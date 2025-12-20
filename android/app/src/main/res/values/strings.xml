@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Clean Cloak</string>
+    <string name="title_activity_main">Clean Cloak</string>
+    <string name="package_name">com.cleancloak.app</string>
+    <string name="custom_url_scheme">com.cleancloak.app</string>
+</resources>

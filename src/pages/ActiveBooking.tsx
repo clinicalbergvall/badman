@@ -1,0 +1,245 @@
+import React, { useState, useEffect } from 'react'
+import { Button, Card } from '@/components/ui'
+import LiveTracking from '@/components/LiveTracking'
+import ChatBox from '@/components/ChatBox'
+import VerificationBadge from '@/components/VerificationBadge'
+import type { VerificationDetails, Location } from '@/lib/types'
+import { api } from '@/lib/api'
+
+export default function ActiveBooking() {
+  const [activeTab, setActiveTab] = useState<'tracking' | 'chat'>('tracking')
+  const [booking, setBooking] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    // Fetch real active booking from API
+    const fetchActiveBooking = async () => {
+      try {
+        const response = await api.get("/bookings/active");
+
+        if (response.ok) {
+          const data = await response.json()
+          if (data.success && data.booking) {
+            setBooking(data.booking)
+          }
+        }
+      } catch (error) {
+        // On error, set booking to null
+        setBooking(null)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchActiveBooking()
+  }, [])
+
+  if (loading) {
+    return <div>Loading...</div>
+  }
+
+  if (!booking) {
+    return <div>No active booking found.</div>
+  }
+
+  const clientLocation: Location = {
+    latitude: -1.2921,
+    longitude: 36.8219,
+    address: 'Nairobi, Kenya'
+  }
+
+  const cleanerVerification: VerificationDetails = {
+    idVerified: true,
+    idNumber: 'ID-12345678',
+    policeCheck: true,
+    references: [
+      {
+        id: '1',
+        name: 'Jane Smith',
+        phone: '0723456789',
+        relationship: 'Previous Client',
+        verified: true
+      },
+      {
+        id: '2',
+        name: 'Mike Johnson',
+        phone: '0734567890',
+        relationship: 'Colleague',
+        verified: true
+      }
+    ],
+    insuranceCoverage: false,
+    verifiedAt: new Date().toISOString()
+  }
+
+  const handleReportIssue = () => {
+    const details = window.prompt('Tell us what went wrong so support can reach out:')
+    if (details && details.trim().length > 0) {
+      window.alert('Thanks for the report. Clean Cloak support will contact you shortly.')
+    }
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-4 md:p-6">
+      <div className="max-w-6xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={() => window.history.back()}
+            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Active Booking</h1>
+            <p className="text-sm text-gray-600">Booking #{booking.id.slice(0, 8)}</p>
+          </div>
+        </div>
+
+        {/* Cleaner Info Card */}
+        <Card className="p-6">
+          <div className="flex items-start gap-4">
+            <div className="w-16 h-16 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center text-white text-2xl font-bold">
+              {booking.cleanerName.split(' ').map((n: string) => n[0]).join('')}
+            </div>
+            <div className="flex-1">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900">{booking.cleanerName}</h2>
+                  <p className="text-sm text-gray-600">{booking.cleanerPhone}</p>
+                </div>
+                <VerificationBadge verification={cleanerVerification} size="sm" />
+              </div>
+              
+              <div className="mt-4 grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-gray-500">Service</p>
+                  <p className="text-sm font-medium text-gray-900">{booking.serviceType}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500">Vehicle</p>
+                  <p className="text-sm font-medium text-gray-900">{booking.vehicleType}</p>
+                </div>
+              </div>
+
+              <div className="mt-4 flex items-center gap-3">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => {
+                    const telLink = `tel:${booking.cleanerPhone.replace(/\s+/g, '')}`
+                    window.location.href = telLink
+                  }}
+                  aria-label={`Call ${booking.cleanerName}`}
+                >
+                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                  </svg>
+                  Call Cleaner
+                </Button>
+                <Button 
+                  variant="outline" 
+                  className="px-4"
+                  onClick={() => {
+                    // Show verification details
+                    alert('Verification details modal would open here')
+                  }}
+                >
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                  </svg>
+                </Button>
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        {/* Tabs */}
+        <div className="flex gap-2 border-b border-gray-200">
+          <button
+            onClick={() => setActiveTab('tracking')}
+            className={`px-6 py-3 font-medium transition-colors relative ${
+              activeTab === 'tracking'
+                ? 'text-yellow-600'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              <span>Live Tracking</span>
+            </div>
+            {activeTab === 'tracking' && (
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-yellow-600"></div>
+            )}
+          </button>
+
+          <button
+            onClick={() => setActiveTab('chat')}
+            className={`px-6 py-3 font-medium transition-colors relative ${
+              activeTab === 'chat'
+                ? 'text-yellow-600'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            <div className="flex items-center gap-2">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              </svg>
+              <span>Chat</span>
+              <span className="ml-1 px-2 py-0.5 bg-red-500 text-white text-xs rounded-full">2</span>
+            </div>
+            {activeTab === 'chat' && (
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-yellow-600"></div>
+            )}
+          </button>
+        </div>
+
+        {/* Tab Content */}
+        <div>
+          {activeTab === 'tracking' ? (
+            <LiveTracking 
+              bookingId={booking.id} 
+              clientLocation={clientLocation}
+            />
+          ) : (
+            <ChatBox
+              bookingId={booking.id}
+              currentUserId="client-123"
+              currentUserName="You"
+              currentUserRole="client"
+            />
+          )}
+        </div>
+
+        {/* Emergency Button */}
+        <Card className="p-4 bg-red-50 border-red-200">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+              <div>
+                <p className="font-medium text-red-900">Need Help?</p>
+                <p className="text-sm text-red-700">Report an issue</p>
+              </div>
+            </div>
+            <Button 
+              variant="outline" 
+              className="border-red-300 text-red-700 hover:bg-red-100"
+              onClick={handleReportIssue}
+            >
+              Report Issue
+            </Button>
+          </div>
+        </Card>
+      </div>
+    </div>
+  )
+}

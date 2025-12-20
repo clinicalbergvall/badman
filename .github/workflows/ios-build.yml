@@ -1,0 +1,105 @@
+name: iOS IPA Build
+
+on:
+  workflow_dispatch:
+    inputs:
+      buildConfiguration:
+        description: "Xcode build configuration"
+        required: false
+        default: "Release"
+      exportMethod:
+        description: "Export method (development or ad-hoc)"
+        required: false
+        default: "development"
+
+jobs:
+  build-ios:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+
+      - name: Install CocoaPods
+        run: |
+          sudo gem install cocoapods
+
+      - name: Install NPM dependencies
+        run: npm ci
+
+      - name: Add Capacitor iOS platform
+        run: npx cap add ios
+
+      - name: Build web assets and sync Capacitor iOS
+        run: npm run ios:sync
+
+      - name: Install iOS Pods
+        working-directory: ios/App
+        run: pod install --repo-update
+
+      - name: Import Apple code signing certificates
+        uses: apple-actions/import-codesign-certs@v2
+        with:
+          p12-file-base64: ${{ secrets.APPLE_P12_BASE64 }}
+          p12-password: ${{ secrets.APPLE_P12_PASSWORD }}
+          mobileprovision-file-base64: ${{ secrets.APPLE_MOBILEPROVISION_BASE64 }}
+
+      - name: Build Xcode archive
+        working-directory: ios/App
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          xcodebuild -workspace App.xcworkspace \
+            -scheme App \
+            -configuration "${{ github.event.inputs.buildConfiguration || 'Release' }}" \
+            -archivePath ./build/App.xcarchive \
+            archive \
+            DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
+            CODE_SIGN_STYLE=Automatic \
+            | tee xcodebuild-archive.log
+
+      - name: Create export options plist
+        working-directory: ios/App
+        run: |
+          cat > ./build/exportOptions.plist << 'EOF'
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key>
+            <string>${{ github.event.inputs.exportMethod || 'development' }}</string>
+            <key>compileBitcode</key>
+            <false/>
+            <key>destination</key>
+            <string>export</string>
+            <key>manifest</key>
+            <dict/>
+            <key>signingStyle</key>
+            <string>automatic</string>
+          </dict>
+          </plist>
+          EOF
+
+      - name: Export IPA
+        working-directory: ios/App
+        run: |
+          xcodebuild -exportArchive \
+            -archivePath ./build/App.xcarchive \
+            -exportOptionsPlist ./build/exportOptions.plist \
+            -exportPath ./build/ipa \
+            | tee xcodebuild-export.log
+
+      - name: List build outputs
+        working-directory: ios/App
+        run: ls -la ./build/ipa
+
+      - name: Upload IPA artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-ipa
+          path: ios/App/build/ipa/*.ipa

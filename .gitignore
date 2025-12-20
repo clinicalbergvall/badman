@@ -1,0 +1,22 @@
+node_modules/
+dist/
+.env
+.env.*
+.DS_Store
+*.log
+.vscode/
+.idea/
+.trae/
+coverage/
+
+# Android
+android/.gradle/
+android/build/
+android/app/build/
+
+# iOS
+ios/App/build/
+ios/App/Pods/
+ios/App/*.xcworkspace/xcshareddata/WorkspaceSettings.xcsettings
+ios/App/*.xcodeproj/xcuserdata/
+ios/App/*.xcworkspace/xcuserdata/

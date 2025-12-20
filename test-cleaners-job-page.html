@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clean Cloak - Cleaners Job Page Test Suite</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .header {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #666;
+            font-size: 14px;
+        }
+        .test-section {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .test-section h2 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .status-pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        .status-success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        .status-error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+        .test-item {
+            padding: 15px;
+            margin-bottom: 10px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+        .test-item:hover {
+            border-color: #667eea;
+        }
+        .test-item h3 {
+            color: #333;
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+        .test-result {
+            font-size: 14px;
+            color: #666;
+            margin-top: 8px;
+        }
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-right: 10px;
+            margin-top: 10px;
+        }
+        button:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        button:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .config-display {
+            background: #f3f4f6;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            margin-top: 10px;
+            word-break: break-all;
+        }
+        .input-group {
+            margin-bottom: 15px;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        .input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .json-viewer {
+            background: #1f2937;
+            color: #10b981;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            margin-top: 10px;
+            overflow-x: auto;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧪 Clean Cloak - Cleaners Job Page Test Suite</h1>
+            <p class="subtitle">Backend: https://clean-cloak-b.onrender.com</p>
+        </div>
+
+        <!-- Configuration Section -->
+        <div class="test-section">
+            <h2>⚙️ Configuration</h2>
+            <div class="config-display">
+                <strong>Backend URL:</strong> https://clean-cloak-b.onrender.com/api<br>
+                <strong>Status:</strong> <span id="backend-status" class="status-badge status-pending">Checking...</span>
+            </div>
+            <button onclick="checkBackendHealth()">Check Backend Health</button>
+            <div id="health-result" class="json-viewer" style="display: none;"></div>
+        </div>
+
+        <!-- Authentication Section -->
+        <div class="test-section">
+            <h2>🔐 Authentication Tests</h2>
+            
+            <div class="test-item">
+                <h3>1. Cleaner Login</h3>
+                <div class="input-group">
+                    <label>Phone Number (Kenyan format: 07XXXXXXXX or 01XXXXXXXX):</label>
+                    <input type="text" id="login-phone" placeholder="0712345678" value="">
+                </div>
+                <div class="input-group">
+                    <label>Password:</label>
+                    <input type="password" id="login-password" placeholder="password123" value="">
+                </div>
+                <button onclick="testCleanerLogin()">Login as Cleaner</button>
+                <div id="login-result" class="test-result"></div>
+                <div id="login-data" class="json-viewer" style="display: none;"></div>
+            </div>
+
+            <div class="test-item">
+                <h3>2. Register New Cleaner (Optional)</h3>
+                <div class="input-group">
+                    <label>Name:</label>
+                    <input type="text" id="reg-name" placeholder="John Doe">
+                </div>
+                <div class="input-group">
+                    <label>Email:</label>
+                    <input type="email" id="reg-email" placeholder="john@example.com">
+                </div>
+                <div class="input-group">
+                    <label>Phone:</label>
+                    <input type="text" id="reg-phone" placeholder="0712345678">
+                </div>
+                <div class="input-group">
+                    <label>Password:</label>
+                    <input type="password" id="reg-password" placeholder="password123">
+                </div>
+                <button onclick="testCleanerRegistration()">Register as Cleaner</button>
+                <div id="register-result" class="test-result"></div>
+                <div id="register-data" class="json-viewer" style="display: none;"></div>
+            </div>
+        </div>
+
+        <!-- Cleaners Job Page Tests -->
+        <div class="test-section">
+            <h2>💼 Cleaners Job Page Tests</h2>
+            
+            <div class="test-item">
+                <h3>3. Fetch Cleaner Profile</h3>
+                <button onclick="testGetCleanerProfile()">Get Cleaner Profile</button>
+                <div id="profile-result" class="test-result"></div>
+                <div id="profile-data" class="json-viewer" style="display: none;"></div>
+            </div>
+
+            <div class="test-item">
+                <h3>4. Fetch Job Opportunities</h3>
+                <button onclick="testGetJobOpportunities()">Get Job Opportunities</button>
+                <button onclick="testGetJobOpportunities('home-cleaning')">Get Home Cleaning Jobs</button>
+                <div id="jobs-result" class="test-result"></div>
+                <div id="jobs-data" class="json-viewer" style="display: none;"></div>
+            </div>
+
+            <div class="test-item">
+                <h3>5. Accept Job Booking</h3>
+                <div class="input-group">
+                    <label>Booking ID (from job opportunities above):</label>
+                    <input type="text" id="booking-id" placeholder="Enter booking ID">
+                </div>
+                <button onclick="testAcceptBooking()">Accept Booking</button>
+                <div id="accept-result" class="test-result"></div>
+                <div id="accept-data" class="json-viewer" style="display: none;"></div>
+            </div>
+        </div>
+
+        <!-- Additional Features -->
+        <div class="test-section">
+            <h2>🔍 Additional Tests</h2>
+            
+            <div class="test-item">
+                <h3>6. CORS & Credentials</h3>
+                <button onclick="testCORS()">Test CORS Configuration</button>
+                <div id="cors-result" class="test-result"></div>
+            </div>
+
+            <div class="test-item">
+                <h3>7. Cookie Handling</h3>
+                <button onclick="checkCookies()">Check Cookies</button>
+                <div id="cookie-result" class="test-result"></div>
+                <div id="cookie-data" class="json-viewer" style="display: none;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'https://clean-cloak-b.onrender.com/api';
+        let authToken = null;
+
+        // Helper function to display results
+        function displayResult(elementId, message, isSuccess = true) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.style.color = isSuccess ? '#059669' : '#dc2626';
+        }
+
+        function displayJSON(elementId, data) {
+            const element = document.getElementById(elementId);
+            element.style.display = 'block';
+            element.textContent = JSON.stringify(data, null, 2);
+        }
+
+        function updateStatus(elementId, status, text) {
+            const element = document.getElementById(elementId);
+            element.className = `status-badge status-${status}`;
+            element.textContent = text;
+        }
+
+        // Check backend health
+        async function checkBackendHealth() {
+            try {
+                updateStatus('backend-status', 'pending', 'Checking...');
+                const response = await fetch(`${API_BASE_URL.replace('/api', '')}/api/health`);
+                const data = await response.json();
+                
+                if (data.status === 'OK') {
+                    updateStatus('backend-status', 'success', 'Healthy ✓');
+                    displayJSON('health-result', data);
+                } else {
+                    updateStatus('backend-status', 'error', 'Unhealthy ✗');
+                    displayJSON('health-result', data);
+                }
+            } catch (error) {
+                updateStatus('backend-status', 'error', 'Failed ✗');
+                displayResult('health-result', `Error: ${error.message}`, false);
+            }
+        }
+
+        // Test cleaner login
+        async function testCleanerLogin() {
+            const phone = document.getElementById('login-phone').value;
+            const password = document.getElementById('login-password').value;
+
+            if (!phone || !password) {
+                displayResult('login-result', 'Please enter phone and password', false);
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        identifier: phone,
+                        password: password
+                    })
+                });
+
+                const data = await response.json();
+                displayJSON('login-data', data);
+
+                if (data.success) {
+                    displayResult('login-result', `✓ Login successful! Role: ${data.user.role}`, true);
+                    if (data.user.role !== 'cleaner') {
+                        displayResult('login-result', `⚠️ Warning: User role is '${data.user.role}', not 'cleaner'. Job page may not work.`, false);
+                    }
+                } else {
+                    displayResult('login-result', `✗ Login failed: ${data.message}`, false);
+                }
+            } catch (error) {
+                displayResult('login-result', `✗ Error: ${error.message}`, false);
+            }
+        }
+
+        // Test cleaner registration
+        async function testCleanerRegistration() {
+            const name = document.getElementById('reg-name').value;
+            const email = document.getElementById('reg-email').value;
+            const phone = document.getElementById('reg-phone').value;
+            const password = document.getElementById('reg-password').value;
+
+            if (!name || !email || !phone || !password) {
+                displayResult('register-result', 'Please fill all fields', false);
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({
+                        name,
+                        email,
+                        phone,
+                        password,
+                        role: 'cleaner'
+                    })
+                });
+
+                const data = await response.json();
+                displayJSON('register-data', data);
+
+                if (data.success) {
+                    displayResult('register-result', '✓ Registration successful! You can now login.', true);
+                } else {
+                    displayResult('register-result', `✗ Registration failed: ${data.message}`, false);
+                }
+            } catch (error) {
+                displayResult('register-result', `✗ Error: ${error.message}`, false);
+            }
+        }
+
+        // Test get cleaner profile
+        async function testGetCleanerProfile() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/cleaners/profile`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include'
+                });
+
+                const data = await response.json();
+                displayJSON('profile-data', data);
+
+                if (data.success) {
+                    displayResult('profile-result', `✓ Profile loaded! Services: ${data.profile.services?.join(', ') || 'None'}`, true);
+                } else {
+                    displayResult('profile-result', `✗ Failed: ${data.message}`, false);
+                }
+            } catch (error) {
+                displayResult('profile-result', `✗ Error: ${error.message}`, false);
+            }
+        }
+
+        // Test get job opportunities
+        async function testGetJobOpportunities(serviceCategory = 'car-detailing') {
+            try {
+                const response = await fetch(`${API_BASE_URL}/bookings/opportunities?serviceCategory=${serviceCategory}&limit=50`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include'
+                });
+
+                const data = await response.json();
+                displayJSON('jobs-data', data);
+
+                if (data.success) {
+                    displayResult('jobs-result', `✓ Found ${data.count} job opportunities! Total available: ${data.total}`, true);
+                } else {
+                    displayResult('jobs-result', `✗ Failed: ${data.message}`, false);
+                }
+            } catch (error) {
+                displayResult('jobs-result', `✗ Error: ${error.message}`, false);
+            }
+        }
+
+        // Test accept booking
+        async function testAcceptBooking() {
+            const bookingId = document.getElementById('booking-id').value;
+
+            if (!bookingId) {
+                displayResult('accept-result', 'Please enter a booking ID', false);
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/bookings/${bookingId}/status`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    credentials: 'include',
+                    body: JSON.stringify({ status: 'confirmed' })
+                });
+
+                const data = await response.json();
+                displayJSON('accept-data', data);
+
+                if (data.success || response.ok) {
+                    displayResult('accept-result', '✓ Booking accepted successfully!', true);
+                } else {
+                    displayResult('accept-result', `✗ Failed: ${data.message}`, false);
+                }
+            } catch (error) {
+                displayResult('accept-result', `✗ Error: ${error.message}`, false);
+            }
+        }
+
+        // Test CORS
+        async function testCORS() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/auth/login`, {
+                    method: 'OPTIONS',
+                    headers: {
+                        'Origin': window.location.origin,
+                        'Access-Control-Request-Method': 'POST',
+                        'Access-Control-Request-Headers': 'Content-Type'
+                    }
+                });
+
+                const corsHeaders = {
+                    'Access-Control-Allow-Origin': response.headers.get('Access-Control-Allow-Origin'),
+                    'Access-Control-Allow-Credentials': response.headers.get('Access-Control-Allow-Credentials'),
+                    'Access-Control-Allow-Methods': response.headers.get('Access-Control-Allow-Methods')
+                };
+
+                if (corsHeaders['Access-Control-Allow-Credentials'] === 'true') {
+                    displayResult('cors-result', '✓ CORS is configured correctly with credentials support', true);
+                } else {
+                    displayResult('cors-result', '⚠️ CORS may not support credentials properly', false);
+                }
+            } catch (error) {
+                displayResult('cors-result', `✗ CORS test failed: ${error.message}`, false);
+            }
+        }
+
+        // Check cookies
+        function checkCookies() {
+            const cookies = document.cookie;
+            const element = document.getElementById('cookie-data');
+            element.style.display = 'block';
+            
+            if (cookies) {
+                element.textContent = `Cookies found:\n${cookies}`;
+                displayResult('cookie-result', '✓ Cookies are present', true);
+            } else {
+                element.textContent = 'No cookies found. This is expected if httpOnly cookies are used.';
+                displayResult('cookie-result', 'ℹ️ No visible cookies (httpOnly cookies cannot be accessed via JS)', true);
+            }
+        }
+
+        // Auto-check backend health on load
+        window.addEventListener('load', () => {
+            checkBackendHealth();
+        });
+    </script>
+</body>
+</html>
