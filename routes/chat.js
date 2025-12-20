@@ -3,6 +3,7 @@ const router = express.Router();
 const { protect } = require('../middleware/auth');
 const ChatRoom = require('../models/ChatRoom');
 const Booking = require('../models/Booking');
+const { sendNotificationToUser } = require('./events');
 
 // @route   POST /api/chat
 // @desc    Create chat room for a booking
@@ -122,6 +123,18 @@ router.post('/:bookingId/message', protect, async (req, res) => {
 
     // Add message
     await chatRoom.addMessage(req.user.id, senderRole, message, imageUrl);
+    
+    // Send notification to the other party
+    const recipientId = senderRole === 'client' ? chatRoom.cleaner : chatRoom.client;
+    const senderName = senderRole === 'client' ? 'Client' : 'Cleaner';
+    
+    sendNotificationToUser(recipientId, 'newMessage', {
+      message: {
+        text: message,
+        senderName: senderName
+      },
+      bookingId: req.params.bookingId
+    });
 
     res.json({
       success: true,

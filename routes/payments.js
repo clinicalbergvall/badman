@@ -6,6 +6,7 @@ const Transaction = require('../models/transaction');
 const User = require('../models/User');
 const CleanerProfile = require('../models/CleanerProfile');
 const IntaSend = require('intasend-node');
+const { sendNotificationToBookingParticipants } = require('./events');
 
 // Webhook from IntaSend – receives payment confirmation
 router.post(
@@ -63,6 +64,12 @@ router.post(
 
           // Initiate cleaner M-Pesa payout
           await processCleanerPayout(booking, pricing.cleanerPayout);
+          
+          // Send notification to both parties about payment completion
+          sendNotificationToBookingParticipants(bookingId, 'payment_completed', {
+            bookingId: bookingId,
+            amount: pricing.totalPrice
+          });
 
           console.log(`Payment SUCCESS: KSh ${pricing.totalPrice} for JOB_${bookingId}`);
           console.log(`Platform fee (40%): KSh ${pricing.platformFee}`);
@@ -179,6 +186,12 @@ async function processMpesaPayout(transaction, phoneNumber, amount) {
       booking.payoutStatus = 'processed';
       booking.payoutProcessedAt = new Date();
       await booking.save();
+      
+      // Send notification to cleaner about payout completion
+      sendNotificationToUser(booking.cleaner, 'payout_processed', {
+        bookingId: booking._id,
+        amount: transaction.amount
+      });
 
       console.log(`M-Pesa payout SUCCESS: KSh ${amount} to ${phoneNumber}`);
     } else {

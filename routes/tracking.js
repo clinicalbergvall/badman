@@ -3,6 +3,7 @@ const router = express.Router();
 const { protect, authorize } = require('../middleware/auth');
 const Tracking = require('../models/Tracking');
 const Booking = require('../models/Booking');
+const { sendNotificationToUser } = require('./events');
 
 // @route   POST /api/tracking
 // @desc    Start tracking for a booking
@@ -163,6 +164,16 @@ router.put('/:bookingId/status', protect, authorize('cleaner'), async (req, res)
       tracking.estimatedArrival = estimatedArrival;
     }
     await tracking.save();
+    
+    // Send notification to client when cleaner updates status
+    const booking = await Booking.findById(req.params.bookingId);
+    if (booking && booking.client) {
+      sendNotificationToUser(booking.client, 'cleaner_status_update', {
+        bookingId: req.params.bookingId,
+        status: status,
+        estimatedArrival: estimatedArrival
+      });
+    }
 
     res.json({
       success: true,

@@ -8,6 +8,7 @@ const CleanerProfile = require("../models/CleanerProfile");
 const User = require("../models/User");
 const IntaSend = require("intasend-node"); // <-- NEW
 const { v4: uuidv4 } = require("uuid");
+const { sendNotificationToUser, sendNotificationToBookingParticipants } = require('./events');
 // File system operations removed - using MongoDB only
 
 const formatCurrency = new Intl.NumberFormat("en-KE", {
@@ -155,6 +156,12 @@ router.post("/public", async (req, res) => {
       booking,
       user: { id: user._id, name: user.name, phone: user.phone, role: user.role },
     });
+    
+    // Send notification to client about new booking
+    sendNotificationToUser(user._id, 'booking_created', {
+      serviceCategory: bookingPayload.serviceCategory,
+      bookingId: booking._id
+    });
   } catch (error) {
     console.error("Public booking creation error:", error);
     res.status(500).json({
@@ -181,6 +188,12 @@ router.post("/", protect, async (req, res) => {
       success: true,
       message: "Booking created successfully",
       booking,
+    });
+    
+    // Send notification to client about new booking
+    sendNotificationToUser(req.user.id, 'booking_created', {
+      serviceCategory: bookingData.serviceCategory,
+      bookingId: booking._id
     });
   } catch (error) {
     console.error("Booking creation error:", error);
@@ -396,6 +409,9 @@ router.post("/:id/accept", protect, authorize("cleaner"), async (req, res) => {
     console.log(`✅ Booking ${booking._id} accepted by cleaner ${req.user.id}`);
 
     // TODO: Send notification to client that cleaner accepted
+    sendNotificationToUser(booking.client._id, 'booking_accepted', {
+      bookingId: booking._id
+    });
 
     res.json({
       success: true,
@@ -561,7 +577,13 @@ router.put(
       }
 
       booking.status = status;
-      if (status === "completed") booking.completedAt = new Date();
+      if (status === "completed") {
+        booking.completedAt = new Date();
+        // Send notification when booking is completed
+        sendNotificationToBookingParticipants(booking._id, 'booking_completed', {
+          bookingId: booking._id
+        });
+      }
       await booking.save();
 
       res.json({ success: true, message: "Status updated", booking });
