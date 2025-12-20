@@ -20,18 +20,33 @@ const app = express();
 app.use(helmet());
 app.use(compression());
 
-// Rate limiting
+// General rate limiting
 const limiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100,
+  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes default
+  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 500, // Increased from 100 to 500 requests
   message: {
     success: false,
     message: 'Too many requests from this IP, please try again later.'
   },
   standardHeaders: true,
   legacyHeaders: false,
+  // Skip rate limiting for health check endpoint
+  skip: (req, res) => req.path === '/api/health'
 });
 app.use('/api/', limiter);
+
+// Stricter rate limiting for auth endpoints to prevent brute force attacks
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 20, // Limit to 20 requests per window
+  message: {
+    success: false,
+    message: 'Too many authentication attempts. Please try again later.'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use('/api/auth/', authLimiter);
 
 // Request timeout for serverless
 app.use((req, res, next) => {
