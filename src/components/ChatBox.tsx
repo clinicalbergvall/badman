@@ -69,10 +69,28 @@ export default function ChatBox({
   // Listen for real-time messages via SSE
   useEffect(() => {
     try {
-      const base = import.meta.env.VITE_API_URL || 'http://localhost:5000'
-      const url = `${base.endsWith('/api') ? base : `${base}/api`}/events`
+      const base = import.meta.env.VITE_API_URL || window.location.origin
+      const apiUrl = base.endsWith('/api') ? base : `${base}/api`
+      const url = `${apiUrl}/events`
       const es = new EventSource(url, { withCredentials: true })
 
+      // Listen for general message events (default EventSource event)
+      es.addEventListener('message', (evt: MessageEvent) => {
+        try {
+          const payload = JSON.parse(evt.data)
+          const { type, message: newMessage } = payload || {}
+          
+          // Only add message if it's a newMessage event for this booking and not already in the list
+          if (type === 'newMessage' && newMessage && newMessage.bookingId === bookingId && 
+              !messages.some(msg => msg.id === newMessage.id)) {
+            setMessages(prev => [...prev, newMessage])
+          }
+        } catch (e) {
+          console.error('Error processing SSE message:', e)
+        }
+      })
+
+      // Also listen for specific newMessage events that might be sent directly
       es.addEventListener('newMessage', (evt: MessageEvent) => {
         try {
           const payload = JSON.parse(evt.data)
@@ -226,6 +244,7 @@ export default function ChatBox({
               </div>
               {dateMessages.map((msg) => {
                 const isOwnMessage = msg.senderId === currentUserId
+                
                 return (
                   <div
                     key={msg.id}
@@ -251,7 +270,7 @@ export default function ChatBox({
                           />
                         )}
                       </div>
-                      <p className={`text-xs text-gray-500 mt-1 ${isOwnMessage ? 'text-right mr-2' : 'ml-2'}`}>
+                      <p className={`text-xs text-gray-500 mt-1 ${isOwnMessage ? 'text-right mr-2' : 'text-left ml-2'}`}>
                         {formatTime(msg.timestamp)}
                         {isOwnMessage && msg.read && (
                           <span className="ml-1">✓✓</span>
@@ -270,15 +289,7 @@ export default function ChatBox({
       {/* Input */}
       <div className="p-4 border-t border-gray-200 bg-white">
         <div className="flex gap-2 items-center">
-          <button
-            onClick={handleImageUpload}
-            className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-full transition-colors"
-            title="Upload image"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-          </button>
+
           
           <div className="flex-1 relative">
             <textarea

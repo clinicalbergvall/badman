@@ -540,10 +540,28 @@ export const ChatComponent = ({
     if (!chatRoom) return;
     
     try {
-      const base = import.meta.env.VITE_API_URL || 'http://localhost:5000'
-      const url = `${base.endsWith('/api') ? base : `${base}/api`}/events`
+      const base = import.meta.env.VITE_API_URL || window.location.origin
+      const apiUrl = base.endsWith('/api') ? base : `${base}/api`
+      const url = `${apiUrl}/events`
       const es = new EventSource(url, { withCredentials: true })
 
+      // Listen for general message events (default EventSource event)
+      es.addEventListener('message', (evt: MessageEvent) => {
+        try {
+          const payload = JSON.parse(evt.data)
+          const { type, message: newMessage } = payload || {}
+          
+          // Only add message if it's a newMessage event for this booking and not already in the list
+          if (type === 'newMessage' && newMessage && newMessage.bookingId === bookingId && 
+              !messages.some(msg => msg.id === newMessage.id)) {
+            setMessages(prev => [...prev, newMessage])
+          }
+        } catch (e) {
+          console.error('Error processing SSE message:', e)
+        }
+      })
+
+      // Also listen for specific newMessage events that might be sent directly
       es.addEventListener('newMessage', (evt: MessageEvent) => {
         try {
           const payload = JSON.parse(evt.data)
@@ -712,17 +730,7 @@ export const ChatComponent = ({
             <p className="text-xs text-gray-500">Online</p>
           </div>
         </div>
-        <div className="flex gap-2">
-          <button className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-full">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-            </svg>
-          </button>
-          <button className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded-full">
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-          </button>
+
         </div>
       </div>
 

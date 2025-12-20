@@ -56,11 +56,11 @@ export function NotificationCenter() {
 
     // Navigate based on notification type
     if (notification.bookingId) {
-      if (notification.type === "service_complete") {
+      if (notification.type === "service_complete" || notification.type === "booking_completed") {
         navigate("/completed-bookings");
       } else {
         // Could navigate to booking details
-        navigate("/");
+        navigate(`/active-booking/${notification.bookingId}`);
       }
     }
 
@@ -70,13 +70,24 @@ export function NotificationCenter() {
   const getNotificationIcon = (type: string) => {
     switch (type) {
       case "service_complete":
+      case "booking_completed":
         return "✅";
       case "payment_success":
+      case "payment_completed":
         return "💳";
       case "cleaner_accepted":
+      case "booking_accepted":
         return "👍";
       case "cleaner_on_way":
+      case "cleaner_status_update":
         return "🚗";
+      case "new_message":
+      case "newMessage":
+        return "💬";
+      case "payout_processed":
+        return "💰";
+      case "booking_created":
+        return "📋";
       default:
         return "ℹ️";
     }
@@ -85,13 +96,24 @@ export function NotificationCenter() {
   const getNotificationColor = (type: string) => {
     switch (type) {
       case "service_complete":
+      case "booking_completed":
         return "bg-green-500";
       case "payment_success":
+      case "payment_completed":
         return "bg-blue-500";
       case "cleaner_accepted":
+      case "booking_accepted":
         return "bg-yellow-500";
       case "cleaner_on_way":
+      case "cleaner_status_update":
         return "bg-purple-500";
+      case "new_message":
+      case "newMessage":
+        return "bg-indigo-500";
+      case "payout_processed":
+        return "bg-emerald-500";
+      case "booking_created":
+        return "bg-cyan-500";
       default:
         return "bg-gray-500";
     }

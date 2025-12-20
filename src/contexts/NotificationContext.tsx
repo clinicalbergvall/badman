@@ -3,7 +3,7 @@ import { toast } from 'react-hot-toast'
 
 export interface Notification {
     id: string
-    type: 'service_complete' | 'payment_success' | 'cleaner_accepted' | 'cleaner_on_way' | 'new_message' | 'info'
+    type: 'service_complete' | 'payment_success' | 'cleaner_accepted' | 'cleaner_on_way' | 'new_message' | 'info' | 'booking_created' | 'booking_accepted' | 'booking_completed' | 'payment_completed' | 'payout_processed' | 'newMessage' | 'cleaner_status_update'
     title: string
     message: string
     bookingId?: string
@@ -59,56 +59,57 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   // Subscribe to backend SSE for real-time events
   useEffect(() => {
     try {
-      const base = import.meta.env.VITE_API_URL || 'http://localhost:5000'
-      const url = `${base.endsWith('/api') ? base : `${base}/api`}/events`
+      const base = import.meta.env.VITE_API_URL || window.location.origin
+      const apiUrl = base.endsWith('/api') ? base : `${base}/api`
+      const url = `${apiUrl}/events`
       const es = new EventSource(url, { withCredentials: true })
 
+      // Listen for general message events (default EventSource event)
       es.addEventListener('message', (evt: MessageEvent) => {
         try {
           const payload = JSON.parse(evt.data)
           const { type, payload: data } = payload || {}
-          if (!type) return
-
-          // Map server events to notifications
-          const titleMap: Record<string, string> = {
-            booking_created: 'New Booking',
-            booking_accepted: 'Job Accepted',
-            booking_completed: 'Job Completed',
-            payment_completed: 'Payment Received',
-            payout_processed: 'Payout Sent',
-            newMessage: 'New Message',
-          }
-          const messageMap: Record<string, (d: any) => string> = {
-            booking_created: (d) => `A ${d?.serviceCategory || 'service'} booking is now pending`,
-            booking_accepted: (d) => `Booking ${d?.bookingId?.slice?.(0,8) || ''} accepted`,
-            booking_completed: (d) => `Booking ${d?.bookingId?.slice?.(0,8) || ''} marked completed`,
-            payment_completed: (d) => `Payment confirmed for booking ${d?.bookingId?.slice?.(0,8) || ''}`,
-            payout_processed: (d) => `Payout processed for booking ${d?.bookingId?.slice?.(0,8) || ''}`,
-            newMessage: (d) => `New message${d?.message?.senderName ? ` from ${d.message.senderName}` : ''}${d?.bookingId ? ` for booking ${d.bookingId.slice(0,8)}` : ''}`,
-          }
-
-          const title = titleMap[type] || 'Update'
-          const messageBuilder = messageMap[type]
-          const message = messageBuilder ? messageBuilder(data) : 'New activity'
-
-          setNotifications(prev => ([
-            {
-              id: `notif_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-              type: type === 'booking_completed' ? 'service_complete' : type === 'payment_completed' ? 'payment_success' : type === 'newMessage' ? 'new_message' : 'info',
-              title,
-              message,
-              bookingId: data?.bookingId,
-              read: false,
-              createdAt: new Date().toISOString(),
-            },
-            ...prev,
-          ]))
-
-          if (!toastMuted) {
-            toast(`${title}: ${message}`)
-          }
+          if (!type) return;
+      
+          processNotification(type, data);
         } catch {}
-      })
+      });
+      
+      // Also listen for specific event types that might be sent directly
+      es.addEventListener('newMessage', (evt: MessageEvent) => {
+        try {
+          const payload = JSON.parse(evt.data)
+          processNotification('newMessage', payload);
+        } catch {}
+      });
+      
+      es.addEventListener('booking_created', (evt: MessageEvent) => {
+        try {
+          const payload = JSON.parse(evt.data)
+          processNotification('booking_created', payload);
+        } catch {}
+      });
+      
+      es.addEventListener('booking_accepted', (evt: MessageEvent) => {
+        try {
+          const payload = JSON.parse(evt.data)
+          processNotification('booking_accepted', payload);
+        } catch {}
+      });
+      
+      es.addEventListener('booking_completed', (evt: MessageEvent) => {
+        try {
+          const payload = JSON.parse(evt.data)
+          processNotification('booking_completed', payload);
+        } catch {}
+      });
+      
+      es.addEventListener('payment_completed', (evt: MessageEvent) => {
+        try {
+          const payload = JSON.parse(evt.data)
+          processNotification('payment_completed', payload);
+        } catch {}
+      });
 
       es.addEventListener('error', (evt) => {
         console.error('SSE connection error:', evt);
@@ -122,6 +123,54 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   }, [])
 
     const unreadCount = notifications.filter(n => !n.read).length
+
+    const processNotification = (type: string, data: any) => {
+      // Map server events to notifications
+      const titleMap: Record<string, string> = {
+        booking_created: 'New Booking',
+        booking_accepted: 'Job Accepted',
+        booking_completed: 'Job Completed',
+        payment_completed: 'Payment Received',
+        payout_processed: 'Payout Sent',
+        newMessage: 'New Message',
+        cleaner_status_update: 'Cleaner Update',
+      }
+      const messageMap: Record<string, (d: any) => string> = {
+        booking_created: (d) => `A ${d?.serviceCategory || 'service'} booking is now pending`,
+        booking_accepted: (d) => `Booking ${d?.bookingId?.slice?.(0,8) || ''} accepted`,
+        booking_completed: (d) => `Booking ${d?.bookingId?.slice?.(0,8) || ''} marked completed`,
+        payment_completed: (d) => `Payment confirmed for booking ${d?.bookingId?.slice?.(0,8) || ''}`,
+        payout_processed: (d) => `Payout processed for booking ${d?.bookingId?.slice?.(0,8) || ''}`,
+        newMessage: (d) => `New message${d?.message?.senderName ? ` from ${d.message.senderName}` : ''}${d?.bookingId ? ` for booking ${d.bookingId.slice(0,8)}` : ''}`,
+        cleaner_status_update: (d) => `Cleaner status updated to ${d?.status || 'new status'}`,
+      }
+
+      const title = titleMap[type] || 'Update'
+      const messageBuilder = messageMap[type]
+      const message = messageBuilder ? messageBuilder(data) : 'New activity'
+
+      setNotifications(prev => ([
+        {
+          id: `notif_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+          type: type === 'booking_completed' ? 'service_complete' : 
+                type === 'payment_completed' ? 'payment_success' : 
+                type === 'booking_accepted' ? 'cleaner_accepted' : 
+                type === 'newMessage' ? 'new_message' : 
+                type === 'cleaner_status_update' ? 'cleaner_on_way' : 
+                type || 'info',
+          title,
+          message,
+          bookingId: data?.bookingId,
+          read: false,
+          createdAt: new Date().toISOString(),
+        },
+        ...prev,
+      ]))
+
+      if (!toastMuted) {
+        toast(`${title}: ${message}`)
+      }
+    };
 
     const addNotification = (notification: Omit<Notification, 'id' | 'createdAt' | 'read'>) => {
         const newNotification: Notification = {

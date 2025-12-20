@@ -502,7 +502,7 @@ router.post("/:id/pay", protect, authorize("client"), async (req, res) => {
 
     // Initialise IntaSend client
     const client = new IntaSend(
-      process.env.INTASEND_PUBLISHABLE_KEY,
+      process.env.INTASEND_PUBLIC_KEY,  // ✅ FIXED
       process.env.INTASEND_SECRET_KEY,
       process.env.NODE_ENV !== "production", // true = sandbox
     );

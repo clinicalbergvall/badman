@@ -14,7 +14,6 @@ interface DashboardStats {
   totalBookings: number
   completedBookings: number
   totalRevenue: number
-  avgRating: number
 }
 
 interface ClientData {
@@ -184,12 +183,10 @@ export default function AdminDashboard() {
   const allCleaners = [...pending, ...approved]
 
   const summary = useMemo(() => {
-    if (!stats) return { total: 0, avgRating: '0.0', totalJobs: 0, complianceRate: 0 }
+    if (!stats) return { total: 0, totalJobs: 0 }
     return {
       total: stats.totalCleaners,
-      avgRating: stats.avgRating.toFixed(1),
-      totalJobs: stats.totalBookings,
-      complianceRate: Math.round((stats.approvedCleaners / stats.totalCleaners) * 100) || 0
+      totalJobs: stats.totalBookings
     }
   }, [stats])
 
@@ -258,11 +255,9 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          <div className="mt-8 grid gap-4 md:grid-cols-4">
+          <div className="mt-8 grid gap-4 md:grid-cols-2">
             <StatCard label="Total Cleaners" value={stats?.totalCleaners || 0} accent="from-yellow-300/80 to-yellow-500/60" />
             <StatCard label="Pending Reviews" value={stats?.pendingCleaners || 0} accent="from-orange-300/70 to-rose-500/50" />
-            <StatCard label="Average Rating" value={`${summary.avgRating} ★`} accent="from-emerald-300/60 to-cyan-500/60" />
-            <StatCard label="Verification Rate" value={`${summary.complianceRate}%`} accent="from-blue-400/60 to-indigo-500/60" />
           </div>
         </header>
 
@@ -458,7 +453,7 @@ function CleanerCard({
   return (
     <Card className="border border-slate-800/80 bg-slate-950/70 p-6 text-slate-200">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div>
+        <div className="flex-1">
           <div className="flex flex-wrap items-center gap-3">
             <div className="rounded-full border border-yellow-400/50 bg-slate-900 px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-yellow-300">
               {profile.approvalStatus === 'approved' ? 'Live' : 'Review'}
@@ -471,14 +466,29 @@ function CleanerCard({
           <p className="mt-2 text-sm text-slate-400">
             {profile.phone} · {profile.email || 'No email on file'}
           </p>
-          <p className="text-xs uppercase tracking-[0.25em] text-slate-500">Services</p>
-          <p className="text-sm text-slate-200">{(profile.services || []).join(', ') || 'Not specified'}</p>
+          <div className="mt-3">
+            <p className="text-xs uppercase tracking-[0.25em] text-slate-500">Services</p>
+            <p className="text-sm text-slate-200">{(profile.services || []).join(', ') || 'Not specified'}</p>
+          </div>
+          
+          <div className="mt-4 grid grid-cols-2 gap-3">
+            <div>
+              <p className="text-xs uppercase tracking-[0.25em] text-slate-500">Address</p>
+              <p className="text-sm text-slate-200 truncate">{profile.address || 'Not provided'}</p>
+            </div>
+            <div>
+              <p className="text-xs uppercase tracking-[0.25em] text-slate-500">Member Since</p>
+              <p className="text-sm text-slate-200">
+                {profile.createdAt ? new Date(profile.createdAt).toLocaleDateString() : 'Unknown'}
+              </p>
+            </div>
+          </div>
         </div>
 
-        <div className="grid gap-3 text-center sm:grid-cols-3">
+        <div className="grid grid-cols-3 gap-3 text-center">
           <MiniMetric label="Rating" value={`${profile.rating ?? 0} ★`} />
           <MiniMetric label="Jobs" value={profile.totalJobs ?? 0} />
-          <MiniMetric label="Insurance" value={profile.verification?.insuranceCoverage ? 'Yes' : 'None'} />
+          <MiniMetric label="Verified" value={profile.verified ? 'Yes' : 'No'} />
         </div>
       </div>
 
@@ -487,17 +497,20 @@ function CleanerCard({
         {renderImageSlot('Full Body', profile.fullBodyPhoto)}
         <div className="rounded-2xl border border-slate-800/70 bg-slate-900/40 p-4 text-sm text-slate-400">
           <p className="text-xs tracking-[0.2em] text-slate-500">ID Verification</p>
-          <div className="mt-3 flex gap-3">
+          <div className="mt-3 flex flex-wrap gap-2">
             <VerificationChip label="ID" active={!!profile.verification?.idVerified} />
             <VerificationChip label="Police" active={!!profile.verification?.policeCheck} />
             <VerificationChip label="Insurance" active={!!profile.verification?.insuranceCoverage} />
           </div>
+          {profile.verification?.idNumber && (
+            <p className="mt-2 text-xs text-slate-300">ID: {profile.verification.idNumber}</p>
+          )}
         </div>
       </div>
 
       {profile.beforeAfterPhotos && profile.beforeAfterPhotos.length > 0 && (
         <div className="mt-6">
-          <p className="text-xs uppercase tracking-[0.3em] text-slate-500">Recent Jobs</p>
+          <p className="text-xs uppercase tracking-[0.3em] text-slate-500">Recent Jobs ({profile.beforeAfterPhotos.length})</p>
           <div className="mt-3 grid grid-cols-2 gap-3">
             {profile.beforeAfterPhotos.slice(0, 2).map((photo) => (
               <div key={photo.id} className="overflow-hidden rounded-2xl border border-slate-800">
@@ -505,6 +518,9 @@ function CleanerCard({
                   <img src={photo.beforeImage} alt="Before" className="h-20 w-1/2 object-cover" />
                   <img src={photo.afterImage} alt="After" className="h-20 w-1/2 object-cover" />
                 </div>
+                {photo.description && (
+                  <p className="p-2 text-xs text-slate-300 truncate">{photo.description}</p>
+                )}
               </div>
             ))}
           </div>

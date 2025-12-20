@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import { useParams } from 'react-router-dom'
 import { Button, Card } from '@/components/ui'
 import LiveTracking from '@/components/LiveTracking'
 import ChatBox from '@/components/ChatBox'
@@ -7,15 +8,16 @@ import type { VerificationDetails, Location } from '@/lib/types'
 import { api } from '@/lib/api'
 
 export default function ActiveBooking() {
+  const { id } = useParams<{ id: string }>()
   const [activeTab, setActiveTab] = useState<'tracking' | 'chat'>('tracking')
   const [booking, setBooking] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Fetch real active booking from API
-    const fetchActiveBooking = async () => {
+    // Fetch booking by ID from API
+    const fetchBooking = async () => {
       try {
-        const response = await api.get("/bookings/active");
+        const response = await api.get(id ? `/bookings/${id}` : "/bookings/active");
 
         if (response.ok) {
           const data = await response.json()
@@ -31,8 +33,8 @@ export default function ActiveBooking() {
       }
     }
 
-    fetchActiveBooking()
-  }, [])
+    fetchBooking()
+  }, [id])
 
   if (loading) {
     return <div>Loading...</div>

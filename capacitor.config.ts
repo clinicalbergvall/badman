@@ -34,9 +34,6 @@ const config: CapacitorConfig = {
 
     // Build configuration
     buildOptions: {
-      // Enable minification
-      minifyEnabled: true,
-
       // Enable ProGuard/R8 for code shrinking
       shrinkResources: true,
     },
@@ -75,8 +72,7 @@ const config: CapacitorConfig = {
 
     // App settings
     App: {
-      // Disable automatic URL opening
-      handleApplicationOpenUrl: true,
+      // This property doesn't exist in Capacitor's App plugin
     },
 
     // Network settings
@@ -89,4 +85,4 @@ const config: CapacitorConfig = {
   loggingBehavior: "production", // Reduce logging in production
 };
 
-export default config;
+module.exports = config;
