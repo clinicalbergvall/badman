@@ -6,6 +6,7 @@ import ChatBox from '@/components/ChatBox'
 import VerificationBadge from '@/components/VerificationBadge'
 import type { VerificationDetails, Location } from '@/lib/types'
 import { api } from '@/lib/api'
+import { loadUserSession } from '@/lib/storage'
 
 export default function ActiveBooking() {
   const { id } = useParams<{ id: string }>()
@@ -13,8 +14,26 @@ export default function ActiveBooking() {
   const [booking, setBooking] = useState<any>(null)
   const [loading, setLoading] = useState(true)
 
+
+  const ChatBoxWithUserData = ({ bookingId }: { bookingId: string }) => {
+    const userSession = loadUserSession()
+
+    if (!userSession) {
+      return <div className="p-4 text-center text-gray-500">Please log in to use chat</div>
+    }
+
+    return (
+      <ChatBox
+        bookingId={bookingId}
+        currentUserId={userSession.phone}
+        currentUserName={userSession.name}
+        currentUserRole={userSession.userType as 'client' | 'cleaner'}
+      />
+    )
+  }
+
   useEffect(() => {
-    // Fetch booking by ID from API
+
     const fetchBooking = async () => {
       try {
         const response = await api.get(id ? `/bookings/${id}` : "/bookings/active");
@@ -26,7 +45,7 @@ export default function ActiveBooking() {
           }
         }
       } catch (error) {
-        // On error, set booking to null
+
         setBooking(null)
       } finally {
         setLoading(false)
@@ -44,10 +63,11 @@ export default function ActiveBooking() {
     return <div>No active booking found.</div>
   }
 
-  const clientLocation: Location = {
-    latitude: -1.2921,
-    longitude: 36.8219,
-    address: 'Nairobi, Kenya'
+  const clientLocation = {
+    latitude: booking.location?.coordinates?.[0] || -1.2921,
+    longitude: booking.location?.coordinates?.[1] || 36.8219,
+    address: booking.location?.address || booking.location?.manualAddress || 'Nairobi, Kenya',
+    coordinates: booking.location?.coordinates || [-1.2921, 36.8219] as [number, number]
   }
 
   const cleanerVerification: VerificationDetails = {
@@ -77,16 +97,16 @@ export default function ActiveBooking() {
   const handleReportIssue = () => {
     const details = window.prompt('Tell us what went wrong so support can reach out:')
     if (details && details.trim().length > 0) {
-      window.alert('Thanks for the report. Clean Cloak support will contact you shortly.')
+      window.alert('Thanks for the report. CleanCloak support will contact you shortly.')
     }
   }
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-6">
       <div className="max-w-6xl mx-auto space-y-6">
-        {/* Header */}
+        { }
         <div className="flex items-center gap-4">
-          <button 
+          <button
             onClick={() => window.history.back()}
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
           >
@@ -100,7 +120,7 @@ export default function ActiveBooking() {
           </div>
         </div>
 
-        {/* Cleaner Info Card */}
+        { }
         <Card className="p-6">
           <div className="flex items-start gap-4">
             <div className="w-16 h-16 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center text-white text-2xl font-bold">
@@ -114,7 +134,7 @@ export default function ActiveBooking() {
                 </div>
                 <VerificationBadge verification={cleanerVerification} size="sm" />
               </div>
-              
+
               <div className="mt-4 grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-xs text-gray-500">Service</p>
@@ -141,11 +161,11 @@ export default function ActiveBooking() {
                   </svg>
                   Call Cleaner
                 </Button>
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   className="px-4"
                   onClick={() => {
-                    // Show verification details
+
                     alert('Verification details modal would open here')
                   }}
                 >
@@ -158,15 +178,14 @@ export default function ActiveBooking() {
           </div>
         </Card>
 
-        {/* Tabs */}
+        { }
         <div className="flex gap-2 border-b border-gray-200">
           <button
             onClick={() => setActiveTab('tracking')}
-            className={`px-6 py-3 font-medium transition-colors relative ${
-              activeTab === 'tracking'
-                ? 'text-yellow-600'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
+            className={`px-6 py-3 font-medium transition-colors relative ${activeTab === 'tracking'
+              ? 'text-yellow-600'
+              : 'text-gray-600 hover:text-gray-900'
+              }`}
           >
             <div className="flex items-center gap-2">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -182,11 +201,10 @@ export default function ActiveBooking() {
 
           <button
             onClick={() => setActiveTab('chat')}
-            className={`px-6 py-3 font-medium transition-colors relative ${
-              activeTab === 'chat'
-                ? 'text-yellow-600'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
+            className={`px-6 py-3 font-medium transition-colors relative ${activeTab === 'chat'
+              ? 'text-yellow-600'
+              : 'text-gray-600 hover:text-gray-900'
+              }`}
           >
             <div className="flex items-center gap-2">
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -201,24 +219,21 @@ export default function ActiveBooking() {
           </button>
         </div>
 
-        {/* Tab Content */}
+        { }
         <div>
           {activeTab === 'tracking' ? (
-            <LiveTracking 
-              bookingId={booking.id} 
+            <LiveTracking
+              bookingId={booking.id}
               clientLocation={clientLocation}
             />
           ) : (
-            <ChatBox
+            <ChatBoxWithUserData
               bookingId={booking.id}
-              currentUserId="client-123"
-              currentUserName="You"
-              currentUserRole="client"
             />
           )}
         </div>
 
-        {/* Emergency Button */}
+        { }
         <Card className="p-4 bg-red-50 border-red-200">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -232,8 +247,8 @@ export default function ActiveBooking() {
                 <p className="text-sm text-red-700">Report an issue</p>
               </div>
             </div>
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               className="border-red-300 text-red-700 hover:bg-red-100"
               onClick={handleReportIssue}
             >

@@ -7,36 +7,62 @@ import type { CleanerJobOpportunity, CleanerProfile } from "@/lib/types";
 import toast from "react-hot-toast";
 import { api } from "@/lib/api";
 import { logger } from "@/lib/logger";
+import { LocationMap } from "@/components/ui";
 
 export default function CleanerJobs() {
   const [jobs, setJobs] = useState<CleanerJobOpportunity[]>([]);
   const [profile, setProfile] = useState<CleanerProfile | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [selectedLocationJob, setSelectedLocationJob] = useState<CleanerJobOpportunity | null>(null);
   const navigate = useNavigate();
 
-  // Calculate 60% of the original payout for cleaner earnings
-  const calculateCleanerPayout = (payout: string): string => {
-    // Extract numeric value from payout string (e.g., "KSh 7,000" -> 7000)
-    const numericValue = parseFloat(payout.replace(/[^0-9.-]+/g, ""));
-    if (isNaN(numericValue)) return payout; // Return original if parsing fails
+  const handleViewLocation = (job: CleanerJobOpportunity) => {
+    // Validate coordinates before setting the job to view
+    const hasValidCoordinates = job.coordinates && 
+      Array.isArray(job.coordinates) && 
+      job.coordinates.length === 2 &&
+      typeof job.coordinates[0] === 'number' &&
+      typeof job.coordinates[1] === 'number' &&
+      !isNaN(job.coordinates[0]) &&
+      !isNaN(job.coordinates[1]) &&
+      isFinite(job.coordinates[0]) &&
+      isFinite(job.coordinates[1]);
     
-    // Calculate 60% and format back to currency string
-    const cleanerEarning = numericValue * 0.6;
+    if (hasValidCoordinates || job.location) {
+      setSelectedLocationJob(job);
+    } else {
+      console.warn("Location data is not available or invalid", job);
+      toast.error("Location data is not available or invalid");
+    }
+  };
+
+  const handleCloseLocationModal = () => {
+    setSelectedLocationJob(null);
+  };
+
+  
+  const calculateCleanerPayout = (payout: string): string => {
+    
+    const numericValue = parseFloat(payout.replace(/[^0-9.-]+/g, ""));
+    if (isNaN(numericValue)) return payout; 
+
+    
+    const cleanerEarning = numericValue * 0.4;
     return `KSh ${Math.round(cleanerEarning).toLocaleString()}`;
   };
 
-  // Load data on mount and when refreshed
+  
   useEffect(() => {
     fetchAllData();
 
-    // Poll for new jobs every 30 seconds
+    
     const interval = setInterval(() => {
-      // Pass silent flag if you want to avoid loading spinners on poll
-      // For now, we just call it. Ideally fetchAllData should handle "background" fetching.
-      // But fetchAllData sets isLoading(true). We might want to refactor that to avoid flashing.
-      // For now, let's just stick to initial load to avoid UI flicker, or refactor fetchAllData.
-      // Actually, let's Refactor fetchAllData to accept a showLoading arg.
+      
+      
+      
+      
+      
       fetchAllData(false);
     }, 30000);
 
@@ -46,35 +72,35 @@ export default function CleanerJobs() {
   const fetchAllData = async (showLoading = true) => {
     try {
       if (showLoading) setIsLoading(true);
-      // Fetch cleaner profile (auth via httpOnly cookie)
+      
       try {
         const profileRes = await api.get("/cleaners/profile");
         if (profileRes.ok) {
           const profileData = await profileRes.json();
           setProfile(profileData.profile);
         } else {
-          logger.error("Failed to fetch profile, status:", profileRes.status);
+          logger.error("Failed to fetch profile, status:", new Error(`HTTP ${profileRes.status}`));
         }
       } catch (error) {
-        logger.error("Error fetching profile:", error);
+        logger.error("Error fetching profile:", error instanceof Error ? error : undefined);
         if (showLoading) toast.error("Could not load profile");
       }
 
-      // Fetch job opportunities
+      
       try {
         const jobsRes = await api.get("/bookings/opportunities?limit=50");
         if (jobsRes.ok) {
           const jobsData = await jobsRes.json();
           setJobs(jobsData.opportunities || []);
         } else {
-          logger.error("Failed to fetch jobs, status:", jobsRes.status);
+          logger.error("Failed to fetch jobs, status:", new Error(`HTTP ${jobsRes.status}`));
         }
       } catch (error) {
-        logger.error("Error fetching jobs:", error);
+        logger.error("Error fetching jobs:", error instanceof Error ? error : undefined);
         if (showLoading) toast.error("Could not load job opportunities");
       }
     } catch (error) {
-      logger.error("Data fetch error:", error);
+      logger.error("Data fetch error:", error instanceof Error ? error : undefined);
       if (showLoading) toast.error("Failed to load data");
     } finally {
       if (showLoading) setIsLoading(false);
@@ -96,7 +122,7 @@ export default function CleanerJobs() {
       await fetchAllData();
       toast.success("Job feed updated! 🎉");
     } catch (error) {
-      logger.error("Unable to refresh jobs", error);
+      logger.error("Unable to refresh jobs", error instanceof Error ? error : undefined);
       toast.error("Could not refresh job feed");
     } finally {
       setIsRefreshing(false);
@@ -117,12 +143,12 @@ export default function CleanerJobs() {
       const data = await res.json();
       toast.success(data.message || "Booking accepted! 🎉");
       setJobs((prev) => prev.filter((item) => item.id !== job.id));
-      // Refresh list to reflect any server‑side changes
+      
       fetchAllData();
-      // Navigate to active jobs for immediate follow-up
+      
       navigate("/cleaner-active");
     } catch (error) {
-      logger.error("Accept booking error:", error);
+      logger.error("Accept booking error:", error instanceof Error ? error : undefined);
       toast.error(
         error instanceof Error ? error.message : "Failed to accept booking",
       );
@@ -147,7 +173,7 @@ export default function CleanerJobs() {
   return (
     <CleanerLayout currentPage="jobs">
       <div className="space-y-6">
-        {/* Page Header */}
+        {}
         <div className="text-center animate-up">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             Available Jobs
@@ -155,7 +181,7 @@ export default function CleanerJobs() {
           <p className="text-gray-600 max-w-2xl mx-auto">
             {profile?.firstName && (
               <Badge variant="warning" className="mb-3">
-                🚀 {profile.firstName}, you're live on Clean Cloak
+                🚀 {profile.firstName}, you're live on CleanCloak
               </Badge>
             )}
           </p>
@@ -167,7 +193,7 @@ export default function CleanerJobs() {
         </div>
 
         <section className="grid gap-6 lg:grid-cols-3">
-          {/* Jobs List */}
+          {}
           <div className="lg:col-span-2 space-y-5">
             <Card className="p-6 border border-gray-100 shadow-sm hover-lift">
               <div className="flex items-center justify-between mb-6">
@@ -249,6 +275,18 @@ export default function CleanerJobs() {
                             <span>{job.timing}</span>
                           </span>
                         </div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          {job.coordinates && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-xs"
+                              onClick={() => handleViewLocation(job)}
+                            >
+                              🗺️ View Location
+                            </Button>
+                          )}
+                        </div>
                         <p className="text-xl font-bold text-emerald-600">
                           {calculateCleanerPayout(job.payout)}
                         </p>
@@ -283,9 +321,9 @@ export default function CleanerJobs() {
             </Card>
           </div>
 
-          {/* Sidebar */}
+          {}
           <div className="space-y-6">
-            {/* Quick Stats */}
+            {}
             <Card className="p-6 border border-gray-100 shadow-sm hover-lift">
               <div className="mb-4">
                 <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold">
@@ -325,6 +363,36 @@ export default function CleanerJobs() {
           </div>
         </section>
       </div>
+
+      {/* Location Modal */}
+      {selectedLocationJob && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[80vh]">
+            <div className="p-4 border-b flex items-center justify-between">
+              <h3 className="text-lg font-semibold">
+                Client Location - {selectedLocationJob.title}
+              </h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleCloseLocationModal}
+              >
+                ✕
+              </Button>
+            </div>
+            <div className="p-4">
+              <LocationMap
+                location={{
+                  address: selectedLocationJob.location,
+                  coordinates: selectedLocationJob.coordinates || undefined,
+                  manualAddress: undefined
+                }}
+                title="Client Location"
+              />
+            </div>
+          </div>
+        </div>
+      )}
     </CleanerLayout>
   );
 }

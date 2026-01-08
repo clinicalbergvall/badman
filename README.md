@@ -1,10 +1,10 @@
-# Clean Cloak ✨🏠
+# CleanCloak ✨🏠
 
 Enterprise-grade on-demand car detailing and home cleaning service platform for Kenya with team management, real-time tracking, and automated payments.
 
 ## 🚀 Platform Overview
 
-Clean Cloak is a comprehensive service booking platform that connects clients with professional cleaners through an intelligent team-based system. Features include real-time tracking, secure payments, team management, and admin oversight.
+CleanCloak is a comprehensive service booking platform that connects clients with professional cleaners through an intelligent team-based system. Features include real-time tracking, secure payments, team management, and admin oversight.
 
 ## ✨ Key Features
 
@@ -267,7 +267,7 @@ clean-cloak/
 ```bash
 # Clone repository
 git clone <repository-url>
-cd clean-cloak
+cd cleancloak
 
 # Install frontend dependencies
 npm install
@@ -289,7 +289,7 @@ cd backend && npm run dev  # Backend (http://localhost:5000)
 Required environment variables:
 ```env
 # Database
-MONGODB_URI=mongodb://localhost:27017/clean-cloak
+MONGODB_URI=mongodb://localhost:27017/cleancloak
 
 # JWT
 JWT_SECRET=your-super-secret-jwt-key
@@ -324,12 +324,10 @@ INTASEND_WEBHOOK_SECRET=your-webhook-secret
 ### Technical Support
 - **Documentation**: Check project README and code comments
 - **Issues**: Report bugs via GitHub issues
-- **Email**: support@clean-cloak.com
-
-### Business Inquiries
-- **Services**: info@clean-cloak.com
-- **Partnerships**: partners@clean-cloak.com
-- **Careers**: careers@clean-cloak.com
+- **Email**: support@cleancloak.com
+- **Services**: info@cleancloak.com
+- **Partnerships**: partners@cleancloak.com
+- **Careers**: careers@cleancloak.com
 
 ---
 
@@ -337,4 +335,4 @@ INTASEND_WEBHOOK_SECRET=your-webhook-secret
 
 *Professional Car Detailing & Home Cleaning with Team Management, Real-Time Tracking, and Automated Payments*
 
-© 2025 Clean Cloak. All rights reserved.
+© 2025 CleanCloak. All rights reserved.

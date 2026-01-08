@@ -8,7 +8,6 @@ import {
   useNavigate,
   useLocation,
 } from "react-router-dom";
-import { App as CapacitorApp } from "@capacitor/app";
 import AppEnhanced from "./AppEnhanced";
 import AdminDashboard from "./pages/AdminDashboard";
 import CleanerJobs from "./pages/cleanersjob";
@@ -27,14 +26,41 @@ import { api } from "./lib/api";
 import "./index.css";
 import { Toaster, toast } from "react-hot-toast";
 
-// Validate environment in production
-if (import.meta.env.MODE === "production" && !import.meta.env.VITE_API_URL) {
-  console.error("CRITICAL: VITE_API_URL is not set in production!");
+
+const getCapacitor = async () => {
+  try {
+    const capacitorModule = await import("@capacitor/core");
+    return capacitorModule.Capacitor;
+  } catch (err) {
+    console.warn("Capacitor not available in this environment:", err);
+    
+    return {
+      isNativePlatform: () => false,
+    };
+  }
+};
+
+
+try {
+  if (import.meta.env.MODE === "production" && !import.meta.env.VITE_API_URL) {
+    console.error("CRITICAL: VITE_API_URL is not set in production!");
+  }
+} catch (error) {
+  console.warn("Environment check failed:", error);
 }
 
 console.log("App starting with API:", API_BASE_URL);
 
-// Notification System
+
+window.addEventListener('error', (event) => {
+  console.error('Global error caught:', event.error);
+});
+
+window.addEventListener('unhandledrejection', (event) => {
+  console.error('Unhandled promise rejection:', event.reason);
+});
+
+
 export const showNotification = (
   message: string,
   type: "success" | "error" | "info" = "info",
@@ -51,7 +77,7 @@ export const showNotification = (
   }
 };
 
-// Protected Route Component
+
 const ProtectedRoute = ({
   children,
   requiredRole,
@@ -64,6 +90,14 @@ const ProtectedRoute = ({
 
   React.useEffect(() => {
     let cancelled = false;
+
+    
+    const timeoutId = setTimeout(() => {
+      if (!cancelled) {
+        setChecked(true);
+      }
+    }, 5000); 
+
     if (!localSession) {
       (async () => {
         try {
@@ -79,19 +113,29 @@ const ProtectedRoute = ({
               lastSignedIn: new Date().toISOString(),
             };
             localStorage.setItem(
-              "clean-cloak-user-session",
+              "cleancloak-user-session",
               JSON.stringify(hydrated),
             );
             if (!cancelled) setLocalSession(hydrated);
           }
-        } catch {}
-        if (!cancelled) setChecked(true);
+        } catch (error) {
+          console.error('Error fetching user session:', error);
+          
+          if (!cancelled) setChecked(true);
+        }
+        if (!cancelled) {
+          clearTimeout(timeoutId);
+          setChecked(true);
+        }
       })();
     } else {
+      clearTimeout(timeoutId);
       setChecked(true);
     }
+
     return () => {
       cancelled = true;
+      clearTimeout(timeoutId);
     };
   }, [localSession]);
 
@@ -117,7 +161,7 @@ const ProtectedRoute = ({
   return <>{children}</>;
 };
 
-// Error Boundary Component
+
 class ErrorBoundary extends React.Component<
   { children: React.ReactNode },
   { hasError: boolean; error?: Error }
@@ -132,13 +176,13 @@ class ErrorBoundary extends React.Component<
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    // Log error details for debugging
+    
     console.error("Error Boundary caught an error:", error);
     console.error("Error Info:", errorInfo);
 
-    // In production, you might want to send this to an error reporting service
+    
     if (process.env.NODE_ENV === "production") {
-      // Example: sendToErrorService(error, errorInfo)
+      
       console.error("Production error - check logs for details");
     }
   }
@@ -173,7 +217,7 @@ class ErrorBoundary extends React.Component<
   }
 }
 
-// Back Button Handler Component
+
 const BackButtonHandler = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -181,36 +225,58 @@ const BackButtonHandler = () => {
   const lastBackPressRef = React.useRef(0);
 
   useEffect(() => {
-    const backButtonListener = CapacitorApp.addListener(
-      "backButton",
-      () => {
-        const evt = new CustomEvent("app:hardwareBack", { cancelable: true });
-        const proceed = document.dispatchEvent(evt);
-        if (!proceed) return;
+    let backButtonListener: any = null;
 
-        const atRoot = location.pathname === "/";
-        if (!atRoot) {
-          navigate(-1);
-          return;
-        }
+    
+    (async () => {
+      try {
+        const capacitorInstance = await getCapacitor();
+        if (capacitorInstance.isNativePlatform()) {
+          const appModule = await import("@capacitor/app");
+          backButtonListener = await appModule.App.addListener(
+            "backButton",
+            () => {
+              const evt = new CustomEvent("app:hardwareBack", { cancelable: true });
+              const proceed = document.dispatchEvent(evt);
+              if (!proceed) return;
 
-        if (window.history.length > 1) {
-          navigate(-1);
-          return;
-        }
+              const atRoot = location.pathname === "/";
+              if (!atRoot) {
+                navigate(-1);
+                return;
+              }
 
-        const now = Date.now();
-        if (now - lastBackPressRef.current < backPressWindowMs) {
-          CapacitorApp.exitApp();
-        } else {
-          lastBackPressRef.current = now;
-          toast("Press back again to exit");
+              if (window.history.length > 1) {
+                navigate(-1);
+                return;
+              }
+
+              const now = Date.now();
+              if (now - lastBackPressRef.current < backPressWindowMs) {
+                appModule.App.exitApp();
+              } else {
+                lastBackPressRef.current = now;
+                toast("Press back again to exit");
+              }
+            },
+          );
         }
-      },
-    );
+      } catch (error) {
+        console.warn('Back button handler failed:', error);
+      }
+    })();
 
     return () => {
-      backButtonListener.then((listener) => listener.remove());
+      (async () => {
+        if (backButtonListener) {
+          try {
+            const appModule = await import("@capacitor/app");
+            await appModule.App.removeAllListeners();
+          } catch (error) {
+            console.warn('Failed to remove back button listener:', error);
+          }
+        }
+      })();
     };
   }, [navigate, location]);
 
@@ -302,13 +368,68 @@ const Root = () => {
           </Suspense>
         </NotificationProvider>
       </ErrorBoundary>
-      <Toaster position="top-center" />
+      <Toaster position="top-right" toastOptions={{
+        
+        className: 'cleancloak-toast',
+        duration: 4000,
+        style: {
+          background: '#1f2937',
+          color: '#f3f4f6',
+          borderRadius: '0.5rem',
+          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+          maxWidth: '350px',
+          zIndex: 9999,
+        },
+      }} />
     </BrowserRouter>
   );
 };
 
-ReactDOM.createRoot(document.getElementById("root")!).render(
-  <React.StrictMode>
-    <Root />
-  </React.StrictMode>,
-);
+
+
+
+const initializeApp = () => {
+  
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+      renderApp();
+    });
+  } else {
+    renderApp();
+  }
+};
+
+const renderApp = () => {
+  try {
+    const rootElement = document.getElementById("root");
+    if (!rootElement) {
+      console.error("Root element not found");
+      return;
+    }
+
+    ReactDOM.createRoot(rootElement).render(
+      <React.StrictMode>
+        <Root />
+      </React.StrictMode>,
+    );
+  } catch (error) {
+    console.error("Failed to initialize app:", error);
+    
+    const rootElement = document.getElementById("root");
+    if (rootElement) {
+      rootElement.innerHTML = `
+        <div style="display: flex; align-items: center; justify-content: center; height: 100vh; text-align: center; padding: 20px; background-color: #f3f4f6;">
+          <div>
+            <h1 style="color: #FACC15; margin-bottom: 16px; font-family: sans-serif; font-size: 24px;">CleanCloak</h1>
+            <p style="color: #6B7280; margin-bottom: 8px; font-family: sans-serif;">App failed to load</p>
+            <p style="color: #9CA3AF; font-size: 14px; font-family: sans-serif;">Error: ${error instanceof Error ? error.message : 'Unknown error'}</p>
+            <p style="color: #9CA3AF; font-size: 12px; font-family: sans-serif; margin-top: 10px;">Check browser console for more details</p>
+          </div>
+        </div>
+      `;
+    }
+  }
+};
+
+
+initializeApp();

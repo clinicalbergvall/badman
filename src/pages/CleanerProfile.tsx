@@ -72,14 +72,14 @@ export default function CleanerProfile() {
 
     const fetchProfile = async () => {
       try {
-        // Try to fetch from server first
+        
         const res = await api.get('/cleaners/profile')
         if (res.ok) {
           const data = await res.json()
           if (data.profile) {
             setProfile(data.profile)
             previousApprovalStatus.current = data.profile.approvalStatus
-            // Update local cache
+            
             saveCleanerProfile(data.profile)
             return
           }
@@ -88,7 +88,7 @@ export default function CleanerProfile() {
         console.error('Failed to fetch profile from server:', error)
       }
 
-      // Fallback to local storage if server fetch fails or returns no profile
+      
       const saved = loadCleanerProfile()
       if (saved) {
         setProfile(saved)
@@ -245,7 +245,7 @@ export default function CleanerProfile() {
     }
   }
 
-  // Toggle service
+  
   const toggleService = (service: ServiceCategory) => {
     const services = profile.services || []
     if (services.includes(service)) {
@@ -256,7 +256,7 @@ export default function CleanerProfile() {
   }
 
   const handleSaveProfile = async () => {
-    // Validate required fields
+    
     if (!profile.firstName || !profile.lastName || !profile.phone || !profile.address || !profile.city) {
       toast.error('Please fill in all required fields')
       return
@@ -267,13 +267,13 @@ export default function CleanerProfile() {
       return
     }
 
-    // Validate payout settings
+    
     if (!profile.mpesaPhoneNumber) {
       toast.error('Add your M-Pesa phone number to receive payouts')
       return
     }
 
-    // Save profile (server-first; local as fallback)
+    
     if (!profile.passportPhoto || !profile.fullBodyPhoto) {
       toast.error('Upload both passport and full-body photos')
       return
@@ -310,7 +310,7 @@ export default function CleanerProfile() {
       createdAt: new Date().toISOString(),
     }
 
-    // POST to backend API
+    
     try {
       const response = await api.post('/cleaners/profile', {
         firstName: savedProfile.firstName,
@@ -336,7 +336,7 @@ export default function CleanerProfile() {
       const data = await response.json()
       if (data?.success) {
         toast.success('Profile submitted for verification ✅')
-        // Cache locally for convenience after successful submission
+        
         saveCleanerProfile(savedProfile)
         addPendingCleaner(savedProfile)
         setProfile(savedProfile)
@@ -348,7 +348,7 @@ export default function CleanerProfile() {
       console.error('Failed to save to backend:', error)
       const msg = error instanceof Error ? error.message : 'Submission error'
       toast.error(`${msg}. Please sign in as a cleaner and try again.`)
-      // Do not mark as submitted; keep form state for correction
+      
     }
   }
 
@@ -444,7 +444,7 @@ export default function CleanerProfile() {
           <Card className="p-6 bg-yellow-50 border-yellow-200">
             <h3 className="font-semibold text-gray-900 mb-2">Need to update something?</h3>
             <p className="text-sm text-gray-700">
-              Contact Clean Cloak support to unlock editing, or wait for the admin decision.
+              Contact CleanCloak support to unlock editing, or wait for the admin decision.
             </p>
           </Card>
         </div>
@@ -472,7 +472,7 @@ export default function CleanerProfile() {
   return (
     <CleanerLayout currentPage="profile">
       <div className="max-w-4xl mx-auto space-y-6">
-        {/* Header */}
+        {}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Complete Your Profile</h1>
           <p className="text-gray-600">Tell us about yourself and showcase your work</p>
@@ -493,7 +493,7 @@ export default function CleanerProfile() {
           </Card>
         )}
 
-        {/* Personal Information */}
+        {}
         <Card className="p-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Personal Information</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -555,7 +555,7 @@ export default function CleanerProfile() {
           </div>
         </Card>
 
-        {/* Payout Settings */}
+        {}
         <Card className="p-6 space-y-4">
           <div className="flex items-center gap-2">
             <Badge variant="warning">Important</Badge>
@@ -576,7 +576,7 @@ export default function CleanerProfile() {
           </div>
         </Card>
 
-        {/* Identity Verification */}
+        {}
         <Card className="p-6 space-y-4">
           <div className="flex items-center gap-2">
             <Badge variant="success">Required</Badge>
@@ -633,7 +633,7 @@ export default function CleanerProfile() {
           </div>
         </Card>
 
-        {/* Professional Photos */}
+        {}
         <Card className="p-6 space-y-4">
           <h2 className="text-xl font-semibold text-gray-900">Professional Photos</h2>
           <p className="text-sm text-gray-600">Clients will see these photos when they view your profile. Dress professionally in your cleaning outfit.</p>
@@ -682,7 +682,7 @@ export default function CleanerProfile() {
           </div>
         </Card>
 
-        {/* Services Offered */}
+        {}
         <Card className="p-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Services You Offer</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -706,27 +706,6 @@ export default function CleanerProfile() {
                 )}
               </div>
             </button>
-
-            <button
-              onClick={() => toggleService('home-cleaning')}
-              className={`p-4 rounded-xl border-2 transition-all text-left ${(profile.services || []).includes('home-cleaning')
-                ? 'border-yellow-400 bg-yellow-50'
-                : 'border-gray-200 hover:border-gray-300'
-                }`}
-            >
-              <div className="flex items-center gap-3">
-                <div className="text-2xl">🏠</div>
-                <div>
-                  <h3 className="font-semibold text-gray-900">Home Cleaning</h3>
-                  <p className="text-sm text-gray-600">Residential & commercial cleaning</p>
-                </div>
-                {(profile.services || []).includes('home-cleaning') && (
-                  <svg className="w-6 h-6 text-yellow-600 ml-auto" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                  </svg>
-                )}
-              </div>
-            </button>
           </div>
         </Card>
 
@@ -734,7 +713,7 @@ export default function CleanerProfile() {
 
 
 
-        {/* Save Button */}
+        {}
         <div className="flex gap-4">
           <Button variant="outline" fullWidth onClick={handleCancel}>
             Cancel

@@ -14,7 +14,7 @@ import type { BookingHistoryItem, BookingStatus } from "@/lib/types";
 import { api } from "@/lib/api";
 import { logger } from "@/lib/logger";
 
-// Rating Modal Component
+
 interface RatingModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -46,7 +46,7 @@ function RatingModal({
       await onSubmit(rating, review);
       onClose();
     } catch (error) {
-      logger.error("Failed to submit rating:", error);
+      logger.error("Failed to submit rating:", error instanceof Error ? error : undefined);
     } finally {
       setIsSubmitting(false);
     }
@@ -107,11 +107,10 @@ function RatingModal({
                   className="transition-transform hover:scale-110"
                 >
                   <svg
-                    className={`w-10 h-10 ${
-                      star <= (hoveredStar || rating)
-                        ? "fill-yellow-400 text-yellow-400"
-                        : "fill-gray-200 text-gray-200"
-                    }`}
+                    className={`w-10 h-10 ${star <= (hoveredStar || rating)
+                      ? "fill-yellow-400 text-yellow-400"
+                      : "fill-gray-200 text-gray-200"
+                      }`}
                     viewBox="0 0 20 20"
                   >
                     <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
@@ -206,7 +205,7 @@ export default function BookingHistory() {
         logger.error("Failed to fetch bookings from API");
       }
     } catch (error) {
-      logger.error("Error fetching bookings:", error);
+      logger.error("Error fetching bookings:", error instanceof Error ? error : undefined);
     } finally {
       if (showLoading) setIsLoading(false);
     }
@@ -215,7 +214,7 @@ export default function BookingHistory() {
   useEffect(() => {
     fetchBookings();
 
-    // Poll for updates every 15 seconds
+    
     const interval = setInterval(() => {
       fetchBookings(false);
     }, 15000);
@@ -227,14 +226,16 @@ export default function BookingHistory() {
     (filter === "all"
       ? history
       : history.filter((item) => {
-          if (filter === 'confirmed') {
-             return item.status === 'confirmed' || item.status === 'in-progress';
-          }
-          return item.status === filter;
+        if (filter === 'confirmed') {
+          return item.status === 'confirmed' || item.status === 'in-progress';
+        }
+        return item.status === filter;
       })
-    ).filter((item) => item.status !== ("cancelled" as unknown as BookingStatus));
+    )
+      .filter((item) => item.status !== ("cancelled" as unknown as BookingStatus))
+      .filter((item) => (item.serviceCategory as string) !== "home-cleaning"); 
 
- 
+
 
   const getStatusBadge = (status: BookingStatus) => {
     const variants: Record<BookingStatus, "default" | "success" | "warning" | "error"> = {
@@ -254,20 +255,20 @@ export default function BookingHistory() {
   const handleRatingSubmit = async (rating: number, review: string) => {
     if (!selectedBookingForRating) return;
 
-    // Validate rating
+    
     if (!rating || rating < 1 || rating > 5) {
       alert("Please select a valid rating between 1 and 5 stars");
       return;
     }
 
-    // Validate review length
+    
     if (review && review.length > 1000) {
       alert("Review must be less than 1000 characters");
       return;
     }
 
     try {
-      // Optimistic update
+      
       setHistory((prev) =>
         prev.map((item) =>
           item.id === selectedBookingForRating.id
@@ -276,7 +277,7 @@ export default function BookingHistory() {
         ),
       );
 
-      // Submit to backend API
+      
       const response = await api.post(
         `/bookings/${selectedBookingForRating.id}/rating`,
         { rating, review },
@@ -286,7 +287,7 @@ export default function BookingHistory() {
         const error = await response.json();
         logger.error("Failed to submit rating to backend:", error);
 
-        // Show user-friendly error message
+        
         if (error.message === "Booking has already been rated") {
           alert("You have already rated this booking");
         } else if (error.message === "Can only rate completed bookings") {
@@ -295,7 +296,7 @@ export default function BookingHistory() {
           alert("Failed to submit rating. Please try again.");
         }
 
-        // Revert changes
+        
         setHistory((prev) =>
           prev.map((item) =>
             item.id === selectedBookingForRating.id
@@ -304,15 +305,15 @@ export default function BookingHistory() {
           ),
         );
       } else {
-        // Success feedback
-        // const result = await response.json();
+        
+        
       }
     } catch (error) {
-      logger.error("Error submitting rating:", error);
+      logger.error("Error submitting rating:", error instanceof Error ? error : undefined);
       alert(
         "Network error. Please check your connection.",
       );
-      // Revert changes
+      
       setHistory((prev) =>
         prev.map((item) =>
           item.id === selectedBookingForRating.id
@@ -343,10 +344,10 @@ export default function BookingHistory() {
         throw new Error(error.message || "Failed to mark as complete");
       }
 
-      // const result = await response.json();
+      
       toast.success("✅ Job marked as completed! Client has 2 hours to pay.");
 
-      // Update local state
+      
       setHistory((prev) =>
         prev.map((item) =>
           item.id === booking.id
@@ -355,7 +356,7 @@ export default function BookingHistory() {
         ),
       );
     } catch (error) {
-      logger.error("Error marking complete:", error);
+      logger.error("Error marking complete:", error instanceof Error ? error : undefined);
       toast.error(
         error instanceof Error ? error.message : "Failed to mark as complete",
       );
@@ -365,20 +366,20 @@ export default function BookingHistory() {
   };
 
   const handlePayNow = async (booking: BookingHistoryItem) => {
-    // Check if booking needs to be rated first
+    
     if (!booking.rating) {
       toast.error("⭐ Please rate the service before paying");
       handleRateBooking(booking);
       return;
     }
 
-    // Show payment modal
+    
     setSelectedBookingForPayment(booking);
     setShowPaymentModal(true);
   };
 
   const handlePaymentSuccess = () => {
-    // Refresh bookings after successful payment
+    
     fetchBookings();
     toast.success("Payment completed successfully!");
   };
@@ -401,11 +402,31 @@ export default function BookingHistory() {
         }
       `}</style>
       <div className="max-w-4xl mx-auto w-full">
-        {/* Header */}
+        {}
         <div className="mb-8 w-full">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4 w-full">
             <div className="min-w-0 flex-1">
-              <h1 className="text-3xl font-bold text-gray-900 truncate">My Bookings</h1>
+              <div className="flex items-center gap-2 mb-2">
+                <button
+                  onClick={() => window.history.back()}
+                  className="text-gray-600 hover:text-gray-900 flex items-center gap-1"
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15 19l-7-7 7-7"
+                    />
+                  </svg>
+                </button>
+                <h1 className="text-3xl font-bold text-gray-900 truncate">My Bookings</h1>
+              </div>
               <p className="text-gray-600 mt-1 truncate">
                 Track and manage your service history
               </p>
@@ -433,17 +454,16 @@ export default function BookingHistory() {
             </Button>
           </div>
 
-          {/* Filter Tabs */}
+          {}
           <div className="flex gap-2 overflow-x-auto pb-2 border-b hide-scrollbar w-full">
             {['all', 'pending', 'confirmed', 'completed'].map((status) => (
               <button
                 key={status}
                 onClick={() => setFilter(status as 'all' | BookingStatus)}
-                className={`px-4 py-2.5 text-sm font-medium whitespace-nowrap transition-all border-b-2 flex-shrink-0 ${
-                  filter === status
-                    ? 'border-yellow-400 text-gray-900'
-                    : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
-                }`}
+                className={`px-4 py-2.5 text-sm font-medium whitespace-nowrap transition-all border-b-2 flex-shrink-0 ${filter === status
+                  ? 'border-yellow-400 text-gray-900'
+                  : 'border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300'
+                  }`}
               >
                 {status.charAt(0).toUpperCase() +
                   status.slice(1).replace('-', ' ')}
@@ -452,7 +472,7 @@ export default function BookingHistory() {
           </div>
         </div>
 
-        {/* Bookings List */}
+        {}
         {filteredHistory.length === 0 ? (
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 md:p-12 text-center">
             <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -481,11 +501,11 @@ export default function BookingHistory() {
           <div className="grid gap-4 w-full">
             {filteredHistory.map((booking) => {
               const isCarService = booking.serviceCategory === "car-detailing";
-              const vehicleOrProperty = isCarService && booking.vehicleType
-                ? getVehicleCategory(booking.vehicleType)
-                : undefined;
-              const servicePackageName = isCarService && booking.carServicePackage
-                ? getCarServicePackage(booking.carServicePackage)?.name
+              const vType = isCarService ? booking.vehicleType : undefined;
+              const vehicleOrProperty = vType ? getVehicleCategory(vType) : undefined;
+              const sPkg = isCarService ? booking.carServicePackage : undefined;
+              const servicePackageName = sPkg
+                ? getCarServicePackage(sPkg)?.name
                 : CLEANING_CATEGORIES.find((c) => c.id === booking.cleaningCategory)?.name || "Home Cleaning";
 
               const typeName = (() => {
@@ -522,7 +542,7 @@ export default function BookingHistory() {
                   className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow cursor-pointer w-full overflow-hidden"
                   onClick={() => setSelectedBooking(booking)}
                 >
-                  {/* Header with service info and status */}
+                  {}
                   <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-3 w-full min-w-0 overflow-hidden">
                     <div className="flex items-start gap-3 min-w-0 overflow-hidden">
                       <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center text-xl flex-shrink-0">
@@ -548,7 +568,7 @@ export default function BookingHistory() {
                     </div>
                   </div>
 
-                  {/* Booking details in a responsive grid with consistent alignment */}
+                  {}
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-xs text-gray-600 pt-3 border-t w-full overflow-hidden">
                     {booking.scheduledDate && (
                       <div className="flex items-center gap-1 min-w-0">
@@ -615,26 +635,26 @@ export default function BookingHistory() {
                     )}
                   </div>
 
-                  {/* Action Buttons with consistent alignment */}
+                  {}
                   <div className="mt-3 pt-3 border-t space-y-2 w-full overflow-hidden">
-                    {/* Chat button for confirmed and in-progress bookings */}
+                    {}
                     {(booking.status === "confirmed" ||
                       booking.status === "in-progress") && (
-                      <Button
-                        variant="outline"
-                        size="xs"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedChatBooking(booking);
-                        }}
-                        className="w-full flex items-center justify-center gap-1 text-sm"
-                      >
-                        <span>💬</span>
-                        <span className="truncate">Chat</span>
-                      </Button>
-                    )}
+                        <Button
+                          variant="outline"
+                          size="xs"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedChatBooking(booking);
+                          }}
+                          className="w-full flex items-center justify-center gap-1 text-sm"
+                        >
+                          <span>💬</span>
+                          <span className="truncate">Chat</span>
+                        </Button>
+                      )}
 
-                    {/* Payment button for completed bookings that aren't paid */}
+                    {}
                     {booking.status === "completed" && !booking.paid && (
                       <Button
                         variant="primary"
@@ -651,7 +671,7 @@ export default function BookingHistory() {
                       </Button>
                     )}
 
-                    {/* Rating display or button */}
+                    {}
                     {booking.rating ? (
                       <div className="flex items-center gap-1 justify-center py-1">
                         <span className="text-xs text-gray-600 mr-1">Rating:</span>
@@ -689,7 +709,7 @@ export default function BookingHistory() {
           </div>
         )}
 
-        {/* Booking Detail Modal */}
+        {}
         {selectedBooking && (
           <div
             className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50"
@@ -727,9 +747,19 @@ export default function BookingHistory() {
                 <div>
                   <p className="text-sm text-gray-600">Service</p>
                   <p className="font-semibold text-gray-900">
-                    {selectedBooking.serviceCategory === "car-detailing" && selectedBooking.carServicePackage
-                      ? getCarServicePackage(selectedBooking.carServicePackage)?.name
-                      : CLEANING_CATEGORIES.find((c) => c.id === selectedBooking.cleaningCategory)?.name || "Home Cleaning"}
+                    {(() => {
+                      const isCarService = selectedBooking.serviceCategory === "car-detailing";
+                      const servicePackage = selectedBooking.carServicePackage ? getCarServicePackage(selectedBooking.carServicePackage) : undefined;
+                      const vehicleCategory = selectedBooking.vehicleType ? getVehicleCategory(selectedBooking.vehicleType) : undefined;
+                      const serviceTitle = isCarService
+                        ? `${servicePackage?.name || "Car Detailing"} - ${vehicleCategory?.name || "Vehicle"}`
+                        : CLEANING_CATEGORIES.find((c) => c.id === selectedBooking.cleaningCategory)?.name || "Cleaning Service";
+
+                      
+                      
+                      
+                      return serviceTitle;
+                    })()}
                   </p>
                 </div>
 
@@ -739,28 +769,28 @@ export default function BookingHistory() {
                     {selectedBooking.serviceCategory === "car-detailing" && selectedBooking.vehicleType
                       ? getVehicleCategory(selectedBooking.vehicleType)?.name
                       : (() => {
-                          if (selectedBooking.cleaningCategory === "HOUSE_CLEANING") {
-                            if (selectedBooking.houseCleaningType === "BATHROOM") return "Bathroom Cleaning";
-                            if (selectedBooking.houseCleaningType === "WINDOW") return "Window Cleaning";
-                            if (selectedBooking.houseCleaningType === "ROOM") {
-                              const size = selectedBooking.roomSize ? ROOM_SIZES.find((r) => r.id === selectedBooking.roomSize) : undefined;
-                              return size?.name || "Room";
-                            }
-                          }
-                          if (selectedBooking.cleaningCategory === "FUMIGATION") {
+                        if (selectedBooking.cleaningCategory === "HOUSE_CLEANING") {
+                          if (selectedBooking.houseCleaningType === "BATHROOM") return "Bathroom Cleaning";
+                          if (selectedBooking.houseCleaningType === "WINDOW") return "Window Cleaning";
+                          if (selectedBooking.houseCleaningType === "ROOM") {
                             const size = selectedBooking.roomSize ? ROOM_SIZES.find((r) => r.id === selectedBooking.roomSize) : undefined;
-                            return `${selectedBooking.fumigationType === "BED_BUG" ? "Bed Bug" : "General"} · ${size?.name || ""}`.trim();
+                            return size?.name || "Room";
                           }
-                          if (selectedBooking.cleaningCategory === "MOVE_IN_OUT") {
-                            const size = selectedBooking.roomSize ? ROOM_SIZES.find((r) => r.id === selectedBooking.roomSize) : undefined;
-                            return `Move In/Out · ${size?.name || ""}`.trim();
-                          }
-                          if (selectedBooking.cleaningCategory === "POST_CONSTRUCTION") {
-                            const size = selectedBooking.roomSize ? ROOM_SIZES.find((r) => r.id === selectedBooking.roomSize) : undefined;
-                            return `Post Construction · ${size?.name || ""}`.trim();
-                          }
-                          return "";
-                        })()}
+                        }
+                        if (selectedBooking.cleaningCategory === "FUMIGATION") {
+                          const size = selectedBooking.roomSize ? ROOM_SIZES.find((r) => r.id === selectedBooking.roomSize) : undefined;
+                          return `${selectedBooking.fumigationType === "BED_BUG" ? "Bed Bug" : "General"} · ${size?.name || ""}`.trim();
+                        }
+                        if (selectedBooking.cleaningCategory === "MOVE_IN_OUT") {
+                          const size = selectedBooking.roomSize ? ROOM_SIZES.find((r) => r.id === selectedBooking.roomSize) : undefined;
+                          return `Move In/Out · ${size?.name || ""}`.trim();
+                        }
+                        if (selectedBooking.cleaningCategory === "POST_CONSTRUCTION") {
+                          const size = selectedBooking.roomSize ? ROOM_SIZES.find((r) => r.id === selectedBooking.roomSize) : undefined;
+                          return `Post Construction · ${size?.name || ""}`.trim();
+                        }
+                        return "";
+                      })()}
                   </p>
                 </div>
 
@@ -796,7 +826,7 @@ export default function BookingHistory() {
           </div>
         )}
 
-        {/* Chat Modal */}
+        {}
         {selectedChatBooking && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
             <div className="bg-white rounded-lg max-w-2xl w-full max-h-[80vh]">
@@ -826,7 +856,7 @@ export default function BookingHistory() {
           </div>
         )}
 
-        {/* Rating Modal */}
+        {}
         <RatingModal
           isOpen={ratingModalOpen}
           onClose={() => {
@@ -838,12 +868,12 @@ export default function BookingHistory() {
           serviceName={
             selectedBookingForRating?.serviceCategory === "car-detailing"
               ? getCarServicePackage(selectedBookingForRating?.carServicePackage || "NORMAL-DETAIL")
-                  ?.name || "Car Service"
+                ?.name || "Car Service"
               : CLEANING_CATEGORIES.find((c) => c.id === selectedBookingForRating?.cleaningCategory)?.name || "Cleaning Service"
           }
         />
 
-        {/* Payment Modal */}
+        {}
         {showPaymentModal && selectedBookingForPayment && (
           <PaymentModal
             isOpen={showPaymentModal}

@@ -36,7 +36,7 @@ export default function VerificationBadge({
 
   return (
     <div className="space-y-2">
-      {/* Main Badge */}
+      {}
       <div className={`inline-flex items-center gap-1.5 ${
         isFullyVerified 
           ? 'bg-green-100 text-green-800' 
@@ -50,7 +50,7 @@ export default function VerificationBadge({
         </span>
       </div>
 
-      {/* Detailed Verification Info */}
+      {}
       {showDetails && (
         <div className="space-y-1.5 text-sm">
           <VerificationItem 

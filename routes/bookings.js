@@ -6,10 +6,11 @@ const { protect, authorize } = require("../middleware/auth");
 const Booking = require("../models/Booking");
 const CleanerProfile = require("../models/CleanerProfile");
 const User = require("../models/User");
-const IntaSend = require("intasend-node"); // <-- NEW
+const IntaSend = require("intasend-node"); 
 const { v4: uuidv4 } = require("uuid");
 const { sendNotificationToUser, sendNotificationToBookingParticipants } = require('./events');
-// File system operations removed - using MongoDB only
+const NotificationService = require('../src/lib/notificationService'); 
+
 
 const formatCurrency = new Intl.NumberFormat("en-KE", {
   style: "currency",
@@ -17,29 +18,29 @@ const formatCurrency = new Intl.NumberFormat("en-KE", {
   maximumFractionDigits: 0,
 });
 
-// -------------------------------------------------
-// 1.1 PUBLIC BOOKING (NO AUTH REQUIRED)
-// -------------------------------------------------
+
+
+
 router.post("/public", async (req, res) => {
   try {
     const {
       contact,
       serviceCategory,
-      // Car Detailing Fields - NEW STRUCTURE
+      
       vehicleType,
       carServicePackage,
       paintCorrectionStage,
       midSUVPricingTier,
       fleetCarCount,
       selectedCarExtras,
-      // Home Cleaning Fields - NEW STRUCTURE
+      
       cleaningCategory,
       houseCleaningType,
       fumigationType,
       roomSize,
       bathroomItems,
       windowCount,
-      // Common Fields
+      
       bookingType,
       scheduledDate,
       scheduledTime,
@@ -109,21 +110,21 @@ router.post("/public", async (req, res) => {
 
     const bookingPayload = {
       serviceCategory,
-      // Car Detailing Fields
+      
       vehicleType,
       carServicePackage,
       paintCorrectionStage,
       midSUVPricingTier,
       fleetCarCount,
       selectedCarExtras,
-      // Home Cleaning Fields
+      
       cleaningCategory,
       houseCleaningType,
       fumigationType,
       roomSize,
       bathroomItems,
       windowCount,
-      // Common Fields
+      
       bookingType,
       scheduledDate,
       scheduledTime,
@@ -157,11 +158,14 @@ router.post("/public", async (req, res) => {
       user: { id: user._id, name: user.name, phone: user.phone, role: user.role },
     });
     
-    // Send notification to client about new booking
+    
     sendNotificationToUser(user._id, 'booking_created', {
       serviceCategory: bookingPayload.serviceCategory,
       bookingId: booking._id
     });
+    
+    
+    NotificationService.sendBookingCreatedNotification(booking._id, user._id);
   } catch (error) {
     console.error("Public booking creation error:", error);
     res.status(500).json({
@@ -172,9 +176,9 @@ router.post("/public", async (req, res) => {
   }
 });
 
-// -------------------------------------------------
-// 1. CREATE BOOKING (AUTHENTICATED)
-// -------------------------------------------------
+
+
+
 router.post("/", protect, async (req, res) => {
   try {
     const bookingData = {
@@ -190,11 +194,14 @@ router.post("/", protect, async (req, res) => {
       booking,
     });
     
-    // Send notification to client about new booking
+    
     sendNotificationToUser(req.user.id, 'booking_created', {
       serviceCategory: bookingData.serviceCategory,
       bookingId: booking._id
     });
+    
+    
+    NotificationService.sendBookingCreatedNotification(booking._id, req.user.id);
   } catch (error) {
     console.error("Booking creation error:", error);
     res.status(500).json({
@@ -205,9 +212,9 @@ router.post("/", protect, async (req, res) => {
   }
 });
 
-// -------------------------------------------------
-// 2. GET ALL BOOKINGS FOR LOGGED-IN USER
-// -------------------------------------------------
+
+
+
 router.get("/", protect, async (req, res) => {
   try {
     let query = {};
@@ -237,9 +244,9 @@ router.get("/", protect, async (req, res) => {
   }
 });
 
-// -------------------------------------------------
-// 2b. CLEANER OPPORTUNITIES FEED (requires auth)
-// -------------------------------------------------
+
+
+
 router.get(
   "/opportunities",
   protect,
@@ -292,12 +299,12 @@ router.get(
       });
 
       const carServiceLabels = {
-        // Legacy keys
+        
         INTERIOR: "Interior Detail",
         EXTERIOR: "Exterior Detail",
         PAINT: "Paint Correction",
         FULL: "Full Detail",
-        // New schema keys
+        
         "NORMAL-DETAIL": "Normal Detail",
         "INTERIOR-STEAMING": "Interior Steaming",
         "PAINT-CORRECTION": "Paint Correction",
@@ -335,6 +342,7 @@ router.get(
             booking.location?.manualAddress ||
             booking.location?.address ||
             "Client to confirm exact location",
+          coordinates: booking.location?.coordinates,
           payout: currencyFormatter.format(booking.price || 0),
           timing,
           requirements,
@@ -364,9 +372,9 @@ router.get(
   },
 );
 
-// -------------------------------------------------
-// 2c. ACCEPT BOOKING (cleaner accepts available job)
-// -------------------------------------------------
+
+
+
 router.post("/:id/accept", protect, authorize("cleaner"), async (req, res) => {
   try {
     const booking = await Booking.findById(req.params.id).populate(
@@ -381,7 +389,7 @@ router.post("/:id/accept", protect, authorize("cleaner"), async (req, res) => {
       });
     }
 
-    // Check if booking is available (no cleaner assigned yet)
+    
     if (booking.cleaner) {
       return res.status(400).json({
         success: false,
@@ -389,7 +397,7 @@ router.post("/:id/accept", protect, authorize("cleaner"), async (req, res) => {
       });
     }
 
-    // Check if booking is in pending status
+    
     if (booking.status !== "pending") {
       return res.status(400).json({
         success: false,
@@ -397,21 +405,24 @@ router.post("/:id/accept", protect, authorize("cleaner"), async (req, res) => {
       });
     }
 
-    // Assign cleaner and update status
+    
     booking.cleaner = req.user.id;
     booking.status = "confirmed";
     booking.acceptedAt = new Date();
     await booking.save();
 
-    // Populate cleaner info for response
+    
     await booking.populate("cleaner", "name phone email");
 
     console.log(`✅ Booking ${booking._id} accepted by cleaner ${req.user.id}`);
 
-    // TODO: Send notification to client that cleaner accepted
+    
     sendNotificationToUser(booking.client._id, 'booking_accepted', {
       bookingId: booking._id
     });
+    
+    
+    NotificationService.sendBookingAcceptedNotification(booking._id, booking.client._id);
 
     res.json({
       success: true,
@@ -428,9 +439,9 @@ router.post("/:id/accept", protect, authorize("cleaner"), async (req, res) => {
   }
 });
 
-// -------------------------------------------------
-// 3. GET SINGLE BOOKING
-// -------------------------------------------------
+
+
+
 router.get("/:id", protect, async (req, res) => {
   try {
     const booking = await Booking.findById(req.params.id)
@@ -468,9 +479,9 @@ router.get("/:id", protect, async (req, res) => {
   }
 });
 
-// -------------------------------------------------
-// 4. PAY FOR A BOOKING – STK PUSH + 60/40 SPLIT
-// -------------------------------------------------
+
+
+
 router.post("/:id/pay", protect, authorize("client"), async (req, res) => {
   try {
     const booking = await Booking.findById(req.params.id)
@@ -483,7 +494,7 @@ router.post("/:id/pay", protect, authorize("client"), async (req, res) => {
         .json({ success: false, message: "Booking not found" });
     }
 
-    // Only the client who created it can pay
+    
     if (booking.client._id.toString() !== req.user.id) {
       return res
         .status(403)
@@ -500,17 +511,17 @@ router.post("/:id/pay", protect, authorize("client"), async (req, res) => {
       return res.status(400).json({ success: false, message: "Already paid" });
     }
 
-    // Initialise IntaSend client
+    
     const client = new IntaSend(
-      process.env.INTASEND_PUBLIC_KEY,  // ✅ FIXED
+      process.env.INTASEND_PUBLIC_KEY,  
       process.env.INTASEND_SECRET_KEY,
-      process.env.NODE_ENV !== "production", // true = sandbox
+      process.env.NODE_ENV !== "production", 
     );
 
-    // Calculate pricing split
+    
     const pricing = booking.calculatePricing();
 
-    // Update booking with calculated pricing
+    
     booking.totalPrice = pricing.totalPrice;
     booking.platformFee = pricing.platformFee;
     booking.cleanerPayout = pricing.cleanerPayout;
@@ -526,7 +537,7 @@ router.post("/:id/pay", protect, authorize("client"), async (req, res) => {
         booking_id: booking._id.toString(),
         split: {
           cleaner_phone: booking.cleaner.phone,
-          percentage: 60, // 60% TO CLEANER
+          percentage: 60, 
           platform_fee: pricing.platformFee,
           cleaner_payout: pricing.cleanerPayout,
         },
@@ -548,9 +559,9 @@ router.post("/:id/pay", protect, authorize("client"), async (req, res) => {
   }
 });
 
-// -------------------------------------------------
-// 5. UPDATE BOOKING STATUS (cleaner / admin)
-// -------------------------------------------------
+
+
+
 router.put(
   "/:id/status",
   protect,
@@ -579,10 +590,16 @@ router.put(
       booking.status = status;
       if (status === "completed") {
         booking.completedAt = new Date();
-        // Send notification when booking is completed
+        
         sendNotificationToBookingParticipants(booking._id, 'booking_completed', {
           bookingId: booking._id
         });
+        
+        
+        NotificationService.sendBookingCompletedNotification(booking._id, booking.client._id);
+        if (booking.cleaner) {
+          NotificationService.sendBookingCompletedNotification(booking._id, booking.cleaner._id);
+        }
       }
       await booking.save();
 
@@ -593,10 +610,10 @@ router.put(
   },
 );
 
-// -------------------------------------------------
-// 6. RATE A COMPLETED BOOKING (client)
-// -------------------------------------------------
-// Support both PUT and POST for frontend compatibility
+
+
+
+
 const rateBookingHandler = async (req, res) => {
   try {
     const { rating, review } = req.body;
@@ -631,15 +648,15 @@ const rateBookingHandler = async (req, res) => {
   }
 };
 
-// Support both PUT and POST methods
+
 router.put("/:id/rating", protect, authorize("client"), rateBookingHandler);
 router.post("/:id/rating", protect, authorize("client"), rateBookingHandler);
 
  
 
-// -------------------------------------------------
-// 7b. CLEANER CANCEL BOOKING (unassign or cancel)
-// -------------------------------------------------
-// Cleaner cancellation removed per requirements (clients only)
+
+
+
+
 
 module.exports = router;

@@ -1,14 +1,14 @@
-export type ServiceCategory = "car-detailing" | "home-cleaning";
+export type ServiceCategory = "car-detailing";
 
-// Car Detailing Types - NEW STRUCTURE
+
 export type VehicleType = "SEDAN" | "MID-SUV" | "SUV-DOUBLE-CAB";
 
 export type CarServicePackage =
-  | "NORMAL-DETAIL" // Restore show-room look
-  | "INTERIOR-STEAMING" // Sanitation, deep cleaning, stain & odor removal
-  | "PAINT-CORRECTION" // Restoring car's shine (has stages)
-  | "FULL-DETAIL" // Complete package
-  | "FLEET-PACKAGE"; // Deep cleaning for 5+ cars
+  | "NORMAL-DETAIL"
+  | "INTERIOR-STEAMING"
+  | "PAINT-CORRECTION"
+  | "FULL-DETAIL"
+  | "FLEET-PACKAGE";
 
 export type PaintCorrectionStage = "STAGE-1" | "STAGE-2" | "STAGE-3";
 
@@ -19,11 +19,11 @@ export type CarDetailingExtra =
   | "brown-stain-removal"
   | "window-polishing";
 
-// Mid-SUV pricing tier (for packages with two price options)
+
 export type MidSUVPricingTier = "STANDARD" | "PREMIUM";
 
-// Home Cleaning Types
-// Home Cleaning Types
+
+
 export type CleaningCategory =
   | "HOUSE_CLEANING"
   | "FUMIGATION"
@@ -35,7 +35,7 @@ export type FumigationType = "GENERAL" | "BED_BUG";
 
 export type RoomSize = "STUDIO" | "1BED" | "2BED" | "3BED" | "4BED" | "5BED";
 
-// Keeping these for backward compatibility if needed, but they will be phased out
+
 export type PropertySize = "SMALL" | "MEDIUM" | "LARGE" | RoomSize;
 export type CleaningServiceOption =
   | "STANDARD"
@@ -66,8 +66,8 @@ export interface CarServicePackageOption {
   name: string;
   description: string;
   duration: string;
-  requiresStage?: boolean; // For paint correction
-  requiresCarCount?: boolean; // For fleet package
+  requiresStage?: boolean;
+  requiresCarCount?: boolean;
 }
 
 export interface PaintCorrectionStageOption {
@@ -120,6 +120,7 @@ export interface Location {
   longitude: number;
   address?: string;
   manualAddress?: string;
+  coordinates?: [number, number];
 }
 
 export interface BookingData {
@@ -127,19 +128,18 @@ export interface BookingData {
   phone: string;
   mpesa: string;
   serviceCategory: ServiceCategory;
-  // Car detailing fields - NEW STRUCTURE
+
   vehicleType?: VehicleType;
   carServicePackage?: CarServicePackage;
-  paintCorrectionStage?: PaintCorrectionStage; // Only for PAINT-CORRECTION package
-  midSUVPricingTier?: MidSUVPricingTier; // For Mid-SUV pricing choice
-  fleetCarCount?: number; // Only for FLEET-PACKAGE (minimum 5)
-  selectedCarExtras?: CarDetailingExtra[]; // Optional extras
-  // Home cleaning fields
-  // Home cleaning fields
+  paintCorrectionStage?: PaintCorrectionStage;
+  midSUVPricingTier?: MidSUVPricingTier;
+  fleetCarCount?: number;
+  selectedCarExtras?: CarDetailingExtra[];
+
   cleaningCategory?: CleaningCategory;
   roomSize?: RoomSize;
 
-  // House Cleaning Specifics
+
   houseCleaningType?: HouseCleaningType;
   bathroomItems?: {
     general: boolean;
@@ -152,10 +152,10 @@ export interface BookingData {
     wholeHouse: boolean;
   };
 
-  // Fumigation Specifics
+
   fumigationType?: FumigationType;
 
-  // Legacy fields (keeping optional for now)
+
   propertySize?: PropertySize;
   cleaningServiceOption?: CleaningServiceOption;
   selectedHomeAddons?: HomeCleaningAddon[];
@@ -189,10 +189,11 @@ export interface BookingHistoryItem extends BookingData {
   review?: string;
   cleaner?: { name?: string; phone?: string };
   cleanerProfile?: { passportPhoto?: string; profileImage?: string };
-  paid?: boolean; // Add this property
+  paid?: boolean;
 }
 
 export interface UserAccountSession {
+  id?: string;
   userType: "client" | "cleaner" | "admin";
   name: string;
   phone: string;
@@ -306,6 +307,7 @@ export interface CleanerJobOpportunity {
   saved?: boolean;
   bookingId?: string;
   createdAt?: string;
+  coordinates?: [number, number];
 }
 
 export interface CleanerChecklistItem {

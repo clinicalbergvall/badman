@@ -22,15 +22,19 @@ export default class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('ErrorBoundary caught an error:', error)
-    console.error('Error Info:', errorInfo)
-    
-    if (this.props.onError) {
-      this.props.onError(error, errorInfo)
-    }
+    console.error('ErrorBoundary caught an error:', error);
+    console.error('Error Info:', errorInfo);
+        
     
     if (import.meta.env.PROD) {
-      console.error('Production error - check logs for details')
+      
+      
+      console.error('Production error - check logs for details');
+    }
+    
+    
+    if (this.props.onError) {
+      this.props.onError(error, errorInfo);
     }
   }
 

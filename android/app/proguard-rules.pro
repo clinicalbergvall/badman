@@ -200,10 +200,10 @@
 # ================================
 
 # Keep your app's package classes
--keep class com.cleancloak.app.** { *; }
+-keep class com.hivewipe.app.** { *; }
 
 # Keep models/data classes
--keep class com.cleancloak.app.models.** { *; }
+-keep class com.hivewipe.app.models.** { *; }
 
 # ================================
 # REFLECTION RULES

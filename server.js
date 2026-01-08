@@ -10,35 +10,35 @@ const path = require('path');
 const serverless = require('serverless-http');
 let cookieParser;
 
-// Load environment variables
+
 dotenv.config();
 
-// Initialize Express app
+
 const app = express();
 
-// Security middleware
+
 app.use(helmet());
 app.use(compression());
 
-// General rate limiting
+
 const limiter = rateLimit({
-  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes default
-  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 500, // Increased from 100 to 500 requests
+  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000,
+  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 500,
   message: {
     success: false,
     message: 'Too many requests from this IP, please try again later.'
   },
   standardHeaders: true,
   legacyHeaders: false,
-  // Skip rate limiting for health check endpoint
+
   skip: (req, res) => req.path === '/api/health'
 });
 app.use('/api/', limiter);
 
-// Stricter rate limiting for auth endpoints to prevent brute force attacks
+
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 20, // Limit to 20 requests per window
+  windowMs: 15 * 60 * 1000,
+  max: 20,
   message: {
     success: false,
     message: 'Too many authentication attempts. Please try again later.'
@@ -48,7 +48,7 @@ const authLimiter = rateLimit({
 });
 app.use('/api/auth/', authLimiter);
 
-// Request timeout for serverless
+
 app.use((req, res, next) => {
   res.setTimeout(25000, () => {
     console.error('Request timeout:', req.url);
@@ -60,31 +60,31 @@ app.use((req, res, next) => {
   next();
 });
 
-// Logging
+
 if (process.env.NODE_ENV === 'development') {
   app.use(morgan('dev'));
 } else {
   app.use(morgan('combined'));
 }
 
-// CORS configuration
+
 app.use(cors({
   origin: [
-    'https://sprightly-trifle-9b980c.netlify.app',   // NEW domain ✅
-    'https://teal-daffodil-d3a9b2.netlify.app',     // OLD domain (keep for backup)
-    'http://localhost:5173',                        // Local development
-    'http://localhost:3000'                          // Alternative local
+    'https://sprightly-trifle-9b980c.netlify.app',
+    'https://teal-daffodil-d3a9b2.netlify.app',
+    'http://localhost:5173',
+    'http://localhost:3000'
   ],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// Body parsing middleware
+
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Cookie parsing (optional)
+
 try {
   cookieParser = require('cookie-parser');
   app.use(cookieParser());
@@ -92,24 +92,24 @@ try {
   console.warn('cookie-parser not installed; falling back to manual parsing in auth middleware');
 }
 
-// Static files
+
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// MongoDB Connection with serverless optimization
+
 let cachedDb = null;
 
 async function connectToDatabase() {
   if (cachedDb) {
     return cachedDb;
   }
-  
+
   try {
     const conn = await mongoose.connect(process.env.MONGODB_URI, {
-  maxPoolSize: 10,
-  serverSelectionTimeoutMS: 5000,
-  socketTimeoutMS: 45000
-});
-    
+      maxPoolSize: 10,
+      serverSelectionTimeoutMS: 5000,
+      socketTimeoutMS: 45000
+    });
+
     cachedDb = conn;
     console.log('✅ MongoDB Connected Successfully');
     return conn;
@@ -119,7 +119,7 @@ async function connectToDatabase() {
   }
 }
 
-// Enhanced error handling for serverless
+
 process.on('unhandledRejection', (err, promise) => {
   console.error('Unhandled Rejection at:', promise, 'reason:', err);
 });
@@ -129,7 +129,7 @@ process.on('uncaughtException', (err) => {
   process.exit(1);
 });
 
-// Initialize connection
+
 connectToDatabase().catch(err => {
   console.error('Failed to initialize database connection:', err);
 });
@@ -142,14 +142,14 @@ app.use('/api/users', require('./routes/users'));
 app.use('/api/tracking', require('./routes/tracking'));
 app.use('/api/payments', require('./routes/payments'));
 app.use('/api/admin', require('./routes/admin'));
-app.use('/api/team-leader', require('./routes/team-leader'));  // Team Leader System
-app.use('/api/verification', require('./routes/verification'));  // Verification System
+app.use('/api/team-leader', require('./routes/team-leader'));
+app.use('/api/verification', require('./routes/verification'));
 app.use('/api/chat', require('./routes/chat'));
 app.use('/api/events', require('./routes/events').router);
 
 app.get('/api/health', async (req, res) => {
   try {
-    // Test database connection
+
     const dbState = mongoose.connection.readyState;
     const dbStates = {
       0: 'disconnected',
@@ -157,10 +157,10 @@ app.get('/api/health', async (req, res) => {
       2: 'connecting',
       3: 'disconnecting'
     };
-    
+
     const health = {
       status: 'OK',
-      message: 'Clean Cloak API is running',
+      message: 'CleanCloak API is running',
       timestamp: new Date().toISOString(),
       database: {
         state: dbStates[dbState],
@@ -172,12 +172,12 @@ app.get('/api/health', async (req, res) => {
         total: Math.round(process.memoryUsage().heapTotal / 1024 / 1024) + 'MB'
       }
     };
-    
+
     if (dbState !== 1) {
       health.status = 'WARNING';
       health.message = 'Database connection issue';
     }
-    
+
     res.status(dbState === 1 ? 200 : 503).json(health);
   } catch (error) {
     res.status(500).json({
@@ -189,7 +189,17 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
-// Enhanced error middleware
+
+if (process.env.NODE_ENV === 'production') {
+  app.use(express.static(path.join(__dirname, 'dist')));
+
+
+  app.get(/^(?!\/api\/).*$/, (req, res) => {
+    res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+  });
+}
+
+
 app.use((err, req, res, next) => {
   console.error('Server Error:', {
     message: err.message,
@@ -199,31 +209,46 @@ app.use((err, req, res, next) => {
     timestamp: new Date().toISOString(),
     userAgent: req.get('User-Agent')
   });
-  
+
   const statusCode = err.statusCode || err.status || 500;
-  
+
   res.status(statusCode).json({
     success: false,
-    message: process.env.NODE_ENV === 'production' 
-      ? 'Internal Server Error' 
+    message: process.env.NODE_ENV === 'production'
+      ? 'Internal Server Error'
       : err.message || 'Internal Server Error',
-    ...(process.env.NODE_ENV === 'development' && { 
+    ...(process.env.NODE_ENV === 'development' && {
       stack: err.stack,
-      error: err 
+      error: err
     })
   });
 });
 
-// 404 handler
+
 app.use((req, res) => {
-  console.log('404 handler hit:', req.method, req.url);
-  res.status(404).json({
-    success: false,
-    message: 'Route not found'
-  });
+
+  if (req.path.startsWith('/api/')) {
+    console.log('API 404 handler hit:', req.method, req.url);
+    res.status(404).json({
+      success: false,
+      message: 'API route not found'
+    });
+  } else {
+
+    if (process.env.NODE_ENV === 'production') {
+      res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+    } else {
+
+      console.log('Non-API 404 handler hit:', req.method, req.url);
+      res.status(404).json({
+        success: false,
+        message: 'Route not found'
+      });
+    }
+  }
 });
 
-// Graceful shutdown
+
 process.on('SIGTERM', () => {
   console.log('SIGTERM received, shutting down gracefully');
   mongoose.connection.close(() => {
@@ -240,15 +265,26 @@ process.on('SIGINT', () => {
   });
 });
 
-// Start server for Render and local development
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🌐 Frontend URL: ${process.env.FRONTEND_URL || 'https://teal-daffodil-d3a9b2.netlify.app/'}`);
-});
 
-// Serverless export for Vercel (if needed)
-if (process.env.NODE_ENV === 'production' && process.env.VERCEL) {
-  module.exports = serverless(app);
+const PORT = process.env.PORT || 5000;
+const http = require('http');
+const server = http.createServer(app);
+const { initSocket } = require('./lib/socket.js');
+
+initSocket(server);
+
+if (require.main === module) {
+  server.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+    console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`🌐 Frontend URL: ${process.env.FRONTEND_URL || 'https://teal-daffodil-d3a9b2.netlify.app/'}`);
+  });
+}
+
+// Standard export for Render and other platforms
+module.exports = { app, server };
+
+// Conditional export for Vercel deployment
+if (process.env.VERCEL) {
+  module.exports.handler = serverless(app);
 }

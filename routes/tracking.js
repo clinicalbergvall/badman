@@ -5,14 +5,14 @@ const Tracking = require('../models/Tracking');
 const Booking = require('../models/Booking');
 const { sendNotificationToUser } = require('./events');
 
-// @route   POST /api/tracking
-// @desc    Start tracking for a booking
-// @access  Private (Cleaner)
+
+
+
 router.post('/', protect, authorize('cleaner'), async (req, res) => {
   try {
     const { bookingId, latitude, longitude, address } = req.body;
 
-    // Check if booking exists and belongs to cleaner
+    
     const booking = await Booking.findById(bookingId);
     if (!booking) {
       return res.status(404).json({
@@ -28,7 +28,7 @@ router.post('/', protect, authorize('cleaner'), async (req, res) => {
       });
     }
 
-    // Create or update tracking
+    
     let tracking = await Tracking.findOne({ booking: bookingId });
     
     if (tracking) {
@@ -57,9 +57,9 @@ router.post('/', protect, authorize('cleaner'), async (req, res) => {
   }
 });
 
-// @route   GET /api/tracking/:bookingId
-// @desc    Get tracking data for a booking
-// @access  Private
+
+
+
 router.get('/:bookingId', protect, async (req, res) => {
   try {
     const tracking = await Tracking.findOne({ booking: req.params.bookingId })
@@ -72,7 +72,7 @@ router.get('/:bookingId', protect, async (req, res) => {
       });
     }
 
-    // Check authorization
+    
     const booking = await Booking.findById(req.params.bookingId);
     if (booking.client.toString() !== req.user.id && 
         booking.cleaner?.toString() !== req.user.id &&
@@ -96,9 +96,9 @@ router.get('/:bookingId', protect, async (req, res) => {
   }
 });
 
-// @route   PUT /api/tracking/:bookingId/location
-// @desc    Update cleaner location
-// @access  Private (Cleaner)
+
+
+
 router.put('/:bookingId/location', protect, authorize('cleaner'), async (req, res) => {
   try {
     const { latitude, longitude, address } = req.body;
@@ -136,9 +136,9 @@ router.put('/:bookingId/location', protect, authorize('cleaner'), async (req, re
   }
 });
 
-// @route   PUT /api/tracking/:bookingId/status
-// @desc    Update tracking status
-// @access  Private (Cleaner)
+
+
+
 router.put('/:bookingId/status', protect, authorize('cleaner'), async (req, res) => {
   try {
     const { status, estimatedArrival } = req.body;
@@ -165,7 +165,7 @@ router.put('/:bookingId/status', protect, authorize('cleaner'), async (req, res)
     }
     await tracking.save();
     
-    // Send notification to client when cleaner updates status
+    
     const booking = await Booking.findById(req.params.bookingId);
     if (booking && booking.client) {
       sendNotificationToUser(booking.client, 'cleaner_status_update', {

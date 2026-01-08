@@ -33,7 +33,7 @@ export function RatingInterface({
 
     return (
         <div className="space-y-4">
-            {/* Star Rating */}
+            {}
             <div className="flex flex-col items-center gap-3">
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                     How was your service?
@@ -80,7 +80,7 @@ export function RatingInterface({
                 )}
             </div>
 
-            {/* Review Text Area */}
+            {}
             {rating > 0 && (
                 <div className="space-y-2">
                     <label
@@ -112,7 +112,7 @@ export function RatingInterface({
                 </div>
             )}
 
-            {/* Submit Button */}
+            {}
             {rating > 0 && !disabled && (
                 <button
                     onClick={handleSubmit}

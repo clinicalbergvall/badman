@@ -1,7 +1,6 @@
-const { defineConfig } = require("vite");
-const react = require("@vitejs/plugin-react");
-const path = require("path");
-// https://vitejs.dev/config/
+var defineConfig = require("vite").defineConfig;
+var react = require("@vitejs/plugin-react");
+var path = require("path");
 module.exports = defineConfig({
     plugins: [react.default()],
     resolve: {
@@ -9,13 +8,21 @@ module.exports = defineConfig({
             "@": path.resolve(__dirname, "./src"),
         },
     },
-    // Build optimizations
     build: {
         outDir: "dist",
         sourcemap: false,
         minify: "esbuild",
         chunkSizeWarningLimit: 500,
         rollupOptions: {
+            external: [
+                '@capacitor/core',
+                '@capacitor/push-notifications',
+                '@capacitor/app',
+                '@capacitor/geolocation',
+                '@capacitor/android',
+                '@capacitor/ios',
+                '@capacitor/splash-screen',
+            ],
             output: {
                 manualChunks: {
                     "react-vendor": ["react", "react-dom", "react-router-dom"],
@@ -43,17 +50,6 @@ module.exports = defineConfig({
         port: 5173,
         strictPort: false,
         host: true,
-        hmr: {
-            overlay: false
-        },
-        proxy: {
-            '/api': {
-                target: 'https://clean-cloak-b.onrender.com',
-                changeOrigin: true,
-                secure: false,
-                rewrite: (path) => path.replace(/^\/api/, '/api')
-            }
-        }
     },
     preview: {
         port: 4173,

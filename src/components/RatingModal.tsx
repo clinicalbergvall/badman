@@ -34,7 +34,7 @@ export default function RatingModal({
     setIsSubmitting(true);
     try {
       await onSubmit(rating, review);
-      // Reset form
+      
       setRating(0);
       setReview('');
       onClose();
@@ -56,7 +56,7 @@ export default function RatingModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50 animate-fadeIn">
       <Card className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-6 animate-up">
-        {/* Header */}
+        {}
         <div className="text-center mb-6">
           <div className="w-16 h-16 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center mx-auto mb-3">
             <svg
@@ -81,7 +81,7 @@ export default function RatingModal({
           </p>
         </div>
 
-        {/* Star Rating */}
+        {}
         <div className="mb-6">
           <div className="flex justify-center gap-2 mb-2">
             {[1, 2, 3, 4, 5].map((star) => (
@@ -121,7 +121,7 @@ export default function RatingModal({
           )}
         </div>
 
-        {/* Review Text Area */}
+        {}
         <div className="mb-6">
           <label
             htmlFor="review"
@@ -143,7 +143,7 @@ export default function RatingModal({
           </p>
         </div>
 
-        {/* Action Buttons */}
+        {}
         <div className="flex gap-3">
           <Button
             variant="outline"
@@ -170,7 +170,7 @@ export default function RatingModal({
           </Button>
         </div>
 
-        {/* Info Note */}
+        {}
         <p className="text-xs text-gray-500 text-center mt-4">
           ⭐ Rating is required before you can make payment
         </p>

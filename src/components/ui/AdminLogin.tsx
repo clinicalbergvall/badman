@@ -34,13 +34,13 @@ export const AdminLoginForm = ({
       const data = await authAPI.login(formData.phone, formData.password);
 
       if (data.success && data.user) {
-        // Verify user is admin
+        
         if (data.user.role !== "admin") {
           toast.error("Access denied. Admin privileges required.");
           return;
         }
 
-        // Store admin session
+        
         saveUserSession({
           userType: data.user.role as "client" | "cleaner" | "admin",
           name: data.user.name,

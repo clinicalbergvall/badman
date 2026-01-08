@@ -21,9 +21,9 @@ import type {
   RoomSize,
 } from "./types";
 
-// ============================================
-// CAR DETAILING - NEW STRUCTURE
-// ============================================
+
+
+
 
 export const VEHICLE_CATEGORIES: VehicleCategory[] = [
   {
@@ -140,7 +140,7 @@ export const CAR_DETAILING_EXTRAS: CarDetailingExtraOption[] = [
   },
 ];
 
-// New Detailed Services
+
 export const INTERIOR_SERVICES = [
   {
     id: "vacuuming",
@@ -203,9 +203,9 @@ export const EXTERIOR_SERVICES = [
   },
 ];
 
-// ============================================
-// CAR DETAILING PRICING MATRIX
-// ============================================
+
+
+
 
 interface CarPricingStructure {
   [key: string]: {
@@ -222,7 +222,7 @@ export const CAR_DETAILING_PRICING: CarPricingStructure = {
     "SUV-DOUBLE-CAB": { STANDARD: 8000, PREMIUM: 8500 },
   },
   "INTERIOR-STEAMING": {
-    SEDAN: 4400, // Using SUV price for sedan as well
+    SEDAN: 4400, 
     "MID-SUV": 5300,
     "SUV-DOUBLE-CAB": 6200,
   },
@@ -247,13 +247,13 @@ export const CAR_DETAILING_PRICING: CarPricingStructure = {
     "SUV-DOUBLE-CAB": 15000,
   },
   "FLEET-PACKAGE": {
-    SEDAN: 3500, // Per car
-    "MID-SUV": 3800, // Per car
-    "SUV-DOUBLE-CAB": 4000, // Per car
+    SEDAN: 3500, 
+    "MID-SUV": 3800, 
+    "SUV-DOUBLE-CAB": 4000, 
   },
 };
 
-// Helper function to get car detailing price
+
 export function getCarDetailingPrice(
   vehicleType: VehicleType,
   servicePackage: CarServicePackage,
@@ -263,7 +263,7 @@ export function getCarDetailingPrice(
 ): number {
   let priceKey = servicePackage;
 
-  // For paint correction, append the stage
+  
   if (servicePackage === "PAINT-CORRECTION" && paintStage) {
     priceKey = `PAINT-CORRECTION-${paintStage}` as any;
   }
@@ -273,12 +273,12 @@ export function getCarDetailingPrice(
 
   let basePrice = pricing[vehicleType];
 
-  // Handle Mid-SUV pricing tiers
+  
   if (typeof basePrice === "object" && "STANDARD" in basePrice) {
     basePrice = basePrice[midSUVTier || "STANDARD"];
   }
 
-  // For fleet package, multiply by car count
+  
   if (servicePackage === "FLEET-PACKAGE" && fleetCarCount) {
     return (basePrice as number) * fleetCarCount;
   }
@@ -286,37 +286,37 @@ export function getCarDetailingPrice(
   return basePrice as number;
 }
 
-// Helper function to get vehicle category
+
 export function getVehicleCategory(
   id: VehicleType,
 ): VehicleCategory | undefined {
   return VEHICLE_CATEGORIES.find((cat) => cat.id === id);
 }
 
-// Helper function to get car service package
+
 export function getCarServicePackage(
   id: CarServicePackage,
 ): CarServicePackageOption | undefined {
   return CAR_SERVICE_PACKAGES.find((pkg) => pkg.id === id);
 }
 
-// Helper function to get paint correction stage
+
 export function getPaintCorrectionStage(
   id: PaintCorrectionStage,
 ): PaintCorrectionStageOption | undefined {
   return PAINT_CORRECTION_STAGES.find((stage) => stage.id === id);
 }
 
-// Helper function to get car detailing extra
+
 export function getCarDetailingExtra(
   id: CarDetailingExtra,
 ): CarDetailingExtraOption | undefined {
   return CAR_DETAILING_EXTRAS.find((extra) => extra.id === id);
 }
 
-// ============================================
-// HOME CLEANING - NEW STRUCTURE
-// ============================================
+
+
+
 
 export const CLEANING_CATEGORIES: {
   id: CleaningCategory;
@@ -359,7 +359,7 @@ export const ROOM_SIZES: { id: RoomSize; name: string }[] = [
   { id: "5BED", name: "5 Bedrooms" },
 ];
 
-// Pricing Constants
+
 export const BATHROOM_PRICING = {
   GENERAL: 3500,
   SINK: 800,
@@ -423,7 +423,7 @@ export const POST_CONSTRUCTION_PRICING = {
   ADDITIONAL: 10000,
 };
 
-// Helper to get pricing
+
 export function getHomeCleaningPrice(
   category: CleaningCategory,
   details: {
@@ -470,9 +470,9 @@ export function getHomeCleaningPrice(
   return total;
 }
 
-// ============================================
-// VALIDATION SCHEMAS
-// ============================================
+
+
+
 
 export const phoneSchema = z
   .string()
@@ -504,20 +504,20 @@ export const loginSchema = z.object({
   email: emailSchema.optional(),
 });
 
-// ============================================
-// BACKWARD COMPATIBILITY EXPORTS
-// ============================================
 
-// For old code that imports these
+
+
+
+
 export const vehicleCategories = VEHICLE_CATEGORIES;
 export const carServicePackages = CAR_SERVICE_PACKAGES;
-// Deprecated but keeping to avoid immediate breakages if referenced elsewhere
+
 export const propertyCategories: PropertyCategory[] = [];
 export const cleaningServicePackages: CleaningServicePackage[] = [];
 export const CLEANING_SERVICE_PACKAGES = cleaningServicePackages;
 export const homeCleaningAddons: HomeCleaningAddonOption[] = [];
 
-// Old pricing functions (for backward compatibility)
+
 export const getCarPrice = getCarDetailingPrice;
 export const getCleaningPrice = (
   propertySize: PropertySize,

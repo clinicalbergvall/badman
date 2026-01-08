@@ -1,47 +1,105 @@
-// Logging utility for production-safe logging
-// Replaces console.log/error/warn statements throughout the app
 
-type LogLevel = 'info' | 'warn' | 'error'
 
-class Logger {
-    private isDevelopment = import.meta.env.MODE !== 'production'
-
-    private log(level: LogLevel, message: string, data?: any) {
-        // Always log in development
-        if (this.isDevelopment) {
-            const logFn = level === 'error' ? console.error : level === 'warn' ? console.warn : console.log
-            const timestamp = new Date().toISOString()
-            logFn(`[${timestamp}] [${level.toUpperCase()}]`, message, data || '')
-        }
-
-        // In production, only log errors (and send to error tracking service if configured)
-        if (!this.isDevelopment && level === 'error') {
-            console.error(message, data)
-            // TODO: Send to error tracking service (Sentry, LogRocket, etc.)
-            // Example: Sentry.captureException(new Error(message), { extra: data })
-        }
-    }
-
-    info(message: string, data?: any) {
-        this.log('info', message, data)
-    }
-
-    warn(message: string, data?: any) {
-        this.log('warn', message, data)
-    }
-
-    error(message: string, error?: any) {
-        this.log('error', message, error)
-    }
-
-    // Helper for API errors
-    apiError(endpoint: string, error: any) {
-        this.error(`API Error: ${endpoint}`, {
-            message: error?.message,
-            status: error?.status,
-            response: error?.response
-        })
-    }
+interface LogEntry {
+  level: 'error' | 'warn' | 'info' | 'debug';
+  message: string;
+  timestamp: Date;
+  metadata?: Record<string, any>;
+  stack?: string;
 }
 
-export const logger = new Logger()
+class Logger {
+  private logs: LogEntry[] = [];
+  private maxLogs: number = 100;
+
+  
+  error(message: string, error?: Error, metadata?: Record<string, any>) {
+    const entry: LogEntry = {
+      level: 'error',
+      message,
+      timestamp: new Date(),
+      metadata,
+      stack: error?.stack
+    };
+
+    this.addLog(entry);
+    console.error(`[ERROR] ${message}`, { error, metadata });
+    
+    
+    if (import.meta.env.PROD) {
+      
+    }
+  }
+
+  
+  warn(message: string, metadata?: Record<string, any>) {
+    const entry: LogEntry = {
+      level: 'warn',
+      message,
+      timestamp: new Date(),
+      metadata
+    };
+
+    this.addLog(entry);
+    console.warn(`[WARN] ${message}`, metadata);
+  }
+
+  
+  info(message: string, metadata?: Record<string, any>) {
+    const entry: LogEntry = {
+      level: 'info',
+      message,
+      timestamp: new Date(),
+      metadata
+    };
+
+    this.addLog(entry);
+    console.info(`[INFO] ${message}`, metadata);
+  }
+
+  
+  debug(message: string, metadata?: Record<string, any>) {
+    if (import.meta.env.DEV) {
+      const entry: LogEntry = {
+        level: 'debug',
+        message,
+        timestamp: new Date(),
+        metadata
+      };
+
+      this.addLog(entry);
+      console.debug(`[DEBUG] ${message}`, metadata);
+    }
+  }
+
+  
+  private addLog(entry: LogEntry) {
+    this.logs.push(entry);
+    
+    
+    if (this.logs.length > this.maxLogs) {
+      this.logs = this.logs.slice(-this.maxLogs);
+    }
+  }
+
+  
+  getLogs(): LogEntry[] {
+    return [...this.logs];
+  }
+
+  
+  clearLogs() {
+    this.logs = [];
+  }
+
+  
+  exportLogs(): string {
+    return JSON.stringify(this.logs, null, 2);
+  }
+}
+
+
+export const logger = new Logger();
+
+
+export default Logger;

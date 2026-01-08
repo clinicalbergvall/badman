@@ -91,7 +91,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 Button.displayName = "Button";
 
-// Image Carousel Component
+
 interface CarouselImage {
   id: number;
   title: string;
@@ -101,7 +101,7 @@ interface CarouselImage {
 
 interface ImageCarouselProps {
   images: CarouselImage[];
-  interval?: number; // in milliseconds
+  interval?: number; 
 }
 
 export const ImageCarousel = ({
@@ -117,7 +117,7 @@ export const ImageCarousel = ({
       setTimeout(() => {
         setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
         setIsAnimating(false);
-      }, 300); // Half animation duration
+      }, 300); 
     }, interval);
 
     return () => clearInterval(timer);
@@ -127,7 +127,7 @@ export const ImageCarousel = ({
 
   return (
     <div className="relative w-full h-64 overflow-hidden rounded-lg shadow-sm border border-gray-200">
-      {/* Images with slide animation */}
+      {}
       <div className="relative w-full h-full">
         {images.map((image, index) => (
           <div
@@ -153,7 +153,7 @@ export const ImageCarousel = ({
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
 
-            {/* Image info overlay */}
+            {}
             <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
               <h3 className="font-bold text-lg mb-1">{image.title}</h3>
               <p className="text-sm opacity-90">{image.description}</p>
@@ -162,7 +162,7 @@ export const ImageCarousel = ({
         ))}
       </div>
 
-      {/* Slide indicators */}
+      {}
       <div className="absolute bottom-4 right-4 flex gap-2">
         {images.map((_, index) => (
           <button
@@ -183,7 +183,7 @@ export const ImageCarousel = ({
         ))}
       </div>
 
-      {/* Navigation arrows */}
+      {}
       <button
         onClick={() => {
           setIsAnimating(true);
@@ -239,10 +239,10 @@ export const ImageCarousel = ({
   );
 };
 
-// Auth component
+
 
 interface LoginData {
-  identifier: string; // name or phone
+  identifier: string; 
   password: string;
 }
 
@@ -302,7 +302,7 @@ export const LoginForm = ({
         : await authAPI.register(formData);
 
       if (data.success && data.user) {
-        // Store user session (token is already stored in httpOnly cookie by authAPI)
+        
         localStorage.setItem(
           "clean-cloak-user-session",
           JSON.stringify({
@@ -474,7 +474,7 @@ export const LoginForm = ({
   );
 };
 
-// Chat components
+
 
 interface ChatMessage {
   id: string;
@@ -529,29 +529,32 @@ export const ChatComponent = ({
   useEffect(() => {
     fetchChatRoom();
     
-    // Poll for new messages every 5 seconds
+    
     const interval = setInterval(fetchChatRoom, 5000);
     
     return () => clearInterval(interval);
   }, [bookingId]);
 
-  // Listen for real-time messages via SSE
+  
   useEffect(() => {
     if (!chatRoom) return;
     
     try {
-      const base = import.meta.env.VITE_API_URL || window.location.origin
+      
+      const OVERRIDE_API_URL = localStorage.getItem('apiOverride') || ''
+      const VITE_API_URL = import.meta.env.VITE_API_URL
+      const base = OVERRIDE_API_URL || VITE_API_URL || window.location.origin
       const apiUrl = base.endsWith('/api') ? base : `${base}/api`
       const url = `${apiUrl}/events`
       const es = new EventSource(url, { withCredentials: true })
 
-      // Listen for general message events (default EventSource event)
+      
       es.addEventListener('message', (evt: MessageEvent) => {
         try {
           const payload = JSON.parse(evt.data)
           const { type, message: newMessage } = payload || {}
           
-          // Only add message if it's a newMessage event for this booking and not already in the list
+          
           if (type === 'newMessage' && newMessage && newMessage.bookingId === bookingId && 
               !messages.some(msg => msg.id === newMessage.id)) {
             setMessages(prev => [...prev, newMessage])
@@ -561,13 +564,13 @@ export const ChatComponent = ({
         }
       })
 
-      // Also listen for specific newMessage events that might be sent directly
+      
       es.addEventListener('newMessage', (evt: MessageEvent) => {
         try {
           const payload = JSON.parse(evt.data)
           const { message: newMessage } = payload || {}
           
-          // Only add message if it's for this booking and not already in the list
+          
           if (newMessage && newMessage.bookingId === bookingId && 
               !messages.some(msg => msg.id === newMessage.id)) {
             setMessages(prev => [...prev, newMessage])
@@ -597,24 +600,24 @@ export const ChatComponent = ({
         const data = await response.json();
         if (data.success) {
           setChatRoom(data.chatRoom);
-          // Only update messages if there are new ones
+          
           if (data.chatRoom.messages && data.chatRoom.messages.length !== messages.length) {
             setMessages(data.chatRoom.messages || []);
           }
         }
       } else if (response.status === 404) {
-        // Chat room doesn't exist, create one
+        
         await createChatRoom();
       } else {
         const errorData = await response.json().catch(() => ({}));
-        // Only show error if not polling
+        
         if (!chatRoom) {
           toast.error(errorData.message || "Failed to load chat");
         }
       }
     } catch (error) {
       console.error("Error fetching chat room:", error);
-      // Only show error if not polling
+      
       if (!chatRoom) {
         toast.error("Failed to load chat. Please try again.");
       }
@@ -657,7 +660,7 @@ export const ChatComponent = ({
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
-          // Add the new message to the list
+          
           if (data.message) {
             setMessages(prev => [...prev, data.message]);
           }
@@ -681,18 +684,18 @@ export const ChatComponent = ({
     );
   }
 
-  // Format time for messages
+  
   const formatTime = (timestamp: string) => {
     const date = new Date(timestamp);
     const now = new Date();
     
-    // Check if it's today
+    
     const isToday = date.getDate() === now.getDate() &&
                   date.getMonth() === now.getMonth() &&
                   date.getFullYear() === now.getFullYear();
     
     if (isToday) {
-      // For today, show time
+      
       return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
     }
     
@@ -708,7 +711,7 @@ export const ChatComponent = ({
       if (diffHours < 24) return `${diffHours}h`;
     }
     
-    // For older dates, show date
+    
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
@@ -727,11 +730,9 @@ export const ChatComponent = ({
                 ? chatRoom?.cleaner?.name
                 : chatRoom?.client?.name}
             </h3>
-            <p className="text-xs text-gray-500">Online</p>
           </div>
         </div>
 
-        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">

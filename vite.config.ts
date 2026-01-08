@@ -2,7 +2,7 @@ const { defineConfig } = require("vite");
 const react = require("@vitejs/plugin-react");
 const path = require("path");
 
-// https://vitejs.dev/config/
+
 module.exports = defineConfig({
   plugins: [react.default()],
 
@@ -12,7 +12,7 @@ module.exports = defineConfig({
     },
   },
 
-  // Build optimizations
+  
   build: {
     outDir: "dist",
     sourcemap: false,
@@ -20,6 +20,15 @@ module.exports = defineConfig({
     chunkSizeWarningLimit: 500,
 
     rollupOptions: {
+      external: [
+        '@capacitor/core',
+        '@capacitor/push-notifications',
+        '@capacitor/app',
+        '@capacitor/geolocation',
+        '@capacitor/android',
+        '@capacitor/ios',
+        '@capacitor/splash-screen',
+      ],
       output: {
         manualChunks: {
           "react-vendor": ["react", "react-dom", "react-router-dom"],

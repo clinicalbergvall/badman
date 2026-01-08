@@ -82,7 +82,7 @@ const cleanerProfileSchema = new mongoose.Schema({
   },
   services: [{
     type: String,
-    enum: ['car-detailing', 'home-cleaning'],
+    enum: ['car-detailing'],
     required: true
   }],
   bio: {
@@ -115,7 +115,7 @@ const cleanerProfileSchema = new mongoose.Schema({
   approvalHistory: [approvalHistorySchema],
   approvedAt: Date,
   rejectedAt: Date,
-  // Statistics
+  
   totalJobs: {
     type: Number,
     default: 0
@@ -134,7 +134,7 @@ const cleanerProfileSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
-  // Verification
+  
   verified: {
     type: Boolean,
     default: false
@@ -160,18 +160,18 @@ const cleanerProfileSchema = new mongoose.Schema({
     insuranceDocument: String,
     verifiedAt: Date
   },
-  // Payment Details
+  
   mpesaPhoneNumber: {
     type: String,
     required: true,
     validate: {
-      validator: function(v) {
-        return !v || /^2547[0-9]{8}$/.test(v); // Kenya M-Pesa format
+      validator: function (v) {
+        return !v || /^2547[0-9]{8}$/.test(v); 
       },
       message: 'M-Pesa phone number must be in format 2547XXXXXXXX'
     }
   },
-  // Availability
+  
   isAvailable: {
     type: Boolean,
     default: true
@@ -186,7 +186,7 @@ const cleanerProfileSchema = new mongoose.Schema({
       default: '18:00'
     }
   },
-  // Timestamps
+  
   createdAt: {
     type: Date,
     default: Date.now
@@ -199,15 +199,15 @@ const cleanerProfileSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Method to update rating
-cleanerProfileSchema.methods.updateRating = function(newRating) {
+
+cleanerProfileSchema.methods.updateRating = function (newRating) {
   this.totalRatings += 1;
   this.rating = ((this.rating * (this.totalRatings - 1)) + newRating) / this.totalRatings;
   return this.save();
 };
 
-// Index for faster queries
-// Note: user index is already created by unique: true constraint
+
+
 cleanerProfileSchema.index({ services: 1, isAvailable: 1 });
 cleanerProfileSchema.index({ city: 1, services: 1 });
 cleanerProfileSchema.index({ approvalStatus: 1, createdAt: -1 });

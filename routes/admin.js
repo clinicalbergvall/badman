@@ -5,13 +5,13 @@ const CleanerProfile = require('../models/CleanerProfile');
 const Booking = require('../models/Booking');
 const User = require('../models/User');
 
-// ============================================================
-// CLEANER APPROVAL ENDPOINTS
-// ============================================================
 
-// @route   GET /api/admin/cleaners/pending
-// @desc    Get all pending cleaner profiles for review
-// @access  Private (Admin)
+
+
+
+
+
+
 router.get('/cleaners/pending', protect, authorize('admin'), async (req, res) => {
   try {
     const { city, service, page = 1, limit = 10 } = req.query;
@@ -40,17 +40,23 @@ router.get('/cleaners/pending', protect, authorize('admin'), async (req, res) =>
     });
   } catch (error) {
     console.error('Fetch pending cleaners error:', error);
+    
+    console.error('Error details:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    });
     res.status(500).json({
       success: false,
       message: 'Error fetching pending cleaners',
-      error: error.message
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
     });
   }
 });
 
-// @route   GET /api/admin/cleaners/approved
-// @desc    Get all approved cleaner profiles
-// @access  Private (Admin)
+
+
+
 router.get('/cleaners/approved', protect, authorize('admin'), async (req, res) => {
   try {
     const { city, service, page = 1, limit = 10 } = req.query;
@@ -79,17 +85,23 @@ router.get('/cleaners/approved', protect, authorize('admin'), async (req, res) =
     });
   } catch (error) {
     console.error('Fetch approved cleaners error:', error);
+    
+    console.error('Error details:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    });
     res.status(500).json({
       success: false,
       message: 'Error fetching approved cleaners',
-      error: error.message
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
     });
   }
 });
 
-// @route   GET /api/admin/cleaners/:id
-// @desc    Get single cleaner profile for review
-// @access  Private (Admin)
+
+
+
 router.get('/cleaners/:id', protect, authorize('admin'), async (req, res) => {
   try {
     const profile = await CleanerProfile.findById(req.params.id)
@@ -109,17 +121,23 @@ router.get('/cleaners/:id', protect, authorize('admin'), async (req, res) => {
     });
   } catch (error) {
     console.error('Fetch cleaner error:', error);
+    
+    console.error('Error details:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    });
     res.status(500).json({
       success: false,
       message: 'Error fetching cleaner profile',
-      error: error.message
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
     });
   }
 });
 
-// @route   PUT /api/admin/cleaners/:id/approve
-// @desc    Approve a pending cleaner profile
-// @access  Private (Admin)
+
+
+
 router.put('/cleaners/:id/approve', protect, authorize('admin'), async (req, res) => {
   try {
     const { notes } = req.body;
@@ -139,12 +157,12 @@ router.put('/cleaners/:id/approve', protect, authorize('admin'), async (req, res
       });
     }
 
-    // Update approval status
+    
     profile.approvalStatus = 'approved';
     profile.approvedAt = new Date();
     profile.approvalNotes = notes || '';
 
-    // Add to approval history
+    
     profile.approvalHistory.push({
       status: 'approved',
       notes: notes || 'Approved by admin',
@@ -161,17 +179,23 @@ router.put('/cleaners/:id/approve', protect, authorize('admin'), async (req, res
     });
   } catch (error) {
     console.error('Approve cleaner error:', error);
+    
+    console.error('Error details:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    });
     res.status(500).json({
       success: false,
       message: 'Error approving cleaner',
-      error: error.message
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
     });
   }
 });
 
-// @route   PUT /api/admin/cleaners/:id/reject
-// @desc    Reject a pending cleaner profile
-// @access  Private (Admin)
+
+
+
 router.put('/cleaners/:id/reject', protect, authorize('admin'), async (req, res) => {
   try {
     const { notes } = req.body;
@@ -191,12 +215,12 @@ router.put('/cleaners/:id/reject', protect, authorize('admin'), async (req, res)
       });
     }
 
-    // Update approval status
+    
     profile.approvalStatus = 'rejected';
     profile.rejectedAt = new Date();
     profile.approvalNotes = notes || '';
 
-    // Add to approval history
+    
     profile.approvalHistory.push({
       status: 'rejected',
       notes: notes || 'Rejected by admin',
@@ -213,21 +237,27 @@ router.put('/cleaners/:id/reject', protect, authorize('admin'), async (req, res)
     });
   } catch (error) {
     console.error('Reject cleaner error:', error);
+    
+    console.error('Error details:', {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    });
     res.status(500).json({
       success: false,
       message: 'Error rejecting cleaner',
-      error: error.message
+      error: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
     });
   }
 });
 
-// ============================================================
-// CLIENT OPERATIONS ENDPOINTS
-// ============================================================
 
-// @route   GET /api/admin/clients
-// @desc    Get all clients with booking history
-// @access  Private (Admin)
+
+
+
+
+
+
 router.get('/clients', protect, authorize('admin'), async (req, res) => {
   try {
     const { page = 1, limit = 10 } = req.query;
@@ -238,7 +268,7 @@ router.get('/clients', protect, authorize('admin'), async (req, res) => {
       .populate('cleaner', 'firstName lastName')
       .sort({ createdAt: -1 });
 
-    // Aggregate client data
+    
     const clientMap = new Map();
     bookings.forEach(booking => {
       const clientId = booking.client._id.toString();
@@ -282,9 +312,9 @@ router.get('/clients', protect, authorize('admin'), async (req, res) => {
   }
 });
 
-// @route   GET /api/admin/bookings
-// @desc    Get all bookings with filters
-// @access  Private (Admin)
+
+
+
 router.get('/bookings', protect, authorize('admin'), async (req, res) => {
   try {
     const { status, serviceCategory, page = 1, limit = 10 } = req.query;
@@ -322,9 +352,9 @@ router.get('/bookings', protect, authorize('admin'), async (req, res) => {
   }
 });
 
-// @route   GET /api/admin/dashboard/stats
-// @desc    Get dashboard statistics
-// @access  Private (Admin)
+
+
+
 router.get('/dashboard/stats', protect, authorize('admin'), async (req, res) => {
   try {
     const [totalCleaners, pendingCleaners, approvedCleaners, totalBookings, completedBookings, totalRevenue] = await Promise.all([

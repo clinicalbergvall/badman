@@ -22,7 +22,7 @@ export function PaymentReceipt({ booking, onClose }: PaymentReceiptProps) {
         if (navigator.share) {
             try {
                 await navigator.share({
-                    title: 'Clean Cloak Receipt',
+                    title: 'CleanCloak Receipt',
                     text: `Receipt for booking #${booking.id?.slice(-8)}`,
                     url: receiptUrl
                 })
@@ -30,7 +30,7 @@ export function PaymentReceipt({ booking, onClose }: PaymentReceiptProps) {
                 console.log('Share cancelled')
             }
         } else {
-            // Fallback: copy to clipboard
+            
             navigator.clipboard.writeText(receiptUrl)
             alert('Receipt link copied to clipboard!')
         }
@@ -47,7 +47,7 @@ export function PaymentReceipt({ booking, onClose }: PaymentReceiptProps) {
         })
     }
 
-    // Calculate fee breakdown (40% platform, 60% cleaner)
+    
     const totalAmount = booking.price
     const platformFee = Math.round(totalAmount * 0.4)
     const cleanerEarnings = Math.round(totalAmount * 0.6)
@@ -55,7 +55,7 @@ export function PaymentReceipt({ booking, onClose }: PaymentReceiptProps) {
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 print:bg-white">
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto print:shadow-none print:max-w-full">
-                {/* Header */}
+                {}
                 <div className="bg-gradient-to-r from-yellow-500 to-yellow-600 text-white p-6 print:bg-yellow-500">
                     <div className="flex items-center justify-between mb-4 print:mb-2">
                         <div className="flex items-center gap-3">
@@ -73,7 +73,7 @@ export function PaymentReceipt({ booking, onClose }: PaymentReceiptProps) {
                         </button>
                     </div>
 
-                    {/* Transaction Info */}
+                    {}
                     <div className="bg-yellow-600 bg-opacity-50 rounded-lg p-4 space-y-2">
                         <div className="flex justify-between text-sm">
                             <span className="text-yellow-100">Transaction ID</span>
@@ -86,9 +86,9 @@ export function PaymentReceipt({ booking, onClose }: PaymentReceiptProps) {
                     </div>
                 </div>
 
-                {/* Receipt Body */}
+                {}
                 <div className="p-6 space-y-6">
-                    {/* Service Details */}
+                    {}
                     <div>
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
                             📋 Service Details
@@ -127,7 +127,7 @@ export function PaymentReceipt({ booking, onClose }: PaymentReceiptProps) {
                         </div>
                     </div>
 
-                    {/* Cleaner Info */}
+                    {}
                     {booking.cleaner && (
                         <div>
                             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
@@ -140,7 +140,7 @@ export function PaymentReceipt({ booking, onClose }: PaymentReceiptProps) {
                         </div>
                     )}
 
-                    {/* Payment Breakdown */}
+                    {}
                     <div>
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
                             💰 Payment Breakdown
@@ -171,7 +171,7 @@ export function PaymentReceipt({ booking, onClose }: PaymentReceiptProps) {
                         </div>
                     </div>
 
-                    {/* Rating */}
+                    {}
                     {booking.rating && (
                         <div>
                             <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">Your Rating</h3>
@@ -197,7 +197,7 @@ export function PaymentReceipt({ booking, onClose }: PaymentReceiptProps) {
                         </div>
                     )}
 
-                    {/* Footer Actions */}
+                    {}
                     <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700 print:hidden">
                         <button
                             onClick={handlePrint}
@@ -224,9 +224,9 @@ export function PaymentReceipt({ booking, onClose }: PaymentReceiptProps) {
                         </button>
                     </div>
 
-                    {/* Footer Note */}
+                    {}
                     <div className="text-center text-xs text-gray-500 dark:text-gray-400 pt-4 border-t border-gray-200 dark:border-gray-700">
-                        <p>Thank you for choosing Clean Cloak!</p>
+                        <p>Thank you for choosing CleanCloak!</p>
                         <p className="mt-1">For support, contact us at support@cleancloak.com</p>
                     </div>
                 </div>

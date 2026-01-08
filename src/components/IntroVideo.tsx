@@ -12,7 +12,7 @@ const IntroVideo: React.FC<IntroVideoProps> = ({ onComplete }) => {
   useEffect(() => {
     const videoElement = videoRef.current;
     if (videoElement) {
-      // Attempt to play automatically
+      
       videoElement.play().catch((error) => {
         console.warn("Autoplay prevented:", error);
         videoElement.muted = true;
@@ -21,10 +21,10 @@ const IntroVideo: React.FC<IntroVideoProps> = ({ onComplete }) => {
 
       const handleEnded = () => {
         setIsFading(true);
-        // Wait for fade animation to finish before calling onComplete
+        
         setTimeout(() => {
           onComplete();
-        }, 1000); // Match transition duration
+        }, 1000); 
       };
 
       videoElement.addEventListener('ended', handleEnded);

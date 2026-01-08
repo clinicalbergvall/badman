@@ -8,6 +8,8 @@ import { Card, Badge, Button, ChatComponent, LocationMap } from "@/components/ui
 import CleanerLayout from "@/components/CleanerLayout";
 import { getVehicleCategory } from "@/lib/validation";
 import type { VehicleType } from "@/lib/types";
+import { loadUserSession } from "@/lib/storage";
+import { watchLocation } from "@/lib/location";
 
 interface ActiveBooking {
   _id: string;
@@ -21,7 +23,7 @@ interface ActiveBooking {
   location?: {
     address: string;
     manualAddress?: string;
-    coordinates?: { lat: number; lng: number };
+    coordinates?: [number, number];
   };
   client: {
     _id: string;
@@ -33,10 +35,10 @@ interface ActiveBooking {
   paid?: boolean;
   paidAt?: string;
   payoutStatus?: string;
-  // Add missing properties for chat
+
   carServicePackage?: string;
   cleaningCategory?: string;
-  vehicleType?: VehicleType; // Add this missing property
+  vehicleType?: VehicleType;
 }
 
 export default function CleanerActiveBookings() {
@@ -47,8 +49,27 @@ export default function CleanerActiveBookings() {
   const [loading, setLoading] = useState(true);
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<ActiveBooking | null>(null);
-  const [selectedChatBooking, setSelectedChatBooking] = useState<ActiveBooking | null>(null); // Add this state
-  const [selectedLocationBooking, setSelectedLocationBooking] = useState<ActiveBooking | null>(null); // Add this state
+  const [selectedChatBooking, setSelectedChatBooking] = useState<ActiveBooking | null>(null);
+  const [selectedLocationBooking, setSelectedLocationBooking] = useState<ActiveBooking | null>(null);
+
+
+  const ChatWithCurrentUser = ({ bookingId }: { bookingId: string }) => {
+    const userSession = loadUserSession();
+
+    if (!userSession) {
+      return <div className="p-4 text-center text-gray-500">Please log in to use chat</div>;
+    }
+
+
+
+    return (
+      <ChatComponent
+        bookingId={bookingId}
+        currentUserId={userSession.phone}
+        currentUserRole="cleaner"
+      />
+    );
+  };
 
   const fetchBookings = async (showLoading = true) => {
     if (showLoading) setLoading(true);
@@ -67,13 +88,13 @@ export default function CleanerActiveBookings() {
       const data = await response.json();
       const allBookings = data.bookings || [];
 
-      // Filter active bookings (confirmed, in-progress treated as confirmed)
+
       const active = allBookings.filter(
         (b: ActiveBooking) =>
           b.status === "confirmed" || b.status === "in-progress",
       );
 
-      // Filter completed bookings
+
       const completed = allBookings.filter(
         (b: ActiveBooking) => b.status === "completed",
       );
@@ -91,7 +112,7 @@ export default function CleanerActiveBookings() {
   useEffect(() => {
     fetchBookings();
 
-    // Poll for updates every 30 seconds
+
     const interval = setInterval(() => {
       fetchBookings(false);
     }, 30000);
@@ -126,7 +147,7 @@ export default function CleanerActiveBookings() {
 
       toast.success("Job marked as complete! Client will be notified.");
 
-      // Add notification
+
       addNotification({
         type: "service_complete",
         title: "Job Completed! ✅",
@@ -137,7 +158,7 @@ export default function CleanerActiveBookings() {
       setShowCompleteModal(false);
       setSelectedBooking(null);
 
-      // Refresh bookings
+
       fetchBookings();
     } catch (error) {
       console.error("Error completing booking:", error);
@@ -182,7 +203,7 @@ export default function CleanerActiveBookings() {
     <CleanerLayout>
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
-          {/* Header */}
+          { }
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
               My Active Jobs
@@ -192,7 +213,7 @@ export default function CleanerActiveBookings() {
             </p>
           </div>
 
-          {/* Active Bookings Section */}
+          { }
           {activeBookings.length > 0 && (
             <div className="mb-8">
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
@@ -213,7 +234,7 @@ export default function CleanerActiveBookings() {
             </div>
           )}
 
-          {/* Completed Bookings Section */}
+          { }
           {completedBookings.length > 0 && (
             <div className="mb-8">
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
@@ -230,7 +251,7 @@ export default function CleanerActiveBookings() {
             </div>
           )}
 
-          {/* Empty State */}
+          { }
           {activeBookings.length === 0 && completedBookings.length === 0 && (
             <div className="text-center py-12">
               <div className="text-gray-400 mb-4 text-6xl">⏳</div>
@@ -250,7 +271,7 @@ export default function CleanerActiveBookings() {
           )}
         </div>
 
-        {/* Complete Modal */}
+        { }
         {showCompleteModal && selectedBooking && (
           <CompleteJobModal
             booking={{
@@ -266,7 +287,7 @@ export default function CleanerActiveBookings() {
           />
         )}
 
-        {/* Chat Modal */}
+        { }
         {selectedChatBooking && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
             <div className="bg-white rounded-lg max-w-2xl w-full max-h-[80vh]">
@@ -286,17 +307,15 @@ export default function CleanerActiveBookings() {
                 </Button>
               </div>
               <div className="p-4">
-                <ChatComponent
+                <ChatWithCurrentUser
                   bookingId={selectedChatBooking._id || selectedChatBooking.id || ""}
-                  currentUserId={selectedChatBooking.client._id}
-                  currentUserRole="cleaner"
                 />
               </div>
             </div>
           </div>
         )}
 
-        {/* Location Map Modal */}
+        { }
         {selectedLocationBooking && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
             <div className="bg-white rounded-lg max-w-2xl w-full max-h-[80vh]">
@@ -316,13 +335,11 @@ export default function CleanerActiveBookings() {
                 </Button>
               </div>
               <div className="p-4">
-                <LocationMap 
+                <LocationMap
                   location={{
                     address: selectedLocationBooking.location?.address,
                     manualAddress: selectedLocationBooking.location?.manualAddress,
-                    coordinates: selectedLocationBooking.location?.coordinates ? 
-                      [selectedLocationBooking.location.coordinates.lng, selectedLocationBooking.location.coordinates.lat] : 
-                      undefined
+                    coordinates: selectedLocationBooking.location?.coordinates
                   }}
                   title="Client Location"
                 />              </div>
@@ -334,17 +351,17 @@ export default function CleanerActiveBookings() {
   );
 }
 
-// Active Booking Card Component
+
 interface ActiveBookingCardProps {
   booking: ActiveBooking;
   onComplete: () => void;
   onNavigate: () => void;
   onStartChat: (booking: ActiveBooking) => void;
-  onViewLocation: (booking: ActiveBooking) => void; // Add this prop
+  onViewLocation: (booking: ActiveBooking) => void;
 }
 
-function ActiveBookingCard({ 
-  booking, 
+function ActiveBookingCard({
+  booking,
   onComplete,
   onNavigate,
   onStartChat,
@@ -363,7 +380,7 @@ function ActiveBookingCard({
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
-      {/* Header with service info and earnings */}
+      { }
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
         <div className="flex items-start gap-4">
           <div className="w-12 h-12 bg-yellow-100 dark:bg-yellow-900 rounded-xl flex items-center justify-center text-2xl flex-shrink-0">
@@ -386,7 +403,7 @@ function ActiveBookingCard({
         </div>
       </div>
 
-      {/* Location & Schedule in a responsive grid */}
+      { }
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-4">
         {(booking.location?.address || booking.location?.manualAddress) && (
           <div className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-400">
@@ -405,7 +422,7 @@ function ActiveBookingCard({
         )}
       </div>
 
-      {/* Client Info */}
+      { }
       <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-4">
         <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
           Client Information
@@ -429,14 +446,14 @@ function ActiveBookingCard({
         </div>
       </div>
 
-      {/* Status Badge and Actions */}
+      { }
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <span className="inline-block px-3 py-1 bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 text-sm font-semibold rounded-full capitalize self-start">
           {booking.status === 'in-progress' ? 'Confirmed' : booking.status.replace("-", " ")}
         </span>
 
         <div className="flex gap-2">
-          {/* Chat button for confirmed and in-progress bookings */}
+          { }
           {(booking.status === "confirmed" || booking.status === "in-progress") && (
             <button
               onClick={(e) => {
@@ -450,7 +467,7 @@ function ActiveBookingCard({
             </button>
           )}
 
-          {/* View Location button */}
+          { }
           {booking.location && (
             <button
               onClick={(e) => {
@@ -463,6 +480,8 @@ function ActiveBookingCard({
               🗺️ View Location
             </button>
           )}
+
+
 
           <button
             onClick={onComplete}
@@ -477,7 +496,7 @@ function ActiveBookingCard({
   );
 }
 
-// Completed Booking Card Component
+
 interface CompletedBookingCardProps {
   booking: ActiveBooking;
 }
@@ -500,7 +519,7 @@ function CompletedBookingCard({ booking }: CompletedBookingCardProps) {
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
-      {/* Header with service info and earnings */}
+      { }
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-4">
         <div className="flex items-start gap-4">
           <div className="w-12 h-12 bg-green-100 dark:bg-green-900 rounded-xl flex items-center justify-center text-2xl flex-shrink-0">
@@ -523,18 +542,17 @@ function CompletedBookingCard({ booking }: CompletedBookingCardProps) {
         </div>
       </div>
 
-      {/* Payment Status in a responsive grid */}
+      { }
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
           <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
             Payment Status
           </span>
           <span
-            className={`inline-block px-3 py-1 text-sm font-semibold rounded-full ${
-              isPaid
-                ? "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200"
-                : "bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200"
-            }`}
+            className={`inline-block px-3 py-1 text-sm font-semibold rounded-full ${isPaid
+              ? "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200"
+              : "bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200"
+              }`}
           >
             {isPaid ? "✓ Paid" : "⏳ Awaiting Payment"}
           </span>
@@ -546,11 +564,10 @@ function CompletedBookingCard({ booking }: CompletedBookingCardProps) {
               Payout Status
             </span>
             <span
-              className={`inline-block px-3 py-1 text-sm font-semibold rounded-full ${
-                payoutProcessed
-                  ? "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200"
-                  : "bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200"
-              }`}
+              className={`inline-block px-3 py-1 text-sm font-semibold rounded-full ${payoutProcessed
+                ? "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200"
+                : "bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200"
+                }`}
             >
               {payoutProcessed ? "💰 Payout Sent" : "🔄 Processing"}
             </span>

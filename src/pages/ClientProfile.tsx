@@ -33,19 +33,8 @@ export default function ClientProfile() {
   const [profile, setProfile] = useState<ClientProfile | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
-  const [apiStatus, setApiStatus] = useState<{ ok: boolean; base: string } | null>(null);
-
   useEffect(() => {
     loadProfileData();
-  }, []);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 6000);
-    api.get("/health", { signal: controller.signal })
-      .then((r) => setApiStatus({ ok: r.ok, base: API_BASE_URL }))
-      .catch(() => setApiStatus({ ok: false, base: API_BASE_URL }))
-      .finally(() => clearTimeout(timeout));
   }, []);
 
   const loadProfileData = async () => {
@@ -57,7 +46,7 @@ export default function ClientProfile() {
         return;
       }
 
-      // Initial profile from session
+      
       const initialProfile: ClientProfile = {
         name: session.name || "Client",
         phone: session.phone || "",
@@ -70,7 +59,7 @@ export default function ClientProfile() {
         verificationStatus: "verified",
       };
 
-      // Load transaction history
+      
       const response = await api.get("/bookings");
 
       if (response.ok) {
@@ -89,7 +78,7 @@ export default function ClientProfile() {
 
         setTransactions(transactionData);
 
-        // Calculate totals
+        
         const completedDeals = transactionData.filter(
           (t) => t.status === "completed",
         ).length;
@@ -107,7 +96,7 @@ export default function ClientProfile() {
         setProfile(initialProfile);
       }
     } catch (error) {
-      logger.error("Profile load error:", error);
+      logger.error("Profile load error:", error instanceof Error ? error : undefined);
       toast.error("Failed to load profile data");
     } finally {
       setLoading(false);
@@ -126,25 +115,28 @@ export default function ClientProfile() {
     <ErrorBoundary>
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-full mx-auto px-4 py-8 overflow-x-auto">
-          {apiStatus && (
-            <div
-              className={`mb-4 p-3 rounded-lg text-sm flex items-center justify-between ${
-                apiStatus.ok
-                  ? "bg-green-50 text-green-800"
-                  : "bg-red-50 text-red-800"
-              }`}
+
+          <div className="flex items-center gap-2 mb-6">
+            <button
+              onClick={() => window.history.back()}
+              className="text-gray-600 hover:text-gray-900 flex items-center gap-1"
             >
-              <span>
-                API {apiStatus.ok ? "reachable" : "unreachable"}
-              </span>
-              {!apiStatus.ok && (
-                <a href="/" className="underline">
-                  Change API in header
-                </a>
-              )}
-            </div>
-          )}
-          <h1 className="text-2xl font-bold text-gray-900 mb-6">My Profile</h1>
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 19l-7-7 7-7"
+                />
+              </svg>
+            </button>
+            <h1 className="text-2xl font-bold text-gray-900">My Profile</h1>
+          </div>
 
           {!profile ? (
             <div className="bg-white rounded-xl shadow-sm p-6 text-center max-w-md mx-auto">

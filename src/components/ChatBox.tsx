@@ -4,6 +4,7 @@ import { loadUserSession, getStoredAuthToken } from '@/lib/storage'
 import type { ChatMessage } from '@/lib/types'
 import toast from 'react-hot-toast'
 import { api } from '@/lib/api'
+import { io, Socket } from 'socket.io-client'
 
 interface ChatBoxProps {
   bookingId: string
@@ -12,18 +13,19 @@ interface ChatBoxProps {
   currentUserRole: 'client' | 'cleaner'
 }
 
-export default function ChatBox({ 
-  bookingId, 
-  currentUserId, 
+export default function ChatBox({
+  bookingId,
+  currentUserId,
   currentUserName,
-  currentUserRole 
+  currentUserRole
 }: ChatBoxProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [newMessage, setNewMessage] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  // Auto-scroll to bottom when new messages arrive
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }
@@ -32,26 +34,38 @@ export default function ChatBox({
     scrollToBottom()
   }, [messages])
 
-  // Load initial messages
+
   useEffect(() => {
-    // Fetch real chat messages from API
+
     const fetchMessages = async () => {
       try {
-        const response = await api.get(`/chat/room/${bookingId}`)
+        const response = await api.get(`/chat/${bookingId}`)
 
         if (response.ok) {
           const data = await response.json()
-          if (data.success && data.messages) {
-            // Only update if there are new messages
-            if (data.messages.length !== messages.length) {
-              setMessages(data.messages)
+          if (data.success && data.chatRoom && data.chatRoom.messages) {
+
+            if (data.chatRoom.messages.length !== messages.length) {
+
+              const transformedMessages = data.chatRoom.messages.map((msg: any) => ({
+                id: msg._id,
+                bookingId: bookingId,
+                senderId: msg.sender._id || msg.sender,
+                senderName: msg.sender.name || (msg.senderRole === 'client' ? 'Client' : 'Cleaner'),
+                senderRole: msg.senderRole,
+                message: msg.message,
+                timestamp: msg.timestamp,
+                read: msg.senderRole === currentUserRole ? msg.readByCleaner || msg.readByClient : true,
+                imageUrl: msg.imageUrl,
+              }));
+              setMessages(transformedMessages);
             }
           }
         }
       } catch (error) {
-        // Only log error, don't reset messages
+
         console.error('Error fetching messages:', error)
-        // Show error toast only for initial load
+
         if (messages.length === 0) {
           toast.error('Failed to load messages. Please try again.');
         }
@@ -59,62 +73,83 @@ export default function ChatBox({
     }
 
     fetchMessages()
-    
-    // Poll for new messages every 5 seconds
+
+
     const interval = setInterval(fetchMessages, 5000)
-    
+
     return () => clearInterval(interval)
   }, [bookingId, currentUserId, currentUserName, currentUserRole, messages.length])
 
-  // Listen for real-time messages via SSE
+
   useEffect(() => {
+    const handleResize = () => {
+
+      const isMobile = window.innerWidth <= 768;
+      if (isMobile) {
+        const viewportHeight = window.innerHeight;
+        const documentHeight = document.documentElement.clientHeight;
+        const heightDifference = documentHeight - viewportHeight;
+
+
+        setIsKeyboardVisible(heightDifference > 150);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+
+
+    handleResize();
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
+
+
+  useEffect(() => {
+    let socket: Socket | null = null;
+    const session = loadUserSession();
+
+    if (!session?.id) return;
+
     try {
-      const base = import.meta.env.VITE_API_URL || window.location.origin
-      const apiUrl = base.endsWith('/api') ? base : `${base}/api`
-      const url = `${apiUrl}/events`
-      const es = new EventSource(url, { withCredentials: true })
+      const OVERRIDE_API_URL = localStorage.getItem('apiOverride') || ''
+      const VITE_API_URL = import.meta.env.VITE_API_URL
+      const base = OVERRIDE_API_URL || VITE_API_URL || window.location.origin
+      const socketUrl = base.endsWith('/api') ? base.slice(0, -4) : base;
 
-      // Listen for general message events (default EventSource event)
-      es.addEventListener('message', (evt: MessageEvent) => {
-        try {
-          const payload = JSON.parse(evt.data)
-          const { type, message: newMessage } = payload || {}
-          
-          // Only add message if it's a newMessage event for this booking and not already in the list
-          if (type === 'newMessage' && newMessage && newMessage.bookingId === bookingId && 
-              !messages.some(msg => msg.id === newMessage.id)) {
-            setMessages(prev => [...prev, newMessage])
-          }
-        } catch (e) {
-          console.error('Error processing SSE message:', e)
+      socket = io(socketUrl, {
+        query: { userId: session.id },
+        transports: ['websocket'],
+        withCredentials: true
+      });
+
+      socket.on('newMessage', (data) => {
+        const { message: newMessage } = data || {}
+
+        if (newMessage && newMessage.bookingId === bookingId &&
+          !messages.some(msg => msg.id === newMessage.id)) {
+
+          const transformedMessage = {
+            id: newMessage._id || Date.now().toString(),
+            bookingId: bookingId,
+            senderId: newMessage.senderId || newMessage.sender,
+            senderName: newMessage.senderName || (newMessage.senderRole === 'client' ? 'Client' : 'Cleaner'),
+            senderRole: newMessage.senderRole,
+            message: newMessage.message,
+            timestamp: newMessage.timestamp || new Date().toISOString(),
+            read: newMessage.read || false,
+            imageUrl: newMessage.imageUrl,
+          };
+          setMessages(prev => [...prev, transformedMessage]);
         }
-      })
-
-      // Also listen for specific newMessage events that might be sent directly
-      es.addEventListener('newMessage', (evt: MessageEvent) => {
-        try {
-          const payload = JSON.parse(evt.data)
-          const { message: newMessage } = payload || {}
-          
-          // Only add message if it's for this booking and not already in the list
-          if (newMessage && newMessage.bookingId === bookingId && 
-              !messages.some(msg => msg.id === newMessage.id)) {
-            setMessages(prev => [...prev, newMessage])
-          }
-        } catch (e) {
-          console.error('Error processing SSE message:', e)
-        }
-      })
-
-      es.addEventListener('error', (evt: MessageEvent) => {
-        console.error('SSE connection error:', evt);
-      })
+      });
 
       return () => {
-        es.close()
+        if (socket) socket.disconnect();
       }
     } catch (e) {
-      console.error('Failed to setup SSE for chat:', e)
+      console.error('Failed to setup Socket for chat:', e)
     }
   }, [bookingId, messages])
 
@@ -151,73 +186,69 @@ export default function ChatBox({
   const formatTime = (timestamp: string) => {
     const date = new Date(timestamp)
     const now = new Date()
-    
-    // Check if it's today
+
+
     const isToday = date.getDate() === now.getDate() &&
-                  date.getMonth() === now.getMonth() &&
-                  date.getFullYear() === now.getFullYear()
-    
+      date.getMonth() === now.getMonth() &&
+      date.getFullYear() === now.getFullYear()
+
     if (isToday) {
-      // For today, show time
+
       return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
     }
-    
+
     const diffMs = now.getTime() - date.getTime()
     const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
 
     if (diffDays < 1) {
       const diffMins = Math.floor(diffMs / 60000)
       const diffHours = Math.floor(diffMins / 60)
-      
+
       if (diffMins < 1) return 'Just now'
       if (diffMins < 60) return `${diffMins}m`
       if (diffHours < 24) return `${diffHours}h`
     }
-    
-    // For older dates, show date
+
+
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
   }
 
-  // Group messages by date
+
   const groupMessagesByDate = (messages: ChatMessage[]) => {
     const groups: { [key: string]: ChatMessage[] } = {}
-    
+
     messages.forEach(message => {
       const date = new Date(message.timestamp)
       const today = new Date();
       const dateKey = date.toISOString().split('T')[0];
       const todayKey = today.toISOString().split('T')[0];
-      
-      // Use 'Today' for today's messages
+
+
       const displayKey = dateKey === todayKey ? 'Today' : dateKey;
-      
+
       if (!groups[displayKey]) {
         groups[displayKey] = []
       }
-      
+
       groups[displayKey].push(message)
     })
-    
+
     return groups
   }
 
   return (
-    <Card className="flex flex-col h-[500px]">
-      {/* Header */}
+    <Card className={`flex flex-col ${isKeyboardVisible ? 'h-[70vh]' : 'h-[500px]'} max-h-[70vh]`}>
+      { }
       <div className="p-4 border-b border-gray-200">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="font-semibold text-gray-900">Chat</h3>
             <p className="text-xs text-gray-500">Booking #{bookingId.slice(0, 8)}</p>
           </div>
-          <div className="flex items-center gap-1">
-            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-            <span className="text-xs text-gray-600">Online</span>
-          </div>
         </div>
       </div>
 
-      {/* Messages */}
+      { }
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-gray-500">
@@ -232,35 +263,34 @@ export default function ChatBox({
             <div key={date}>
               <div className="text-center my-4">
                 <span className="inline-block px-3 py-1 bg-gray-200 text-gray-700 text-xs rounded-full">
-                  {date === 'Today' 
-                    ? 'Today' 
-                    : new Date(date).toLocaleDateString('en-US', { 
-                        weekday: 'long', 
-                        year: 'numeric', 
-                        month: 'long', 
-                        day: 'numeric' 
-                      })}
+                  {date === 'Today'
+                    ? 'Today'
+                    : new Date(date).toLocaleDateString('en-US', {
+                      weekday: 'long',
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })}
                 </span>
               </div>
               {dateMessages.map((msg) => {
-                const isOwnMessage = msg.senderId === currentUserId
-                
+                const isOwnMessage = msg.senderRole === currentUserRole
+
                 return (
                   <div
                     key={msg.id}
-                    className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}
+                    className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'} mb-3`}
                   >
-                    <div className={`max-w-[80%] ${isOwnMessage ? 'order-2' : 'order-1'}`}>
-                      {!isOwnMessage && msg.senderName && (
-                        <p className="text-xs text-gray-600 mb-1 ml-2">{msg.senderName}</p>
-                      )}
+                    <div className={`max-w-[80%] ${isOwnMessage ? 'order-2' : 'order-1'} ${isOwnMessage ? 'ml-auto' : 'mr-auto'}`}>
                       <div
-                        className={`rounded-2xl px-4 py-2 ${
-                          isOwnMessage
-                            ? 'bg-yellow-500 text-white rounded-br-none'
-                            : 'bg-gray-100 text-gray-900 rounded-bl-none'
-                        }`}
+                        className={`rounded-2xl px-4 py-2 ${isOwnMessage
+                            ? 'bg-green-500 text-white rounded-br-none'
+                            : 'bg-gray-200 text-gray-800 rounded-bl-none'
+                          }`}
                       >
+                        {!isOwnMessage && msg.senderName && (
+                          <p className="text-xs font-semibold mb-1">{msg.senderName}</p>
+                        )}
                         <p className="text-sm whitespace-pre-wrap break-words">{msg.message}</p>
                         {msg.imageUrl && (
                           <img
@@ -270,12 +300,12 @@ export default function ChatBox({
                           />
                         )}
                       </div>
-                      <p className={`text-xs text-gray-500 mt-1 ${isOwnMessage ? 'text-right mr-2' : 'text-left ml-2'}`}>
-                        {formatTime(msg.timestamp)}
+                      <div className={`text-xs text-gray-500 mt-1 flex ${isOwnMessage ? 'flex-row-reverse justify-end' : 'justify-start'}`}>
+                        <span>{formatTime(msg.timestamp)}</span>
                         {isOwnMessage && msg.read && (
                           <span className="ml-1">✓✓</span>
                         )}
-                      </p>
+                      </div>
                     </div>
                   </div>
                 )
@@ -286,11 +316,11 @@ export default function ChatBox({
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input */}
-      <div className="p-4 border-t border-gray-200 bg-white">
+      { }
+      <div className="p-4 border-t border-gray-200 bg-white sticky bottom-0">
         <div className="flex gap-2 items-center">
 
-          
+
           <div className="flex-1 relative">
             <textarea
               value={newMessage}
@@ -305,9 +335,15 @@ export default function ChatBox({
               className="w-full px-4 py-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent resize-none"
               rows={1}
               style={{ minHeight: '44px', maxHeight: '120px' }}
+              onFocus={(e) => {
+
+                setTimeout(() => {
+                  messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+                }, 100);
+              }}
             />
           </div>
-          
+
           <Button
             onClick={handleSendMessage}
             disabled={!newMessage.trim()}

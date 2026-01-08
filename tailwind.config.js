@@ -1,4 +1,4 @@
-/** @type {import('tailwindcss').Config} */
+
 module.exports = {
   content: [
     './index.html',
@@ -12,8 +12,8 @@ module.exports = {
           dark: '#111111',
         },
         accent: {
-          DEFAULT: '#FACC15', // yellow-400
-          dark: '#EAB308', // yellow-500
+          DEFAULT: '#FACC15', 
+          dark: '#EAB308', 
         }
       },
       fontFamily: {

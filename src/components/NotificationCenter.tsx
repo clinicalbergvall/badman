@@ -20,7 +20,7 @@ export function NotificationCenter() {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
 
-  // Close dropdown when clicking outside
+  
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
@@ -54,12 +54,12 @@ export function NotificationCenter() {
   const handleNotificationClick = (notification: Notification) => {
     markAsRead(notification.id);
 
-    // Navigate based on notification type
+    
     if (notification.bookingId) {
       if (notification.type === "service_complete" || notification.type === "booking_completed") {
         navigate("/completed-bookings");
       } else {
-        // Could navigate to booking details
+        
         navigate(`/active-booking/${notification.bookingId}`);
       }
     }
@@ -136,7 +136,7 @@ export function NotificationCenter() {
 
   return (
     <div className="relative" ref={dropdownRef}>
-      {/* Bell Button */}
+      {}
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="relative p-3 rounded-xl transition-all duration-300 hover:scale-110
@@ -146,7 +146,7 @@ export function NotificationCenter() {
       >
         <div className="text-xl">🔔</div>
 
-        {/* Badge */}
+        {}
         {unreadCount > 0 && (
           <span
             className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold
@@ -158,14 +158,15 @@ export function NotificationCenter() {
         )}
       </button>
 
-      {/* Dropdown */}
+      {}
       {isOpen && (
         <div
-          className="fixed right-4 top-20 w-80 sm:w-96 max-h-[500px] overflow-hidden
+          className="fixed right-4 top-16 w-80 sm:w-96 max-h-[500px] overflow-hidden
                       bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200
                       dark:border-gray-700 z-[9999] animate-scale-in"
+          style={{ transform: 'translateY(0)', top: 'calc(100% + 8px)' }}
         >
-          {/* Header */}
+          {}
           <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
             <h3 className="text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
               🔔 Notifications
@@ -202,7 +203,7 @@ export function NotificationCenter() {
             )}
           </div>
 
-          {/* Notifications List */}
+          {}
           <div className="max-h-[400px] overflow-y-auto">
             {notifications.length === 0 ? (
               <div className="p-8 text-center">
@@ -225,7 +226,7 @@ export function NotificationCenter() {
                               transition-colors ${!notification.read ? "bg-blue-50 dark:bg-blue-900/10" : ""}`}
                   >
                     <div className="flex gap-3">
-                      {/* Icon */}
+                      {}
                       <div
                         className={`flex-shrink-0 w-10 h-10 rounded-full ${getNotificationColor(notification.type)}
                                     flex items-center justify-center text-white text-lg`}
@@ -233,7 +234,7 @@ export function NotificationCenter() {
                         {getNotificationIcon(notification.type)}
                       </div>
 
-                      {/* Content */}
+                      {}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-start justify-between gap-2">
                           <h4

@@ -46,6 +46,25 @@ export default function ServiceShowcase({ serviceCategory = 'car-detailing' }: S
 
   const items = media[active]
 
+  
+  const handleVideoClick = (e: React.MouseEvent<HTMLVideoElement>) => {
+    const video = e.currentTarget;
+    if (video.paused) {
+      video.play();
+    } else {
+      video.pause();
+    }
+  };
+
+  const handleModalVideoClick = (e: React.MouseEvent<HTMLVideoElement>) => {
+    const video = e.currentTarget;
+    if (video.paused) {
+      video.play();
+    } else {
+      video.pause();
+    }
+  };
+
   const goNext = () => {
     setOpenIndex((prev) => {
       if (prev === null) return null
@@ -103,20 +122,18 @@ export default function ServiceShowcase({ serviceCategory = 'car-detailing' }: S
             ) : failed[m.id] ? (
               <img src={m.poster || '/assets/cleaning/pexels-tima-miroshnichenko-6195956.jpg'} alt={m.title} className="w-full h-36 sm:h-40 object-cover" loading="lazy" />
             ) : (
-              <div className="w-full h-36 sm:h-40 bg-black">
-                <video
-                  className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition"
-                  src={m.src}
-                  poster={m.poster}
-                  muted
-                  loop
-                  playsInline
-                  preload="none"
-                  onMouseEnter={(e) => e.currentTarget.play()}
-                  onMouseLeave={(e) => e.currentTarget.pause()}
-                  onError={() => setFailed((f) => ({ ...f, [m.id]: true }))}
-                />
-              </div>
+              <video
+                className="w-full h-36 sm:h-40 object-cover"
+                src={m.src}
+                poster={m.poster}
+                muted
+                loop
+                playsInline
+                preload="none"
+                controls={false}
+                onClick={handleVideoClick}
+                onError={() => setFailed((f) => ({ ...f, [m.id]: true }))}
+              />
             )}
             <div className="absolute inset-x-0 bottom-0 p-2 text-white text-xs bg-gradient-to-t from-black/60 via-black/20 to-transparent">
               <span className="font-semibold">{m.title}</span>
@@ -140,10 +157,11 @@ export default function ServiceShowcase({ serviceCategory = 'car-detailing' }: S
                 src={items[openIndex].src}
                 poster={items[openIndex].poster}
                 controls
-                autoPlay
                 muted
                 loop
                 playsInline
+                preload="none"
+                onClick={handleModalVideoClick}
                 onError={() => setFailed((f) => ({ ...f, [items[openIndex].id]: true }))}
               />
             )}

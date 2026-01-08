@@ -5,7 +5,7 @@ interface IconProps {
     size?: number
 }
 
-// Sparkle Icon (for premium/featured items)
+
 export const SparkleIcon: React.FC<IconProps> = ({ className = '', size = 24 }) => (
     <svg
         width={size}
@@ -30,7 +30,7 @@ export const SparkleIcon: React.FC<IconProps> = ({ className = '', size = 24 }) 
     </svg>
 )
 
-// Car Icon
+
 export const CarIcon: React.FC<IconProps> = ({ className = '', size = 24 }) => (
     <svg
         width={size}
@@ -58,7 +58,7 @@ export const CarIcon: React.FC<IconProps> = ({ className = '', size = 24 }) => (
     </svg>
 )
 
-// Home Icon
+
 export const HomeIcon: React.FC<IconProps> = ({ className = '', size = 24 }) => (
     <svg
         width={size}
@@ -85,7 +85,7 @@ export const HomeIcon: React.FC<IconProps> = ({ className = '', size = 24 }) => 
     </svg>
 )
 
-// Briefcase Icon (for cleaner/business)
+
 export const BriefcaseIcon: React.FC<IconProps> = ({ className = '', size = 24 }) => (
     <svg
         width={size}
@@ -117,7 +117,7 @@ export const BriefcaseIcon: React.FC<IconProps> = ({ className = '', size = 24 }
     </svg>
 )
 
-// Bathroom Icon
+
 export const BathroomIcon: React.FC<IconProps> = ({ className = '', size = 24 }) => (
     <svg
         width={size}
@@ -140,7 +140,7 @@ export const BathroomIcon: React.FC<IconProps> = ({ className = '', size = 24 })
     </svg>
 )
 
-// Window Icon
+
 export const WindowIcon: React.FC<IconProps> = ({ className = '', size = 24 }) => (
     <svg
         width={size}
@@ -166,7 +166,7 @@ export const WindowIcon: React.FC<IconProps> = ({ className = '', size = 24 }) =
     </svg>
 )
 
-// Bed/Room Icon
+
 export const BedIcon: React.FC<IconProps> = ({ className = '', size = 24 }) => (
     <svg
         width={size}
@@ -195,7 +195,7 @@ export const BedIcon: React.FC<IconProps> = ({ className = '', size = 24 }) => (
     </svg>
 )
 
-// Spray/Cleaning Icon
+
 export const SprayIcon: React.FC<IconProps> = ({ className = '', size = 24 }) => (
     <svg
         width={size}
@@ -229,7 +229,7 @@ export const SprayIcon: React.FC<IconProps> = ({ className = '', size = 24 }) =>
     </svg>
 )
 
-// Bug/Fumigation Icon
+
 export const BugIcon: React.FC<IconProps> = ({ className = '', size = 24 }) => (
     <svg
         width={size}
@@ -252,7 +252,7 @@ export const BugIcon: React.FC<IconProps> = ({ className = '', size = 24 }) => (
     </svg>
 )
 
-// Moving/Box Icon
+
 export const BoxIcon: React.FC<IconProps> = ({ className = '', size = 24 }) => (
     <svg
         width={size}
@@ -273,7 +273,7 @@ export const BoxIcon: React.FC<IconProps> = ({ className = '', size = 24 }) => (
     </svg>
 )
 
-// Construction/Hammer Icon
+
 export const HammerIcon: React.FC<IconProps> = ({ className = '', size = 24 }) => (
     <svg
         width={size}
@@ -301,7 +301,7 @@ export const HammerIcon: React.FC<IconProps> = ({ className = '', size = 24 }) =
     </svg>
 )
 
-// Building/Office Icon
+
 export const BuildingIcon: React.FC<IconProps> = ({ className = '', size = 24 }) => (
     <svg
         width={size}
@@ -327,7 +327,7 @@ export const BuildingIcon: React.FC<IconProps> = ({ className = '', size = 24 })
     </svg>
 )
 
-// Sedan Car Icon
+
 export const SedanIcon: React.FC<IconProps> = ({ className = '', size = 24 }) => (
     <svg
         width={size}
@@ -354,7 +354,7 @@ export const SedanIcon: React.FC<IconProps> = ({ className = '', size = 24 }) =>
     </svg>
 )
 
-// SUV Icon
+
 export const SUVIcon: React.FC<IconProps> = ({ className = '', size = 24 }) => (
     <svg
         width={size}
@@ -382,7 +382,7 @@ export const SUVIcon: React.FC<IconProps> = ({ className = '', size = 24 }) => (
     </svg>
 )
 
-// Truck Icon
+
 export const TruckIcon: React.FC<IconProps> = ({ className = '', size = 24 }) => (
     <svg
         width={size}
@@ -412,7 +412,7 @@ export const TruckIcon: React.FC<IconProps> = ({ className = '', size = 24 }) =>
     </svg>
 )
 
-// Checkmark Icon
+
 export const CheckIcon: React.FC<IconProps> = ({ className = '', size = 24 }) => (
     <svg
         width={size}
@@ -432,7 +432,7 @@ export const CheckIcon: React.FC<IconProps> = ({ className = '', size = 24 }) =>
     </svg>
 )
 
-// Star Icon (for ratings/premium)
+
 export const StarIcon: React.FC<IconProps> = ({ className = '', size = 24 }) => (
     <svg
         width={size}

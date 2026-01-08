@@ -1,7 +1,7 @@
-# Clean Cloak - Deploy to Production
+# CleanCloak - Deploy to Production
 # Run this script in PowerShell to deploy your changes
 
-Write-Host "🚀 Clean Cloak Deployment Script" -ForegroundColor Cyan
+Write-Host "🚀 CleanCloak Deployment Script" -ForegroundColor Cyan
 Write-Host "=================================" -ForegroundColor Cyan
 Write-Host ""
 

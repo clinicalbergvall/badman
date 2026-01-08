@@ -1,4 +1,4 @@
-// routes/payments.js
+
 const express = require('express');
 const router = express.Router();
 const Booking = require('../models/Booking');
@@ -8,14 +8,15 @@ const CleanerProfile = require('../models/CleanerProfile');
 const IntaSend = require('intasend-node');
 const { protect } = require('../middleware/auth');
 const { sendNotificationToBookingParticipants, sendNotificationToUser } = require('./events');
+const NotificationService = require('../src/lib/notificationService'); 
 
-// CRITICAL: Payment Initiation Endpoint
+
 router.post('/initiate', protect, async (req, res) => {
   console.log('Payment initiate route hit:', req.body);
   try {
     const { bookingId, phoneNumber } = req.body;
     
-    // Get booking
+    
     const booking = await Booking.findOne({
       _id: bookingId,
       client: req.user.id,
@@ -29,17 +30,17 @@ router.post('/initiate', protect, async (req, res) => {
       });
     }
     
-    // Initialize IntaSend (FIX: Use INTASEND_PUBLIC_KEY not PUBLISHABLE)
+    
     const intasend = new IntaSend(
-      process.env.INTASEND_PUBLIC_KEY,        // ✅ FIXED
+      process.env.INTASEND_PUBLIC_KEY,        
       process.env.INTASEND_SECRET_KEY,
       process.env.NODE_ENV !== 'production'
     );
     
-    // Format phone: 254XXXXXXXXX
+    
     const formattedPhone = phoneNumber.replace(/^0/, '254').replace(/^\+/, '');
     
-    // Trigger M-Pesa STK Push
+    
     const collection = intasend.collection();
     const response = await collection.mpesaStkPush({
       amount: booking.price,
@@ -72,7 +73,7 @@ router.post('/initiate', protect, async (req, res) => {
   }
 });
 
-// Payment Status Check Endpoint
+
 router.get('/status/:bookingId', protect, async (req, res) => {
   try {
     const booking = await Booking.findOne({
@@ -104,19 +105,19 @@ router.get('/status/:bookingId', protect, async (req, res) => {
   }
 });
 
-// Webhook from IntaSend – receives payment confirmation
+
 router.post(
   '/webhook',
-  express.raw({ type: 'application/json' }), // Important: raw body
+  express.raw({ type: 'application/json' }), 
   async (req, res) => {
     try {
       const data = JSON.parse(req.body);
 
-      // Only process successful payments
+      
       if (data.status === 'COMPLETE') {
         const bookingId = data.metadata?.booking_id;
 
-        // Safety check: make sure booking_id exists
+        
         if (!bookingId) {
           console.log('Webhook: No booking_id in metadata');
           return res.json({ success: true });
@@ -125,17 +126,17 @@ router.post(
         const booking = await Booking.findById(bookingId).populate('cleaner');
 
         if (booking && !booking.paid) {
-          // Calculate pricing split
+          
           const pricing = booking.calculatePricing();
           
-          // Update booking payment status
+          
           booking.paid = true;
           booking.paidAt = new Date();
           booking.paymentStatus = 'paid';
           booking.transactionId = data.id || data.transaction_id || '';
           await booking.save();
 
-          // Create payment transaction record
+          
           const paymentTransaction = new Transaction({
             booking: booking._id,
             client: booking.client,
@@ -158,14 +159,20 @@ router.post(
           });
           await paymentTransaction.save();
 
-          // Initiate cleaner M-Pesa payout
+          
           await processCleanerPayout(booking, pricing.cleanerPayout);
           
-          // Send notification to both parties about payment completion
+          
           sendNotificationToBookingParticipants(bookingId, 'payment_completed', {
             bookingId: bookingId,
             amount: pricing.totalPrice
           });
+          
+          
+          NotificationService.sendPaymentCompletedNotification(bookingId, booking.client);
+          if (booking.cleaner) {
+            NotificationService.sendPaymentCompletedNotification(bookingId, booking.cleaner);
+          }
 
           console.log(`Payment SUCCESS: KSh ${pricing.totalPrice} for JOB_${bookingId}`);
           console.log(`Platform fee (40%): KSh ${pricing.platformFee}`);
@@ -175,7 +182,7 @@ router.post(
         }
       }
 
-      // Always respond 200 to IntaSend
+      
       res.json({ success: true });
     } catch (error) {
       console.error('Webhook error:', error);
@@ -184,22 +191,22 @@ router.post(
   }
 );
 
-// Helper function to process cleaner M-Pesa payouts
+
 async function processCleanerPayout(booking, payoutAmount) {
   try {
-    // Get cleaner profile
+    
     const cleanerProfile = await CleanerProfile.findOne({ user: booking.cleaner });
     
     if (!cleanerProfile) {
       throw new Error('Cleaner profile not found');
     }
 
-    // Validate M-Pesa phone number
+    
     if (!cleanerProfile.mpesaPhoneNumber) {
       throw new Error('Cleaner M-Pesa phone number not configured');
     }
 
-    // Create payout transaction record
+    
     const payoutTransaction = new Transaction({
       booking: booking._id,
       client: booking.client,
@@ -218,17 +225,17 @@ async function processCleanerPayout(booking, payoutAmount) {
     
     await payoutTransaction.save();
     
-    // Update booking payout status
+    
     booking.payoutStatus = 'pending';
     await booking.save();
     
-    // Process M-Pesa payout
+    
     await processMpesaPayout(payoutTransaction, cleanerProfile.mpesaPhoneNumber, payoutAmount);
     
   } catch (error) {
     console.error('Error processing cleaner payout:', error);
     
-    // Create failed transaction record
+    
     const failedTransaction = new Transaction({
       booking: booking._id,
       client: booking.client,
@@ -253,14 +260,14 @@ async function processCleanerPayout(booking, payoutAmount) {
   }
 }
 
-// Process M-Pesa payout using IntaSend
+
 async function processMpesaPayout(transaction, phoneNumber, amount) {
   try {
-    // Initialise IntaSend client for payouts
+    
     const client = new IntaSend(
-      process.env.INTASEND_PUBLIC_KEY,  // ✅ FIXED
+      process.env.INTASEND_PUBLIC_KEY,  
       process.env.INTASEND_SECRET_KEY,
-      process.env.NODE_ENV !== 'production'   // true = sandbox
+      process.env.NODE_ENV !== 'production'   
     );
 
     const response = await client.transfer().mpesa({
@@ -270,24 +277,27 @@ async function processMpesaPayout(transaction, phoneNumber, amount) {
     });
 
     if (response.success) {
-      // Update transaction as completed
+      
       transaction.status = 'completed';
       transaction.processedAt = new Date();
       transaction.transactionId = response.id;
       transaction.metadata.intasendResponse = response;
       await transaction.save();
 
-      // Update booking payout status
+      
       const booking = await Booking.findById(transaction.booking);
       booking.payoutStatus = 'processed';
       booking.payoutProcessedAt = new Date();
       await booking.save();
       
-      // Send notification to cleaner about payout completion
+      
       sendNotificationToUser(booking.cleaner, 'payout_processed', {
         bookingId: booking._id,
         amount: transaction.amount
       });
+      
+      
+      NotificationService.sendPayoutProcessedNotification(booking._id, booking.cleaner);
 
       console.log(`M-Pesa payout SUCCESS: KSh ${amount} to ${phoneNumber}`);
     } else {
@@ -297,12 +307,12 @@ async function processMpesaPayout(transaction, phoneNumber, amount) {
   } catch (error) {
     console.error('M-Pesa payout error:', error);
     
-    // Update transaction as failed
+    
     transaction.status = 'failed';
     transaction.metadata.error = error.message;
     await transaction.save();
 
-    // Update booking payout status
+    
     const booking = await Booking.findById(transaction.booking);
     booking.payoutStatus = 'failed';
     await booking.save();
@@ -311,12 +321,12 @@ async function processMpesaPayout(transaction, phoneNumber, amount) {
   }
 }
 
-// Payment Retry Endpoint
+
 router.post('/retry/:bookingId', protect, async (req, res) => {
   try {
     const { phoneNumber } = req.body;
     
-    // Get booking
+    
     const booking = await Booking.findOne({
       _id: req.params.bookingId,
       client: req.user.id,
@@ -330,17 +340,17 @@ router.post('/retry/:bookingId', protect, async (req, res) => {
       });
     }
     
-    // Initialize IntaSend (FIX: Use INTASEND_PUBLIC_KEY not PUBLISHABLE)
+    
     const intasend = new IntaSend(
-      process.env.INTASEND_PUBLIC_KEY,        // ✅ FIXED
+      process.env.INTASEND_PUBLIC_KEY,        
       process.env.INTASEND_SECRET_KEY,
       process.env.NODE_ENV !== 'production'
     );
     
-    // Format phone: 254XXXXXXXXX
+    
     const formattedPhone = phoneNumber.replace(/^0/, '254').replace(/^\+/, '');
     
-    // Trigger M-Pesa STK Push
+    
     const collection = intasend.collection();
     const response = await collection.mpesaStkPush({
       amount: booking.price,

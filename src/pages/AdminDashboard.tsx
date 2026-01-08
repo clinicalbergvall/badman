@@ -44,7 +44,7 @@ interface BookingData {
   cleaningCategory?: string
 }
 
- 
+
 
 export default function AdminDashboard() {
   const [pending, setPending] = useState<CleanerProfile[]>([])
@@ -54,7 +54,7 @@ export default function AdminDashboard() {
   const [cityFilter, setCityFilter] = useState('all')
   const [clients, setClients] = useState<ClientData[]>([])
   const [bookings, setBookings] = useState<BookingData[]>([])
- const [bookingStatus, setBookingStatus] = useState<'all' | 'pending' | 'confirmed' | 'completed'>('all')
+  const [bookingStatus, setBookingStatus] = useState<'all' | 'pending' | 'confirmed' | 'completed'>('all')
   const [bookingPage, setBookingPage] = useState(1)
   const [bookingLimit, setBookingLimit] = useState(10)
   const [bookingTotal, setBookingTotal] = useState(0)
@@ -73,7 +73,7 @@ export default function AdminDashboard() {
       const data = await res.json()
       setPending(data.cleaners || [])
     } catch (error) {
-      logger.error('Fetch pending cleaners error:', error)
+      logger.error('Fetch pending cleaners error:', error instanceof Error ? error : undefined);
       toast.error('Failed to load pending cleaners')
     }
   }
@@ -85,7 +85,7 @@ export default function AdminDashboard() {
       const data = await res.json()
       setApproved(data.cleaners || [])
     } catch (error) {
-      logger.error('Fetch approved cleaners error:', error)
+      logger.error('Fetch approved cleaners error:', error instanceof Error ? error : undefined);
       toast.error('Failed to load approved cleaners')
     }
   }
@@ -97,7 +97,7 @@ export default function AdminDashboard() {
       const data = await res.json()
       setClients(data.clients || [])
     } catch (error) {
-      logger.error('Fetch clients error:', error)
+      logger.error('Fetch clients error:', error instanceof Error ? error : undefined);
     }
   }
 
@@ -114,7 +114,7 @@ export default function AdminDashboard() {
       setBookingTotal(data.total || (data.bookings?.length ?? 0))
       setBookingPages(data.pages || 1)
     } catch (error) {
-      logger.error('Fetch bookings error:', error)
+      logger.error('Fetch bookings error:', error instanceof Error ? error : undefined);
     }
   }
 
@@ -125,7 +125,7 @@ export default function AdminDashboard() {
       const data = await res.json()
       setStats(data.stats)
     } catch (error) {
-      logger.error('Fetch stats error:', error)
+      logger.error('Fetch stats error:', error instanceof Error ? error : undefined);
     }
   }
 
@@ -163,7 +163,7 @@ export default function AdminDashboard() {
       toast.success(`${profile.firstName} approved!`)
       refreshLists()
     } catch (error) {
-      logger.error('Approve error:', error)
+      logger.error('Approve error:', error instanceof Error ? error : undefined);
       toast.error('Failed to approve cleaner')
     }
   }
@@ -175,7 +175,7 @@ export default function AdminDashboard() {
       toast('Cleaner rejected', { icon: '⚠️' })
       refreshLists()
     } catch (error) {
-      logger.error('Reject error:', error)
+      logger.error('Reject error:', error instanceof Error ? error : undefined);
       toast.error('Failed to reject cleaner')
     }
   }
@@ -205,7 +205,7 @@ export default function AdminDashboard() {
     .filter(profile => `${profile.firstName} ${profile.lastName}`.toLowerCase().includes(search.toLowerCase()))
     .filter(profile => cityFilter === 'all' || profile.city === cityFilter)
 
-  
+
 
   const monitoringSignals = useMemo(() => {
     const missingDocs = pending.filter(
@@ -231,11 +231,11 @@ export default function AdminDashboard() {
               <div className="flex items-center gap-3">
                 <img
                   src="/logo.png"
-                  alt="Clean Cloak logo"
+                  alt="CleanCloak logo"
                   className="h-12 w-12 rounded-2xl border border-yellow-400/50 bg-black/40 p-2 shadow-[0_0_25px_rgba(250,204,21,0.35)]"
                 />
                 <div>
-                  <p className="text-xs tracking-[0.3em] uppercase text-yellow-300">Clean Cloak</p>
+                  <p className="text-xs tracking-[0.3em] uppercase text-yellow-300">CleanCloak</p>
                   <p className="text-sm font-semibold text-slate-200">Ops Control Division</p>
                 </div>
               </div>
@@ -332,7 +332,7 @@ export default function AdminDashboard() {
                 <span className="text-xs text-slate-500">{bookingTotal} total</span>
               </div>
               <div className="mt-4 flex overflow-hidden rounded-2xl border border-slate-800">
-                {['all','pending','confirmed','completed'].map((s) => (
+                {['all', 'pending', 'confirmed', 'completed'].map((s) => (
                   <button
                     key={s}
                     className={`flex-1 px-3 py-2 text-xs font-semibold tracking-wide transition ${bookingStatus === s
@@ -368,7 +368,7 @@ export default function AdminDashboard() {
                         <div>Schedule: {(b.scheduledDate || 'N/A')} {(b.scheduledTime || '')}</div>
                       </div>
                       <div className="mt-2 text-xs text-slate-400">
-                        {(b.serviceCategory === 'car-detailing' ? (b.carServicePackage || 'Car Detailing') : (b.cleaningCategory || 'Home Cleaning'))}
+                        {(b.serviceCategory === 'car-detailing' ? (b.carServicePackage || 'Car Detailing') : (b.cleaningCategory || 'Car Detailing'))}
                       </div>
                     </div>
                   ))}
@@ -399,7 +399,7 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      
+
     </div>
   )
 }
@@ -470,7 +470,7 @@ function CleanerCard({
             <p className="text-xs uppercase tracking-[0.25em] text-slate-500">Services</p>
             <p className="text-sm text-slate-200">{(profile.services || []).join(', ') || 'Not specified'}</p>
           </div>
-          
+
           <div className="mt-4 grid grid-cols-2 gap-3">
             <div>
               <p className="text-xs uppercase tracking-[0.25em] text-slate-500">Address</p>

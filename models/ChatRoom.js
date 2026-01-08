@@ -84,7 +84,7 @@ const chatRoomSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Method to add a message
+
 chatRoomSchema.methods.addMessage = async function(senderId, senderRole, message, imageUrl = '') {
   const newMessage = {
     sender: senderId,
@@ -98,21 +98,21 @@ chatRoomSchema.methods.addMessage = async function(senderId, senderRole, message
   this.lastMessage = message;
   this.lastMessageTime = new Date;
 
-  // Update unread counts
+  
   if (senderRole === 'client') {
     this.unreadCleanerCount += 1;
-    // Mark as read by client
+    
     newMessage.readByClient = true;
   } else {
     this.unreadClientCount += 1;
-    // Mark as read by cleaner
+    
     newMessage.readByCleaner = true;
   }
 
   return this.save();
 };
 
-// Method to mark messages as read
+
 chatRoomSchema.methods.markAsRead = async function(userRole) {
   const unreadMessages = this.messages.filter(msg => {
     if (userRole === 'client') {
@@ -130,7 +130,7 @@ chatRoomSchema.methods.markAsRead = async function(userRole) {
     }
   });
 
-  // Reset unread count
+  
   if (userRole === 'client') {
     this.unreadClientCount = 0;
   } else {
@@ -140,8 +140,8 @@ chatRoomSchema.methods.markAsRead = async function(userRole) {
   return this.save();
 };
 
-// Indexes for performance
-// Note: booking index is already created by unique: true constraint
+
+
 chatRoomSchema.index({ client: 1, active: 1 });
 chatRoomSchema.index({ cleaner: 1, active: 1 });
 chatRoomSchema.index({ updatedAt: -1 });

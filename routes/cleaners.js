@@ -4,12 +4,12 @@ const { protect, authorize } = require('../middleware/auth');
 const CleanerProfile = require('../models/CleanerProfile');
 const User = require('../models/User');
 
-// @route   POST /api/cleaners/profile
-// @desc    Create cleaner profile
-// @access  Private (Cleaner)
+
+
+
 router.post('/profile', protect, authorize('cleaner'), async (req, res) => {
   try {
-    // Check if profile already exists
+    
     const existingProfile = await CleanerProfile.findOne({ user: req.user.id });
     if (existingProfile) {
       return res.status(400).json({
@@ -38,9 +38,9 @@ router.post('/profile', protect, authorize('cleaner'), async (req, res) => {
   }
 });
 
-// @route   GET /api/cleaners/profile
-// @desc    Get logged in cleaner's profile
-// @access  Private (Cleaner)
+
+
+
 router.get('/profile', protect, authorize('cleaner'), async (req, res) => {
   try {
     const profile = await CleanerProfile.findOne({ user: req.user.id }).populate('user', 'name email phone');
@@ -65,9 +65,9 @@ router.get('/profile', protect, authorize('cleaner'), async (req, res) => {
   }
 });
 
-// @route   PUT /api/cleaners/profile
-// @desc    Update cleaner profile
-// @access  Private (Cleaner)
+
+
+
 router.put('/profile', protect, authorize('cleaner'), async (req, res) => {
   try {
     let profile = await CleanerProfile.findOne({ user: req.user.id });
@@ -100,9 +100,9 @@ router.put('/profile', protect, authorize('cleaner'), async (req, res) => {
   }
 });
 
-// @route   GET /api/cleaners
-// @desc    Get all available cleaners (with filters)
-// @access  Public
+
+
+
 router.get('/', async (req, res) => {
   try {
     const { service, city, minRating } = req.query;
@@ -139,9 +139,9 @@ router.get('/', async (req, res) => {
   }
 });
 
-// @route   GET /api/cleaners/:id
-// @desc    Get single cleaner profile
-// @access  Public
+
+
+
 router.get('/:id', async (req, res) => {
   try {
     const profile = await CleanerProfile.findById(req.params.id)

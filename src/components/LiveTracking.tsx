@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Card } from './ui'
+import { Card, LocationMap } from './ui'
 import type { TrackingData, Location } from '@/lib/types'
 import { loadUserSession, getStoredAuthToken } from '@/lib/storage'
 import { api } from '@/lib/api'
@@ -14,7 +14,7 @@ export default function LiveTracking({ bookingId, clientLocation }: LiveTracking
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    // Fetch real tracking data from API
+
     const fetchTrackingData = async () => {
       try {
         const response = await api.get(`/tracking/${bookingId}`)
@@ -25,11 +25,11 @@ export default function LiveTracking({ bookingId, clientLocation }: LiveTracking
             setTracking(data.tracking)
           }
         } else {
-          // If no tracking data exists, show not available
+
           setTracking(null)
         }
       } catch (error) {
-        // On error, set tracking to null
+
         setTracking(null)
       } finally {
         setIsLoading(false)
@@ -38,7 +38,7 @@ export default function LiveTracking({ bookingId, clientLocation }: LiveTracking
 
     fetchTrackingData()
 
-    // Simulate location updates every 10 seconds
+
     const interval = setInterval(() => {
       setTracking(prev => prev ? {
         ...prev,
@@ -104,7 +104,7 @@ export default function LiveTracking({ bookingId, clientLocation }: LiveTracking
 
   return (
     <div className="space-y-4">
-      {/* Status Card */}
+      { }
       <Card className="p-6">
         <div className="flex items-start gap-4">
           <div className="text-4xl">{config.icon}</div>
@@ -114,16 +114,16 @@ export default function LiveTracking({ bookingId, clientLocation }: LiveTracking
               {config.label}
             </div>
             <p className="text-gray-600 text-sm">{config.description}</p>
-            
+
             {tracking.estimatedArrival && tracking.status === 'on-way' && (
               <div className="mt-3 flex items-center gap-2 text-sm">
                 <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <span className="text-gray-700 font-medium">
-                  ETA: {new Date(tracking.estimatedArrival).toLocaleTimeString('en-US', { 
-                    hour: '2-digit', 
-                    minute: '2-digit' 
+                  ETA: {new Date(tracking.estimatedArrival).toLocaleTimeString('en-US', {
+                    hour: '2-digit',
+                    minute: '2-digit'
                   })}
                 </span>
               </div>
@@ -132,63 +132,19 @@ export default function LiveTracking({ bookingId, clientLocation }: LiveTracking
         </div>
       </Card>
 
-      {/* Map Placeholder */}
-      <Card className="p-4">
-        <div className="aspect-video bg-gray-100 rounded-lg flex items-center justify-center relative overflow-hidden">
-          {/* Simple map visualization */}
-          <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-green-50">
-            <div className="absolute inset-0 opacity-10">
-              <svg className="w-full h-full" viewBox="0 0 100 100">
-                <line x1="0" y1="50" x2="100" y2="50" stroke="gray" strokeWidth="0.5" />
-                <line x1="50" y1="0" x2="50" y2="100" stroke="gray" strokeWidth="0.5" />
-                <line x1="0" y1="25" x2="100" y2="25" stroke="gray" strokeWidth="0.3" />
-                <line x1="0" y1="75" x2="100" y2="75" stroke="gray" strokeWidth="0.3" />
-                <line x1="25" y1="0" x2="25" y2="100" stroke="gray" strokeWidth="0.3" />
-                <line x1="75" y1="0" x2="75" y2="100" stroke="gray" strokeWidth="0.3" />
-              </svg>
-            </div>
-          </div>
-          
-          {/* Client Location Marker */}
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-            <div className="relative">
-              <div className="w-8 h-8 bg-red-500 rounded-full border-4 border-white shadow-lg flex items-center justify-center">
-                <span className="text-white text-xs">📍</span>
-              </div>
-              <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
-                <span className="text-xs font-medium bg-white px-2 py-1 rounded shadow">Your Location</span>
-              </div>
-            </div>
-          </div>
+      <Card className="p-4 overflow-hidden">
+        <LocationMap
+          location={clientLocation}
+          title="Work Site Location"
+          height="300px"
+        />
 
-          {/* Cleaner Location Marker (if on way) */}
-          {tracking.status === 'on-way' && (
-            <div className="absolute top-1/4 left-1/4">
-              <div className="relative animate-bounce">
-                <div className="w-8 h-8 bg-yellow-500 rounded-full border-4 border-white shadow-lg flex items-center justify-center">
-                  <span className="text-white text-xs">🚗</span>
-                </div>
-                <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
-                  <span className="text-xs font-medium bg-white px-2 py-1 rounded shadow">Cleaner</span>
-                </div>
-              </div>
-            </div>
-          )}
-
-          <div className="absolute bottom-4 right-4 bg-white px-3 py-2 rounded-lg shadow text-xs text-gray-600">
-            <div className="flex items-center gap-1">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <span>Live Tracking</span>
-            </div>
-          </div>
-        </div>
-        
         <p className="text-xs text-gray-500 mt-2 text-center">
           Last updated: {new Date(tracking.lastUpdated).toLocaleTimeString()}
         </p>
       </Card>
 
-      {/* Quick Actions */}
+      { }
       <div className="grid grid-cols-2 gap-3">
         <button className="flex items-center justify-center gap-2 px-4 py-3 bg-white border-2 border-gray-200 rounded-lg hover:border-yellow-400 transition-colors">
           <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -196,7 +152,7 @@ export default function LiveTracking({ bookingId, clientLocation }: LiveTracking
           </svg>
           <span className="text-sm font-medium">Call</span>
         </button>
-        
+
         <button className="flex items-center justify-center gap-2 px-4 py-3 bg-white border-2 border-gray-200 rounded-lg hover:border-yellow-400 transition-colors">
           <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />

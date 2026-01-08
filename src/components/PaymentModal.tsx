@@ -28,7 +28,7 @@ export function PaymentModal({
   const [phoneNumber, setPhoneNumber] = useState("");
 
   useEffect(() => {
-    // Load phone number from booking or user session
+    
     const loadPhoneNumber = async () => {
       try {
         console.log('Loading phone number for booking:', bookingId);
@@ -38,7 +38,7 @@ export function PaymentModal({
         if (response.ok) {
           const data = await response.json();
           console.log('Booking data:', data);
-          // Check both booking.client.phone and booking.client?.phone
+          
           if (data.booking?.client?.phone) {
             console.log('Setting phone from client.phone:', data.booking.client.phone);
             setPhoneNumber(data.booking.client.phone);
@@ -64,7 +64,7 @@ export function PaymentModal({
   if (!isOpen) return null;
 
   const handlePayment = async () => {
-    // Validate phone number
+    
     if (!phoneNumber || phoneNumber.trim().length === 0) {
       toast.error("Please enter your M-Pesa phone number");
       return;
@@ -151,7 +151,7 @@ export function PaymentModal({
   };
 
   const retryPayment = async () => {
-    // Validate phone number
+    
     if (!phoneNumber || phoneNumber.trim().length === 0) {
       toast.error("Please enter your M-Pesa phone number");
       return;
@@ -224,7 +224,7 @@ export function PaymentModal({
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black bg-opacity-50 animate-fadeIn">
       <Card className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-6 animate-up">
-        {/* Header */}
+        {}
         <div className="text-center mb-6">
           <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center mx-auto mb-3">
             <svg
@@ -247,7 +247,7 @@ export function PaymentModal({
           <p className="text-sm text-gray-600">Pay via M-Pesa</p>
         </div>
 
-        {/* Amount Display */}
+        {}
         <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-xl p-4 mb-6">
           <p className="text-sm text-gray-600 text-center mb-1">
             Amount to Pay
@@ -257,7 +257,7 @@ export function PaymentModal({
           </p>
         </div>
 
-        {/* Phone Number Display */}
+        {}
         <div className="mb-6">
           <label
             htmlFor="phoneNumber"
@@ -283,7 +283,7 @@ export function PaymentModal({
           )}
         </div>
 
-        {/* Payment Info */}
+        {}
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
           <div className="flex items-start gap-2">
             <svg
@@ -311,7 +311,7 @@ export function PaymentModal({
           </div>
         </div>
 
-        {/* Action Buttons */}
+        {}
         <div className="flex gap-3">
           <Button
             variant="outline"
@@ -348,7 +348,7 @@ export function PaymentModal({
           )}
         </div>
 
-        {/* Security Note */}
+        {}
         <p className="text-xs text-center text-gray-500 mt-4">
           🔒 Secure payment powered by IntaSend
         </p>

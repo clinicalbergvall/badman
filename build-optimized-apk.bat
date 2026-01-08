@@ -1,6 +1,6 @@
 @echo off
 REM ================================================================
-REM Clean Cloak - Optimized APK Build Script (Windows)
+REM CleanCloak - Optimized APK Build Script (Windows)
 REM ================================================================
 REM This script builds a production-optimized release APK
 REM with all performance enhancements enabled
@@ -17,7 +17,7 @@ set "NC=[0m"
 
 echo.
 echo %BLUE%========================================%NC%
-echo %BLUE%Clean Cloak - Optimized Build Script%NC%
+echo %BLUE%CleanCloak - Optimized Build Script%NC%
 echo %BLUE%========================================%NC%
 echo.
 

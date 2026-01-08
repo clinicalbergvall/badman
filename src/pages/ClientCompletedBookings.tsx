@@ -71,7 +71,7 @@ export default function ClientCompletedBookings() {
 
       const data = await response.json();
 
-      // Filter for completed bookings only
+      
       const completedBookings =
         data.bookings?.filter(
           (booking: CompletedBooking) => booking.status === "completed",
@@ -79,7 +79,7 @@ export default function ClientCompletedBookings() {
 
       setBookings(completedBookings);
     } catch (error) {
-      logger.error("Fetch completed bookings error:", error);
+      logger.error("Fetch completed bookings error:", error instanceof Error ? error : undefined);
       toast.error("Failed to load bookings");
     } finally {
       setLoading(false);
@@ -106,27 +106,27 @@ export default function ClientCompletedBookings() {
 
       toast.success("Rating submitted successfully! ⭐");
 
-      // Refresh bookings
+      
       await fetchCompletedBookings();
 
       setShowRatingModal(false);
       setSelectedBooking(null);
     } catch (error) {
-      logger.error("Submit rating error:", error);
+      logger.error("Submit rating error:", error instanceof Error ? error : undefined);
       toast.error("Failed to submit rating");
       throw error;
     }
   };
 
   const handlePayNow = async (booking: CompletedBooking) => {
-    // Check if rated
+    
     if (!booking.rating) {
       toast.error("Please rate the service before making payment");
       handleRateService(booking);
       return;
     }
 
-    // Check if already paid
+    
     if (booking.paid) {
       toast.error("This booking has already been paid");
       return;
@@ -141,7 +141,7 @@ export default function ClientCompletedBookings() {
     setShowPaymentModal(false);
     setPaymentBooking(null);
 
-    // Refresh bookings
+    
     await fetchCompletedBookings();
   };
 
@@ -175,7 +175,7 @@ export default function ClientCompletedBookings() {
     if (booking.serviceCategory === "car-detailing") {
       return `${booking.carServicePackage || "Car Detailing"} - ${booking.vehicleType || "Vehicle"}`;
     }
-    return `${booking.cleaningCategory || "Home Cleaning"}`;
+    return `${booking.cleaningCategory || "Car Detailing"}`;
   };
 
   if (loading) {
@@ -195,7 +195,7 @@ export default function ClientCompletedBookings() {
     );
   }
 
-  // Check if user is not logged in
+  
   const session = loadUserSession();
   if (!session) {
     return (
@@ -253,7 +253,7 @@ export default function ClientCompletedBookings() {
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-6">
       <div className="max-w-4xl mx-auto space-y-6">
-        {/* Header */}
+        {}
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
@@ -285,7 +285,7 @@ export default function ClientCompletedBookings() {
           </Button>
         </div>
 
-        {/* Unpaid Bookings Section */}
+        {}
         {unpaidBookings.length > 0 && (
           <div className="space-y-4">
             <div className="flex items-center gap-2">
@@ -359,11 +359,10 @@ export default function ClientCompletedBookings() {
                             {[1, 2, 3, 4, 5].map((star) => (
                               <svg
                                 key={star}
-                                className={`w-4 h-4 ${
-                                  star <= booking.rating!
+                                className={`w-4 h-4 ${star <= booking.rating!
                                     ? "text-yellow-400 fill-current"
                                     : "text-gray-300"
-                                }`}
+                                  }`}
                                 fill={
                                   star <= booking.rating!
                                     ? "currentColor"
@@ -402,7 +401,7 @@ export default function ClientCompletedBookings() {
           </div>
         )}
 
-        {/* Paid Bookings Section */}
+        {}
         {paidBookings.length > 0 && (
           <div className="space-y-4">
             <div className="flex items-center gap-2">
@@ -434,14 +433,14 @@ export default function ClientCompletedBookings() {
                         <p className="text-sm font-medium text-gray-900">
                           {booking.paidAt
                             ? new Date(booking.paidAt).toLocaleDateString(
-                                "en-US",
-                                {
-                                  month: "short",
-                                  day: "numeric",
-                                  hour: "2-digit",
-                                  minute: "2-digit",
-                                },
-                              )
+                              "en-US",
+                              {
+                                month: "short",
+                                day: "numeric",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              },
+                            )
                             : "N/A"}
                         </p>
                       </div>
@@ -459,11 +458,10 @@ export default function ClientCompletedBookings() {
                           {[1, 2, 3, 4, 5].map((star) => (
                             <svg
                               key={star}
-                              className={`w-4 h-4 ${
-                                star <= booking.rating!
+                              className={`w-4 h-4 ${star <= booking.rating!
                                   ? "text-yellow-400 fill-current"
                                   : "text-gray-300"
-                              }`}
+                                }`}
                               fill={
                                 star <= booking.rating!
                                   ? "currentColor"
@@ -495,7 +493,7 @@ export default function ClientCompletedBookings() {
           </div>
         )}
 
-        {/* Empty State */}
+        {}
         {bookings.length === 0 && (
           <Card className="p-12 text-center">
             <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -530,7 +528,7 @@ export default function ClientCompletedBookings() {
         )}
       </div>
 
-      {/* Rating Modal */}
+      {}
       {selectedBooking && (
         <RatingModal
           isOpen={showRatingModal}
@@ -545,7 +543,7 @@ export default function ClientCompletedBookings() {
         />
       )}
 
-      {/* Payment Modal */}
+      {}
       {paymentBooking && (
         <PaymentModal
           isOpen={showPaymentModal}

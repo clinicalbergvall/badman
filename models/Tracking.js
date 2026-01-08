@@ -48,7 +48,7 @@ const trackingSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Indexes
+
 trackingSchema.index({ booking: 1 });
 trackingSchema.index({ cleaner: 1, status: 1 });
 

@@ -1,95 +1,119 @@
 import { API_BASE_URL } from './config';
 import { logger } from './logger';
-// Cookies are the primary auth mechanism; avoid bearer tokens
 
-// Helper to get auth headers
+
+
 const getAuthHeaders = (): HeadersInit => {
   return {
     'Content-Type': 'application/json',
   };
 };
 
-// Helper to add CORS headers to requests
+
 const addCorsHeaders = (headers: HeadersInit = {}): HeadersInit => {
-  // CORS headers should be set by the server, not the client
-  // Returning headers as-is to avoid CORS issues
+  
+  
   return headers;
 };
 
-// Simple fetch API wrapper
+
 export const api = {
   get: async (endpoint: string, options: RequestInit = {}) => {
     const url = `${API_BASE_URL}${endpoint}`;
     console.log(`API GET Request to: ${url}`);
-    const response = await fetch(url, {
-      ...options,
-      headers: addCorsHeaders({
-        ...getAuthHeaders(),
-        ...options.headers,
-      }),
-      credentials: 'include', // Send cookies
-    });
-    console.log(`API GET Response from: ${url}`, response.status, response.statusText);
-    if (response.status === 401) {
-      // Token expired or invalid
-      localStorage.removeItem('clean-cloak-user-session');
-      // Optional: Redirect to login or show modal
+    try {
+      const response = await fetch(url, {
+        ...options,
+        headers: addCorsHeaders({
+          ...getAuthHeaders(),
+          ...options.headers,
+        }),
+        credentials: 'include', 
+      });
+      console.log(`API GET Response from: ${url}`, response.status, response.statusText);
+      if (response.status === 401) {
+        
+        localStorage.removeItem('clean-cloak-user-session');
+        
+      }
+      return response;
+    } catch (error) {
+      console.error(`API GET Request failed to: ${url}`, error);
+      
+      throw new Error(`Failed to fetch data: ${error instanceof Error ? error.message : 'Network error'}`);
     }
-    return response;
   },
   post: async (endpoint: string, data: Record<string, any>, options: RequestInit = {}) => {
     const url = `${API_BASE_URL}${endpoint}`;
     console.log(`API POST Request to: ${url}`, data);
-    const response = await fetch(url, {
-      ...options,
-      method: 'POST',
-      headers: addCorsHeaders({
-        ...getAuthHeaders(),
-        ...options.headers,
-      }),
-      credentials: 'include', // Send cookies
-      body: JSON.stringify(data),
-    });
-    console.log(`API POST Response from: ${url}`, response.status, response.statusText);
-    if (response.status === 401) {
-      localStorage.removeItem('clean-cloak-user-session');
+    try {
+      const response = await fetch(url, {
+        ...options,
+        method: 'POST',
+        headers: addCorsHeaders({
+          ...getAuthHeaders(),
+          ...options.headers,
+        }),
+        credentials: 'include', 
+        body: JSON.stringify(data),
+      });
+      console.log(`API POST Response from: ${url}`, response.status, response.statusText);
+      if (response.status === 401) {
+        localStorage.removeItem('clean-cloak-user-session');
+      }
+      return response;
+    } catch (error) {
+      console.error(`API POST Request failed to: ${url}`, error);
+      
+      throw new Error(`Failed to submit data: ${error instanceof Error ? error.message : 'Network error'}`);
     }
-    return response;
   },
   put: async (endpoint: string, data: any, options: RequestInit = {}) => {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      ...options,
-      method: 'PUT',
-      headers: addCorsHeaders({
-        ...getAuthHeaders(),
-        ...options.headers,
-      }),
-      credentials: 'include', // Send cookies
-      body: JSON.stringify(data),
-    });
-    if (response.status === 401) {
-      localStorage.removeItem('clean-cloak-user-session');
+    try {
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        ...options,
+        method: 'PUT',
+        headers: addCorsHeaders({
+          ...getAuthHeaders(),
+          ...options.headers,
+        }),
+        credentials: 'include', 
+        body: JSON.stringify(data),
+      });
+      if (response.status === 401) {
+        localStorage.removeItem('clean-cloak-user-session');
+      }
+      return response;
+    } catch (error) {
+      console.error(`API PUT Request failed to: ${API_BASE_URL}${endpoint}`, error);
+      
+      throw new Error(`Failed to update data: ${error instanceof Error ? error.message : 'Network error'}`);
     }
-    return response;
   },
   delete: async (endpoint: string, options: RequestInit = {}) => {
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-      ...options,
-      method: 'DELETE',
-      headers: addCorsHeaders({
-        ...getAuthHeaders(),
-        ...options.headers,
-      }),
-      credentials: 'include', // Send cookies
-    });
-    if (response.status === 401) {
-      localStorage.removeItem('clean-cloak-user-session');
+    try {
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+        ...options,
+        method: 'DELETE',
+        headers: addCorsHeaders({
+          ...getAuthHeaders(),
+          ...options.headers,
+        }),
+        credentials: 'include', 
+      });
+      if (response.status === 401) {
+        localStorage.removeItem('clean-cloak-user-session');
+      }
+      return response;
+    } catch (error) {
+      console.error(`API DELETE Request failed to: ${API_BASE_URL}${endpoint}`, error);
+      
+      throw new Error(`Failed to delete data: ${error instanceof Error ? error.message : 'Network error'}`);
     }
-    return response;
   },
 };
 
-// Authentication APIs
+
 export const authAPI = {
   login: async (identifier: string, password: string): Promise<any> => {
     try {
@@ -97,13 +121,13 @@ export const authAPI = {
       const data = await response.json();
 
       if (data.success) {
-        // Token is now in httpOnly cookie
+        
         localStorage.setItem('clean-cloak-user-session', JSON.stringify(data.user));
       }
 
       return data;
     } catch (error) {
-      logger.error('API Error /auth/login', error);
+      logger.error('API Error /auth/login', error instanceof Error ? error : undefined);
       throw error;
     }
   },
@@ -114,13 +138,13 @@ export const authAPI = {
       const data = await response.json();
 
       if (data.success) {
-        // Token is now in httpOnly cookie
+        
         localStorage.setItem('clean-cloak-user-session', JSON.stringify(data.user));
       }
 
       return data;
     } catch (error) {
-      logger.error('API Error /auth/register', error);
+      logger.error('API Error /auth/register', error instanceof Error ? error : undefined);
       throw error;
     }
   },
@@ -131,7 +155,7 @@ export const authAPI = {
       const data = await response.json();
       return data;
     } catch (error) {
-      logger.error('API Error /auth/profile', error);
+      logger.error('API Error /auth/profile', error instanceof Error ? error : undefined);
       throw error;
     }
   },
@@ -142,12 +166,12 @@ export const authAPI = {
       localStorage.removeItem('clean-cloak-user-session');
       logger.info('User logged out');
     } catch (error) {
-      logger.error('Logout error', error);
+      logger.error('Logout error', error instanceof Error ? error : undefined);
     }
   }
 };
 
-// Admin APIs
+
 export const adminAPI = {
   getPendingCleaners: async () => {
     const response = await api.get('/verification/pending-profiles');

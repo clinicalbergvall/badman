@@ -1,12 +1,12 @@
 export function formatPhone(phone: string): string {
-  // Format +2547XXXXXXXX to +254 7XX XXX XXX
+  
   if (phone.length === 13 && phone.startsWith('+254')) {
     return `${phone.slice(0, 4)} ${phone.slice(4, 7)} ${phone.slice(7, 10)} ${phone.slice(10)}`
   }
   return phone
 }
 
-// Alias for compatibility
+
 export const formatPhoneNumber = formatPhone
 
 export function formatCurrency(amount: number): string {

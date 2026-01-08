@@ -3,24 +3,24 @@ const router = express.Router();
 const { protect, authorize } = require('../middleware/auth');
 const CleanerProfile = require('../models/CleanerProfile');
 
-// GET verification status
+
 router.get('/status', (req, res) => {
   res.json({ message: 'Verification status OK' });
 });
 
-// POST verification request
+
 router.post('/verify', (req, res) => {
   res.json({ message: 'Verification request received' });
 });
 
-// POST resend verification
+
 router.post('/resend', (req, res) => {
   res.json({ message: 'Verification code resent' });
 });
 
-// @route   GET /api/verification/pending-profiles
-// @desc    Get all pending cleaner profiles for verification
-// @access  Private (Admin)
+
+
+
 router.get('/pending-profiles', protect, authorize('admin'), async (req, res) => {
   try {
     const { city, service, page = 1, limit = 10 } = req.query;
@@ -56,9 +56,9 @@ router.get('/pending-profiles', protect, authorize('admin'), async (req, res) =>
   }
 });
 
-// @route   PUT /api/verification/approve-profile/:id
-// @desc    Approve a pending cleaner profile
-// @access  Private (Admin)
+
+
+
 router.put('/approve-profile/:id', protect, authorize('admin'), async (req, res) => {
   try {
     const { adminNotes } = req.body;
@@ -78,13 +78,13 @@ router.put('/approve-profile/:id', protect, authorize('admin'), async (req, res)
       });
     }
 
-    // Update approval status
+    
     profile.approvalStatus = 'approved';
     profile.approvedAt = new Date();
     profile.approvalNotes = adminNotes || '';
     profile.verified = true;
 
-    // Add to approval history
+    
     profile.approvalHistory.push({
       status: 'approved',
       notes: adminNotes || 'Approved by admin',
@@ -109,9 +109,9 @@ router.put('/approve-profile/:id', protect, authorize('admin'), async (req, res)
   }
 });
 
-// @route   PUT /api/verification/reject-profile/:id
-// @desc    Reject a pending cleaner profile
-// @access  Private (Admin)
+
+
+
 router.put('/reject-profile/:id', protect, authorize('admin'), async (req, res) => {
   try {
     const { rejectionReason, adminNotes } = req.body;
@@ -131,12 +131,12 @@ router.put('/reject-profile/:id', protect, authorize('admin'), async (req, res) 
       });
     }
 
-    // Update approval status
+    
     profile.approvalStatus = 'rejected';
     profile.rejectedAt = new Date();
     profile.approvalNotes = adminNotes || rejectionReason || '';
 
-    // Add to approval history
+    
     profile.approvalHistory.push({
       status: 'rejected',
       notes: adminNotes || rejectionReason || 'Rejected by admin',

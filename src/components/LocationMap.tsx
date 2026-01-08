@@ -1,67 +1,166 @@
 import { Card } from './ui'
+import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet'
+import 'leaflet/dist/leaflet.css'
+import L from 'leaflet'
+import icon from 'leaflet/dist/images/marker-icon.png'
+import iconShadow from 'leaflet/dist/images/marker-shadow.png'
+
+// Fix for default marker icon in React Leaflet
+const DefaultIcon = L.icon({
+  iconUrl: icon,
+  shadowUrl: iconShadow,
+  iconSize: [25, 41],
+  iconAnchor: [12, 41]
+})
+L.Marker.prototype.options.icon = DefaultIcon
+
+// Component to recenter map when coordinates change
+function RecenterMap({ lat, lng }: { lat: number, lng: number }) {
+  const map = useMap()
+  map.setView([lat, lng])
+  return null
+}
+
+function MapClickHandler({ onClick }: { onClick: (lat: number, lng: number) => void }) {
+  useMapEvents({
+    click(e) {
+      onClick(e.latlng.lat, e.latlng.lng);
+    }
+  })
+  return null;
+}
 
 interface LocationMapProps {
   location: {
     address?: string
     manualAddress?: string
-    coordinates?: [number, number] // [longitude, latitude]
+    coordinates?: [number, number]
   }
   title?: string
+  height?: string
+  draggable?: boolean
+  onLocationChange?: (lat: number, lng: number) => void
 }
 
-export default function LocationMap({ location, title = "Client Location" }: LocationMapProps) {
-  // Get the best available address
+export default function LocationMap({
+  location,
+  title = "Client Location",
+  height = "300px",
+  draggable = false,
+  onLocationChange
+}: LocationMapProps) {
+
   const displayAddress = location.manualAddress || location.address || "Unknown location"
-  
-  // For now, we'll create a simple visual representation of a map
-  // In a real implementation, this would integrate with Google Maps or Leaflet
-  
+
+  // Default to Nairobi center if no coordinates (approximate)
+  const defaultCenter: [number, number] = [-1.2921, 36.8219]
+
+  // Validate coordinates before using them
+  const position: [number, number] = location.coordinates && 
+    Array.isArray(location.coordinates) && 
+    location.coordinates.length === 2 &&
+    typeof location.coordinates[0] === 'number' &&
+    typeof location.coordinates[1] === 'number' &&
+    !isNaN(location.coordinates[0]) &&
+    !isNaN(location.coordinates[1]) &&
+    isFinite(location.coordinates[0]) &&
+    isFinite(location.coordinates[1])
+    ? [location.coordinates[0], location.coordinates[1]]
+    : defaultCenter
+
+  const eventHandlers = {
+    dragend(e: any) {
+      if (onLocationChange) {
+        const marker = e.target
+        const position = marker.getLatLng()
+        onLocationChange(position.lat, position.lng)
+      }
+    },
+  }
+
+  // Check if coordinates are valid before rendering
+  const hasValidCoordinates = location.coordinates &&
+    Array.isArray(location.coordinates) &&
+    location.coordinates.length === 2 &&
+    typeof location.coordinates[0] === 'number' &&
+    typeof location.coordinates[1] === 'number' &&
+    !isNaN(location.coordinates[0]) &&
+    !isNaN(location.coordinates[1]) &&
+    isFinite(location.coordinates[0]) &&
+    isFinite(location.coordinates[1]);
+
+  if (!hasValidCoordinates && !location.manualAddress && !location.address) {
+    return (
+      <Card className="p-4">
+        <div className="mb-3">
+          <h3 className="font-semibold text-gray-900">{title}</h3>
+          <p className="text-sm text-gray-600 mt-1">No location data available</p>
+        </div>
+        <div className="rounded-lg overflow-hidden bg-gray-100 z-0 relative" style={{ height: height }}>
+          <div className="w-full h-full flex items-center justify-center bg-gray-50 text-gray-500">
+            <p>No location to display</p>
+          </div>
+        </div>
+      </Card>
+    );
+  }
+
   return (
     <Card className="p-4">
       <div className="mb-3">
         <h3 className="font-semibold text-gray-900">{title}</h3>
         <p className="text-sm text-gray-600 mt-1">{displayAddress}</p>
+        {draggable && (
+          <p className="text-xs text-blue-600 font-medium mt-1 animate-pulse">
+            💡 Tip: Drag the marker to pinpoint your exact location
+          </p>
+        )}
       </div>
-      
-      {/* Simple map visualization */}
-      <div className="aspect-video bg-gray-100 rounded-lg flex items-center justify-center relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-blue-50 to-green-50">
-          <div className="absolute inset-0 opacity-10">
-            <svg className="w-full h-full" viewBox="0 0 100 100">
-              <line x1="0" y1="50" x2="100" y2="50" stroke="gray" strokeWidth="0.5" />
-              <line x1="50" y1="0" x2="50" y2="100" stroke="gray" strokeWidth="0.5" />
-              <line x1="0" y1="25" x2="100" y2="25" stroke="gray" strokeWidth="0.3" />
-              <line x1="0" y1="75" x2="100" y2="75" stroke="gray" strokeWidth="0.3" />
-              <line x1="25" y1="0" x2="25" y2="100" stroke="gray" strokeWidth="0.3" />
-              <line x1="75" y1="0" x2="75" y2="100" stroke="gray" strokeWidth="0.3" />
-            </svg>
-          </div>
-        </div>
-        
-        {/* Location Marker */}
-        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
-          <div className="relative">
-            <div className="w-8 h-8 bg-red-500 rounded-full border-4 border-white shadow-lg flex items-center justify-center">
-              <span className="text-white text-xs">📍</span>
-            </div>
-            <div className="absolute -bottom-6 left-1/2 transform -translate-x-1/2 whitespace-nowrap">
-              <span className="text-xs font-medium bg-white px-2 py-1 rounded shadow">Client</span>
-            </div>
-          </div>
-        </div>
-        
-        <div className="absolute bottom-4 right-4 bg-white px-3 py-2 rounded-lg shadow text-xs text-gray-600">
-          <div className="flex items-center gap-1">
-            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-            <span>Location Map</span>
-          </div>
-        </div>
+
+      <div
+        className="rounded-lg overflow-hidden bg-gray-100 z-0 relative"
+        style={{ height: height }}
+      >
+        <MapContainer
+          center={position}
+          zoom={15}
+          scrollWheelZoom={false}
+          style={{ height: '100%', width: '100%' }}
+        >
+          <TileLayer
+            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          />
+          <Marker
+            position={position}
+            draggable={draggable}
+            {...(draggable && onLocationChange ? { eventHandlers } : {})}
+          >
+            <Popup>
+              {displayAddress}
+            </Popup>
+          </Marker>
+          {(draggable && onLocationChange) ? (
+            <MapClickHandler onClick={onLocationChange} />
+          ) : null}
+          <RecenterMap lat={position[0]} lng={position[1]} />
+        </MapContainer>
       </div>
-      
-      {location.coordinates && (
-        <p className="text-xs text-gray-500 mt-2">
-          Coordinates: {location.coordinates[1]}, {location.coordinates[0]}
-        </p>
+
+      {hasValidCoordinates && (
+        <div className="flex items-center justify-between mt-2">
+          <p className="text-xs text-gray-500">
+            {location.coordinates![0].toFixed(6)}, {location.coordinates![1].toFixed(6)}
+          </p>
+          <a
+            href={`https://www.google.com/maps/dir/?api=1&destination=${location.coordinates![0]},${location.coordinates![1]}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-blue-600 font-bold hover:underline flex items-center gap-1"
+          >
+            <span>🧭</span> Get Directions
+          </a>
+        </div>
       )}
     </Card>
   )

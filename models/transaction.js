@@ -67,7 +67,7 @@ const transactionSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// ✅ Fix: prevent OverwriteModelError by reusing existing model if already compiled
+
 module.exports = mongoose.models.Transaction || mongoose.model('Transaction', transactionSchema);
 
 

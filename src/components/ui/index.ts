@@ -6,5 +6,5 @@ export { Badge } from './Badge'
 export { ProgressBar } from './ProgressBar'
 export * from './Icons'
 
-// Export the LocationMap component
+
 export { default as LocationMap } from '../LocationMap'

@@ -20,22 +20,12 @@ export default function CleanerLayout({ children, currentPage = 'jobs' }: Cleane
 
     return (
         <div className="min-h-screen bg-gray-50">
-            {/* Top Navigation Bar */}
+            {}
             <header className="bg-white border-b border-gray-200 sticky top-0 z-40 shadow-sm">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex items-center justify-between h-16">
-                        {/* Logo & Brand */}
-                        <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-yellow-400 rounded-xl flex items-center justify-center shadow-md">
-                                <span className="text-xl"></span>
-                            </div>
-                            <div className="hidden sm:block">
-                                <h1 className="text-lg font-bold text-gray-900">Clean Cloak</h1>
-                                <p className="text-xs text-gray-500">Cleaner Portal</p>
-                            </div>
-                        </div>
 
-                        {/* Desktop Navigation */}
+                        {}
                         <nav className="hidden md:flex items-center gap-1">
                             {navItems.map((item) => (
                                 <a
@@ -52,7 +42,7 @@ export default function CleanerLayout({ children, currentPage = 'jobs' }: Cleane
                             ))}
                         </nav>
 
-                        {/* User Profile */}
+                        {}
                         <div className="flex items-center gap-3">
                             <div className="hidden sm:block text-right">
                                 <p className="text-sm font-semibold text-gray-900">
@@ -64,7 +54,7 @@ export default function CleanerLayout({ children, currentPage = 'jobs' }: Cleane
                                 {(userSession?.name || 'C')[0].toUpperCase()}
                             </div>
 
-                            {/* Mobile Menu Button */}
+                            {}
                             <button
                                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                                 className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
@@ -80,7 +70,7 @@ export default function CleanerLayout({ children, currentPage = 'jobs' }: Cleane
                         </div>
                     </div>
 
-                    {/* Mobile Navigation */}
+                    {}
                     {isMobileMenuOpen && (
                         <div className="md:hidden py-4 border-t border-gray-200 animate-up">
                             <nav className="flex flex-col gap-2">
@@ -104,12 +94,12 @@ export default function CleanerLayout({ children, currentPage = 'jobs' }: Cleane
                 </div>
             </header>
 
-            {/* Main Content */}
+            {}
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 {children}
             </main>
 
-            {/* Bottom Navigation (Mobile) */}
+            {}
             <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-40">
                 <div className="grid grid-cols-4 gap-1 px-2 py-2">
                     {navItems.map((item) => (
@@ -128,7 +118,7 @@ export default function CleanerLayout({ children, currentPage = 'jobs' }: Cleane
                 </div>
             </nav>
 
-            {/* Bottom padding for mobile nav */}
+            {}
             <div className="md:hidden h-20"></div>
         </div>
     )

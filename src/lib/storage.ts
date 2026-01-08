@@ -10,20 +10,20 @@ import type {
 import { API_BASE_URL } from "./config";
 import { logger } from "./logger";
 
-const BOOKING_KEY = "clean-cloak-booking";
-const HISTORY_KEY = "clean-cloak-history";
-const CLEANER_PROFILE_KEY = "clean-cloak-cleaner-profile";
-const CLEANER_PENDING_KEY = "clean-cloak-pending-cleaners";
-const CLEANER_APPROVED_KEY = "clean-cloak-approved-cleaners";
-const CLEANER_JOB_OPPORTUNITIES_KEY = "clean-cloak-job-opportunities";
-const CLEANER_CHECKLIST_KEY = "clean-cloak-job-checklist";
-const CLEANER_BEFORE_AFTER_KEY = "clean-cloak-before-after-gallery";
-const USER_SESSION_KEY = "clean-cloak-user-session";
+const BOOKING_KEY = "cleancloak-booking";
+const HISTORY_KEY = "cleancloak-history";
+const CLEANER_PROFILE_KEY = "cleancloak-cleaner-profile";
+const CLEANER_PENDING_KEY = "cleancloak-pending-cleaners";
+const CLEANER_APPROVED_KEY = "cleancloak-approved-cleaners";
+const CLEANER_JOB_OPPORTUNITIES_KEY = "cleancloak-job-opportunities";
+const CLEANER_CHECKLIST_KEY = "cleancloak-job-checklist";
+const CLEANER_BEFORE_AFTER_KEY = "cleancloak-before-after-gallery";
+const USER_SESSION_KEY = "cleancloak-user-session";
 
 const OPPORTUNITIES_ENDPOINT = "/bookings/opportunities";
 const JOB_PRIORITY_THRESHOLD = 15000;
 
-// Helper to get auth token
+
 export const getStoredAuthToken = (): string | null => {
   return localStorage.getItem("token") || sessionStorage.getItem("token");
 };
@@ -38,7 +38,7 @@ function saveCleanerJobOpportunities(jobs: CleanerJobOpportunity[]): void {
   try {
     localStorage.setItem(CLEANER_JOB_OPPORTUNITIES_KEY, JSON.stringify(jobs));
   } catch (error) {
-    logger.error("Failed to save cleaner job opportunities:", error);
+    logger.error("Failed to save cleaner job opportunities:", error instanceof Error ? error : undefined);
   }
 }
 
@@ -77,10 +77,10 @@ export function loadCleanerJobOpportunities(): CleanerJobOpportunity[] {
     if (saved) {
       return withDefaultJobState(JSON.parse(saved));
     }
-    // Return empty array - no mock data fallback
+    
     return [];
   } catch (error) {
-    logger.error("Failed to load cleaner job opportunities:", error);
+    logger.error("Failed to load cleaner job opportunities:", error instanceof Error ? error : undefined);
     return [];
   }
 }
@@ -102,10 +102,10 @@ export function addBookingToCleanerJobs(
   const titleParts = [booking.carServicePackage, booking.vehicleType].filter(
     Boolean,
   );
+
   
-  // Calculate cleaner payout (60% of the price)
   const cleanerPayout = Math.round((booking.price || 0) * 0.6);
-  
+
   const opportunity: CleanerJobOpportunity = {
     id,
     bookingId: booking.id,
@@ -141,7 +141,7 @@ function saveCleanerChecklist(items: CleanerChecklistItem[]): void {
   try {
     localStorage.setItem(CLEANER_CHECKLIST_KEY, JSON.stringify(items));
   } catch (error) {
-    logger.error("Failed to save cleaner checklist:", error);
+    logger.error("Failed to save cleaner checklist:", error instanceof Error ? error : undefined);
   }
 }
 
@@ -151,10 +151,10 @@ export function loadCleanerChecklist(): CleanerChecklistItem[] {
     if (saved) {
       return JSON.parse(saved);
     }
-    // Return empty array - no mock data fallback
+    
     return [];
   } catch (error) {
-    logger.error("Failed to load cleaner checklist:", error);
+    logger.error("Failed to load cleaner checklist:", error instanceof Error ? error : undefined);
     return [];
   }
 }
@@ -172,7 +172,7 @@ export function saveCurrentBooking(booking: BookingData): void {
   try {
     localStorage.setItem(BOOKING_KEY, JSON.stringify(booking));
   } catch (error) {
-    logger.error("Failed to save booking:", error);
+    logger.error("Failed to save booking:", error instanceof Error ? error : undefined);
   }
 }
 
@@ -181,7 +181,7 @@ export function loadCurrentBooking(): BookingData | null {
     const saved = localStorage.getItem(BOOKING_KEY);
     return saved ? JSON.parse(saved) : null;
   } catch (error) {
-    logger.error("Failed to load booking:", error);
+    logger.error("Failed to load booking:", error instanceof Error ? error : undefined);
     return null;
   }
 }
@@ -190,7 +190,7 @@ export function clearCurrentBooking(): void {
   try {
     localStorage.removeItem(BOOKING_KEY);
   } catch (error) {
-    logger.error("Failed to clear booking:", error);
+    logger.error("Failed to clear booking:", error instanceof Error ? error : undefined);
   }
 }
 
@@ -204,11 +204,11 @@ export function saveToHistory(booking: BookingData): void {
       createdAt: booking.createdAt || new Date().toISOString(),
     };
     history.unshift(historyItem);
-    // Keep only last 50 bookings
+    
     const trimmed = history.slice(0, 50);
     localStorage.setItem(HISTORY_KEY, JSON.stringify(trimmed));
   } catch (error) {
-    logger.error("Failed to save to history:", error);
+    logger.error("Failed to save to history:", error instanceof Error ? error : undefined);
   }
 }
 
@@ -217,7 +217,7 @@ export function loadHistory(): BookingHistoryItem[] {
     const saved = localStorage.getItem(HISTORY_KEY);
     return saved ? JSON.parse(saved) : [];
   } catch (error) {
-    logger.error("Failed to load history:", error);
+    logger.error("Failed to load history:", error instanceof Error ? error : undefined);
     return [];
   }
 }
@@ -234,20 +234,20 @@ export function updateHistoryItem(
       localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
     }
   } catch (error) {
-    logger.error("Failed to update history item:", error);
+    logger.error("Failed to update history item:", error instanceof Error ? error : undefined);
   }
 }
 
-// Aliases for compatibility
+
 export const saveBooking = saveCurrentBooking;
 export const addToHistory = saveToHistory;
 
-// Cleaner profile storage helpers
+
 export function saveCleanerProfile(profile: CleanerProfile): void {
   try {
     localStorage.setItem(CLEANER_PROFILE_KEY, JSON.stringify(profile));
   } catch (error) {
-    logger.error("Failed to save cleaner profile:", error);
+    logger.error("Failed to save cleaner profile:", error instanceof Error ? error : undefined);
   }
 }
 
@@ -256,7 +256,7 @@ export function loadCleanerProfile(): CleanerProfile | null {
     const saved = localStorage.getItem(CLEANER_PROFILE_KEY);
     return saved ? JSON.parse(saved) : null;
   } catch (error) {
-    logger.error("Failed to load cleaner profile:", error);
+    logger.error("Failed to load cleaner profile:", error instanceof Error ? error : undefined);
     return null;
   }
 }
@@ -265,7 +265,7 @@ export function clearCleanerProfile(): void {
   try {
     localStorage.removeItem(CLEANER_PROFILE_KEY);
   } catch (error) {
-    logger.error("Failed to clear cleaner profile:", error);
+    logger.error("Failed to clear cleaner profile:", error instanceof Error ? error : undefined);
   }
 }
 
@@ -273,7 +273,7 @@ function savePendingCleaners(cleaners: CleanerProfile[]): void {
   try {
     localStorage.setItem(CLEANER_PENDING_KEY, JSON.stringify(cleaners));
   } catch (error) {
-    logger.error("Failed to save pending cleaners:", error);
+    logger.error("Failed to save pending cleaners:", error instanceof Error ? error : undefined);
   }
 }
 
@@ -282,7 +282,7 @@ export function loadPendingCleaners(): CleanerProfile[] {
     const saved = localStorage.getItem(CLEANER_PENDING_KEY);
     return saved ? JSON.parse(saved) : [];
   } catch (error) {
-    logger.error("Failed to load pending cleaners:", error);
+    logger.error("Failed to load pending cleaners:", error instanceof Error ? error : undefined);
     return [];
   }
 }
@@ -307,7 +307,7 @@ function saveApprovedCleaners(cleaners: CleanerProfile[]): void {
   try {
     localStorage.setItem(CLEANER_APPROVED_KEY, JSON.stringify(cleaners));
   } catch (error) {
-    logger.error("Failed to save approved cleaners:", error);
+    logger.error("Failed to save approved cleaners:", error instanceof Error ? error : undefined);
   }
 }
 
@@ -316,7 +316,7 @@ export function loadApprovedCleaners(): CleanerProfile[] {
     const saved = localStorage.getItem(CLEANER_APPROVED_KEY);
     return saved ? JSON.parse(saved) : [];
   } catch (error) {
-    logger.error("Failed to load approved cleaners:", error);
+    logger.error("Failed to load approved cleaners:", error instanceof Error ? error : undefined);
     return [];
   }
 }
@@ -343,12 +343,12 @@ export function updateStoredCleanerProfile(
   }
 }
 
-// User Session Management
+
 export function saveUserSession(session: UserAccountSession): void {
   try {
     localStorage.setItem(USER_SESSION_KEY, JSON.stringify(session));
   } catch (error) {
-    logger.error("Failed to save user session:", error);
+    logger.error("Failed to save user session:", error instanceof Error ? error : undefined);
   }
 }
 
@@ -357,7 +357,7 @@ export const loadUserSession = (): UserAccountSession | null => {
     const saved = localStorage.getItem(USER_SESSION_KEY);
     return saved ? JSON.parse(saved) : null;
   } catch (error) {
-    logger.error("Failed to load user session:", error);
+    logger.error("Failed to load user session:", error instanceof Error ? error : undefined);
     return null;
   }
 };
@@ -366,6 +366,6 @@ export const clearUserSession = () => {
   try {
     localStorage.removeItem(USER_SESSION_KEY);
   } catch (error) {
-    logger.error("Failed to clear user session:", error);
+    logger.error("Failed to clear user session:", error instanceof Error ? error : undefined);
   }
 };

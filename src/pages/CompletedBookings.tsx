@@ -48,7 +48,7 @@ export default function CompletedBookings() {
 
       const data = await response.json();
 
-      // Filter for completed bookings only
+      
       const completed =
         data.bookings?.filter(
           (b: CompletedBooking) => b.status === "completed",
@@ -78,7 +78,7 @@ export default function CompletedBookings() {
       toast.success("Rating submitted successfully!");
       setRatingBookingId(null);
 
-      // Update local state
+      
       setBookings((prev) =>
         prev.map((b) => (b.id === bookingId ? { ...b, rating, review } : b)),
       );
@@ -99,7 +99,7 @@ export default function CompletedBookings() {
     setShowReceipt(true);
     toast.success("Payment successful!");
 
-    // Add success notification
+    
     if (selectedBooking) {
       addNotification({
         type: "payment_success",
@@ -109,7 +109,7 @@ export default function CompletedBookings() {
       });
     }
 
-    fetchCompletedBookings(); // Refresh to update payment status
+    fetchCompletedBookings(); 
   };
 
   const calculateTimeRemaining = (deadline?: string) => {
@@ -148,7 +148,7 @@ export default function CompletedBookings() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
-        {/* Header */}
+        {}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
             Completed Services
@@ -158,7 +158,7 @@ export default function CompletedBookings() {
           </p>
         </div>
 
-        {/* Unpaid Bookings Section */}
+        {}
         {unpaidBookings.length > 0 && (
           <div className="mb-8">
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
@@ -182,7 +182,7 @@ export default function CompletedBookings() {
           </div>
         )}
 
-        {/* Paid Bookings Section */}
+        {}
         {paidBookings.length > 0 && (
           <div>
             <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
@@ -196,7 +196,7 @@ export default function CompletedBookings() {
           </div>
         )}
 
-        {/* Empty State */}
+        {}
         {bookings.length === 0 && (
           <div className="text-center py-12">
             <div className="text-gray-400 mb-4">
@@ -230,7 +230,7 @@ export default function CompletedBookings() {
         )}
       </div>
 
-      {/* Payment Modal */}
+      {}
       {showPaymentModal && selectedBooking && (
         <PaymentModal
           isOpen={true}
@@ -241,7 +241,7 @@ export default function CompletedBookings() {
         />
       )}
 
-      {/* Receipt Modal */}
+      {}
       {showReceipt && selectedBooking && (
         <PaymentReceipt
           booking={selectedBooking}
@@ -255,7 +255,7 @@ export default function CompletedBookings() {
   );
 }
 
-// Booking Card Component
+
 interface BookingCardProps {
   booking: CompletedBooking;
   onRate?: () => void;
@@ -295,7 +295,7 @@ function BookingCard({
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
-      {/* Header */}
+      {}
       <div className="flex justify-between items-start mb-4">
         <div className="flex-1">
           <h3 className="text-lg font-semibold text-gray-900 dark:text-white capitalize">
@@ -317,7 +317,7 @@ function BookingCard({
         </div>
       </div>
 
-      {/* Details */}
+      {}
       <div className="space-y-2 mb-4">
         {booking.location?.address && (
           <div className="flex items-start gap-2 text-sm text-gray-600 dark:text-gray-400">
@@ -335,7 +335,7 @@ function BookingCard({
         )}
       </div>
 
-      {/* Time Remaining Warning */}
+      {}
       {!isPaid && timeRemaining && (
         <div
           className={`mb-4 p-3 rounded-lg flex items-center gap-2 ${
@@ -353,7 +353,7 @@ function BookingCard({
         </div>
       )}
 
-      {/* Rating Display or Interface */}
+      {}
       {hasRating ? (
         <div className="mb-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
           <div className="flex items-center gap-2 mb-2">
@@ -378,7 +378,7 @@ function BookingCard({
         </div>
       ) : null}
 
-      {/* Action Buttons */}
+      {}
       {!isPaid && (
         <div className="flex gap-3">
           {canPay && (

@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # ================================================================
-# Clean Cloak - Optimized APK Build Script
+# CleanCloak - Optimized APK Build Script
 # ================================================================
 # This script builds a production-optimized release APK
 # with all performance enhancements enabled

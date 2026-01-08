@@ -5,9 +5,9 @@ const ChatRoom = require('../models/ChatRoom');
 const Booking = require('../models/Booking');
 const { sendNotificationToUser } = require('./events');
 
-// @route   POST /api/chat
-// @desc    Create chat room for a booking
-// @access  Private
+
+
+
 router.post('/', protect, async (req, res) => {
   try {
     const { bookingId } = req.body;
@@ -20,7 +20,7 @@ router.post('/', protect, async (req, res) => {
       });
     }
 
-    // Check if chat room already exists
+    
     let chatRoom = await ChatRoom.findOne({ booking: bookingId });
     
     if (chatRoom) {
@@ -30,7 +30,7 @@ router.post('/', protect, async (req, res) => {
       });
     }
 
-    // Create new chat room
+    
     chatRoom = await ChatRoom.create({
       booking: bookingId,
       client: booking.client,
@@ -50,14 +50,15 @@ router.post('/', protect, async (req, res) => {
   }
 });
 
-// @route   GET /api/chat/:bookingId
-// @desc    Get chat room for a booking
-// @access  Private
+
+
+
 router.get('/:bookingId', protect, async (req, res) => {
   try {
     const chatRoom = await ChatRoom.findOne({ booking: req.params.bookingId })
       .populate('client', 'name phone profileImage')
-      .populate('cleaner', 'name phone profileImage');
+      .populate('cleaner', 'name phone profileImage')
+      .populate('messages.sender', 'name phone');
 
     if (!chatRoom) {
       return res.status(404).json({
@@ -66,7 +67,7 @@ router.get('/:bookingId', protect, async (req, res) => {
       });
     }
 
-    // Check authorization
+    
     if (chatRoom.client._id.toString() !== req.user.id && 
         chatRoom.cleaner._id.toString() !== req.user.id &&
         req.user.role !== 'admin') {
@@ -76,7 +77,7 @@ router.get('/:bookingId', protect, async (req, res) => {
       });
     }
 
-    // Mark messages as read
+    
     const userRole = chatRoom.client._id.toString() === req.user.id ? 'client' : 'cleaner';
     await chatRoom.markAsRead(userRole);
 
@@ -93,9 +94,9 @@ router.get('/:bookingId', protect, async (req, res) => {
   }
 });
 
-// @route   POST /api/chat/:bookingId/message
-// @desc    Send a message
-// @access  Private
+
+
+
 router.post('/:bookingId/message', protect, async (req, res) => {
   try {
     const { message, imageUrl } = req.body;
@@ -109,7 +110,7 @@ router.post('/:bookingId/message', protect, async (req, res) => {
       });
     }
 
-    // Check authorization
+    
     if (chatRoom.client.toString() !== req.user.id && 
         chatRoom.cleaner.toString() !== req.user.id) {
       return res.status(403).json({
@@ -118,13 +119,13 @@ router.post('/:bookingId/message', protect, async (req, res) => {
       });
     }
 
-    // Determine sender role
+    
     const senderRole = chatRoom.client.toString() === req.user.id ? 'client' : 'cleaner';
 
-    // Add message
+    
     await chatRoom.addMessage(req.user.id, senderRole, message, imageUrl);
     
-    // Send notification to the other party
+    
     const recipientId = senderRole === 'client' ? chatRoom.cleaner : chatRoom.client;
     const senderName = senderRole === 'client' ? 'Client' : 'Cleaner';
     
@@ -136,10 +137,27 @@ router.post('/:bookingId/message', protect, async (req, res) => {
       bookingId: req.params.bookingId
     });
 
+    
+    const updatedChatRoom = await ChatRoom.findOne({ booking: req.params.bookingId })
+      .populate('client', 'name phone profileImage')
+      .populate('cleaner', 'name phone profileImage')
+      .populate('messages.sender', 'name phone');
+    
     res.json({
       success: true,
       message: 'Message sent successfully',
-      chatRoom
+      message: {  
+        ...updatedChatRoom.messages[updatedChatRoom.messages.length - 1],
+        id: updatedChatRoom.messages[updatedChatRoom.messages.length - 1]._id,
+        bookingId: req.params.bookingId,
+        senderId: updatedChatRoom.messages[updatedChatRoom.messages.length - 1].sender._id,
+        senderName: updatedChatRoom.messages[updatedChatRoom.messages.length - 1].sender.name,
+        senderRole: updatedChatRoom.messages[updatedChatRoom.messages.length - 1].senderRole,
+        message: updatedChatRoom.messages[updatedChatRoom.messages.length - 1].message,
+        timestamp: updatedChatRoom.messages[updatedChatRoom.messages.length - 1].timestamp,
+        read: updatedChatRoom.messages[updatedChatRoom.messages.length - 1].readByClient,
+        imageUrl: updatedChatRoom.messages[updatedChatRoom.messages.length - 1].imageUrl,
+      }
     });
   } catch (error) {
     console.error('Send message error:', error);
@@ -150,9 +168,9 @@ router.post('/:bookingId/message', protect, async (req, res) => {
   }
 });
 
-// @route   GET /api/chat
-// @desc    Get all chat rooms for logged in user
-// @access  Private
+
+
+
 router.get('/', protect, async (req, res) => {
   try {
     const query = {

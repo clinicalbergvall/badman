@@ -1,34 +1,61 @@
 import type { Location } from './types'
-import { Capacitor } from '@capacitor/core'
-import { Geolocation } from '@capacitor/geolocation'
+
+
+const getCapacitor = async () => {
+  try {
+    const capacitorModule = await import('@capacitor/core')
+    return capacitorModule.Capacitor
+  } catch (err) {
+    console.warn('Capacitor not available in this environment:', err)
+
+    return {
+      isNativePlatform: () => false,
+    }
+  }
+}
+
+const getGeolocation = async () => {
+  try {
+    const geolocationModule = await import('@capacitor/geolocation')
+    return geolocationModule.Geolocation
+  } catch (err) {
+    console.warn('Geolocation not available in this environment:', err)
+    return null
+  }
+}
 
 export async function getCurrentLocation(): Promise<Location | null> {
   try {
-    // Prefer Capacitor native geolocation on device
+
+    const Capacitor = await getCapacitor();
     if (Capacitor.isNativePlatform()) {
       try {
-        await Geolocation.requestPermissions()
-      } catch {}
+        const Geolocation = await getGeolocation();
+        if (Geolocation) {
+          await Geolocation.requestPermissions();
+          const { coords } = await Geolocation.getCurrentPosition({
+            enableHighAccuracy: true,
+            timeout: 10000,
+          });
 
-      const { coords } = await Geolocation.getCurrentPosition({
-        enableHighAccuracy: true,
-        timeout: 10000,
-      })
+          const location: Location = {
+            latitude: coords.latitude,
+            longitude: coords.longitude,
+          };
 
-      const location: Location = {
-        latitude: coords.latitude,
-        longitude: coords.longitude,
+          try {
+            const address = await reverseGeocode(location.latitude, location.longitude);
+            location.address = address;
+          } catch { }
+
+          return location;
+        }
+      } catch (error) {
+        console.warn('Error using Capacitor geolocation:', error);
       }
-
-      try {
-        const address = await reverseGeocode(location.latitude, location.longitude)
-        location.address = address
-      } catch {}
-
-      return location
     }
 
-    // Fallback to browser geolocation
+
     return new Promise((resolve) => {
       if (!navigator.geolocation) {
         resolve(null)
@@ -45,7 +72,7 @@ export async function getCurrentLocation(): Promise<Location | null> {
           try {
             const address = await reverseGeocode(location.latitude, location.longitude)
             location.address = address
-          } catch {}
+          } catch { }
 
           resolve(location)
         },
@@ -64,20 +91,29 @@ export async function getCurrentLocation(): Promise<Location | null> {
 
 export async function getLocationPermissionStatus(): Promise<string> {
   try {
+    const Capacitor = await getCapacitor();
     if (Capacitor.isNativePlatform()) {
-      const status = await Geolocation.checkPermissions()
-      const fine = (status as any)?.location || (status as any)?.coarseLocation
-      return String(fine || 'unknown')
+      try {
+        const Geolocation = await getGeolocation();
+        if (Geolocation) {
+          const status = await Geolocation.checkPermissions();
+          const fine = (status as any)?.location || (status as any)?.coarseLocation;
+          return String(fine || 'unknown');
+        }
+      } catch (error) {
+        console.warn('Error checking geolocation permissions:', error);
+        return 'unknown';
+      }
     }
-    return 'browser'
+    return 'browser';
   } catch {
-    return 'unknown'
+    return 'unknown';
   }
 }
 
-async function reverseGeocode(lat: number, lng: number): Promise<string> {
-  // Using OpenStreetMap Nominatim API (free, no API key required)
-  // For production, consider using Google Maps Geocoding API
+export async function reverseGeocode(lat: number, lng: number): Promise<string> {
+
+
   try {
     const response = await fetch(
       `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
@@ -102,4 +138,45 @@ export function formatLocation(location: Location): string {
     return location.address
   }
   return `${location.latitude.toFixed(6)}, ${location.longitude.toFixed(6)}`
+}
+
+export async function watchLocation(callback: (location: Location) => void): Promise<{ remove: () => void } | null> {
+  try {
+    const Capacitor = await getCapacitor();
+    if (Capacitor.isNativePlatform()) {
+      const Geolocation = await getGeolocation();
+      if (Geolocation) {
+        const watchId = await Geolocation.watchPosition(
+          { enableHighAccuracy: true, timeout: 10000 },
+          async (position) => {
+            if (position) {
+              callback({
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude,
+              });
+            }
+          }
+        );
+        return { remove: async () => await Geolocation.clearWatch({ id: watchId }) };
+      }
+    }
+
+    if (!navigator.geolocation) return null;
+
+    const watchId = navigator.geolocation.watchPosition(
+      (position) => {
+        callback({
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+        });
+      },
+      () => { },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+
+    return { remove: () => navigator.geolocation.clearWatch(watchId) };
+  } catch (error) {
+    console.warn('Error starting location watch:', error);
+    return null;
+  }
 }

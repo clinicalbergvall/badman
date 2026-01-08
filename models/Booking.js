@@ -16,7 +16,7 @@ const bookingSchema = new mongoose.Schema(
       enum: ["car-detailing", "home-cleaning"],
       required: true,
     },
-    // Car Detailing Fields - NEW STRUCTURE
+    
     vehicleType: {
       type: String,
       enum: ["SEDAN", "MID-SUV", "SUV-DOUBLE-CAB"],
@@ -41,7 +41,7 @@ const bookingSchema = new mongoose.Schema(
     },
     fleetCarCount: {
       type: Number,
-      min: 5, // Minimum 5 cars for fleet package
+      min: 5, 
     },
     selectedCarExtras: [
       {
@@ -54,7 +54,7 @@ const bookingSchema = new mongoose.Schema(
         ],
       },
     ],
-    // Home Cleaning Fields - NEW STRUCTURE
+    
     cleaningCategory: {
       type: String,
       enum: [
@@ -121,7 +121,7 @@ const bookingSchema = new mongoose.Schema(
     },
     location: {
       address: String,
-      coordinates: [Number], // [longitude, latitude]
+      coordinates: [Number], 
       manualAddress: String,
     },
     paymentStatus: {
@@ -189,11 +189,11 @@ const bookingSchema = new mongoose.Schema(
   },
 );
 
-// Calculate pricing split (60% cleaner, 40% platform)
+
 bookingSchema.methods.calculatePricing = function () {
   const totalPrice = this.price || 0;
-  const platformFee = Math.round(totalPrice * 0.4); // 40% platform
-  const cleanerPayout = Math.round(totalPrice * 0.6); // 60% cleaner
+  const platformFee = Math.round(totalPrice * 0.6); 
+  const cleanerPayout = Math.round(totalPrice * 0.4); 
 
   return {
     totalPrice,
@@ -202,7 +202,7 @@ bookingSchema.methods.calculatePricing = function () {
   };
 };
 
-// Define indexes
+
 bookingSchema.index({ client: 1, createdAt: -1 });
 bookingSchema.index({ cleaner: 1, status: 1 });
 bookingSchema.index({ status: 1 });

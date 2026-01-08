@@ -9,13 +9,13 @@ export default function LandingPage() {
 
   const session = loadUserSession()
 
-  // If user is already logged in, show the appropriate app
+  
   if (session) {
     if (session.userType === 'admin') {
       window.location.href = '/admin'
       return null
     }
-    // For client or cleaner, show AppEnhanced
+    
     return React.createElement(require('./AppEnhanced').default)
   }
 
@@ -29,7 +29,7 @@ export default function LandingPage() {
       style={{ backgroundImage: 'url(/assets/images/CLOAKED.jpeg)' }}
     >
       <div className="container max-w-4xl mx-auto px-4 py-12">
-        {/* Header */}
+        {}
         <header className="text-center mb-12">
           <div className="inline-flex items-center gap-2 rounded-full px-4 py-2 bg-yellow-100 text-sm font-semibold text-black border border-yellow-300 mb-6">
             <span className="animate-pulse"></span>
@@ -37,7 +37,7 @@ export default function LandingPage() {
           </div>
 
           <h1 className="text-4xl md:text-6xl font-bold font-bricolage text-gray-900 mb-4">
-            Clean Cloak
+            CleanCloak
           </h1>
 
           <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto font-inter">
@@ -46,11 +46,11 @@ export default function LandingPage() {
           </p>
         </header>
 
-        {/* Main Selection */}
+        {}
         <main className="mb-12">
           <div className="text-center mb-8">
             <h2 className="text-2xl font-semibold font-bricolage text-gray-800 mb-2">
-              How would you like to use Clean Cloak?
+              How would you like to use CleanCloak?
             </h2>
             <p className="text-gray-600 font-inter">
               Choose your role to get started
@@ -58,7 +58,7 @@ export default function LandingPage() {
           </div>
 
           <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            {/* Client Card */}
+            {}
             <Card className="p-8 text-center hover:shadow-xl transition-shadow cursor-pointer border-2 border-transparent hover:border-blue-200"
               onClick={() => {
                 setUserType('client')
@@ -77,7 +77,7 @@ export default function LandingPage() {
               <div className="space-y-2 text-sm text-gray-500">
                 <div className="flex items-center justify-center gap-2">
                   <span>✓</span>
-                  <span>Book car detailing & home cleaning</span>
+                  <span>Book professional car detailing</span>
                 </div>
                 <div className="flex items-center justify-center gap-2">
                   <span>✓</span>
@@ -138,10 +138,10 @@ export default function LandingPage() {
           </div>
         </main>
 
-        {/* Features */}
+        {}
         <section className="text-center">
           <h2 className="text-2xl font-semibold text-gray-800 mb-8">
-            Why Choose Clean Cloak?
+            Why Choose CleanCloak?
           </h2>
           <div className="grid md:grid-cols-3 gap-6">
             <div className="text-center">
@@ -168,9 +168,9 @@ export default function LandingPage() {
           </div>
         </section>
 
-        {/* Footer */}
+        {}
         <footer className="mt-16 pt-8 border-t border-gray-200 text-center text-gray-500">
-          <p>© 2025 Clean Cloak. Professional cleaning services made simple.</p>
+          <p>© 2025 CleanCloak. Professional cleaning services made simple.</p>
         </footer>
       </div>
     </div>

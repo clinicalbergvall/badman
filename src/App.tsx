@@ -11,7 +11,7 @@ export default function App() {
   }, [])
   return (
     <div className="container relative">
-      {/* Animated Background */}
+      {}
       {!performanceMode && (
         <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">
           <div className="absolute top-0 -left-4 w-72 h-72 bg-yellow-300 rounded-full mix-blend-multiply filter blur-xl opacity-30 animate-blob"></div>
@@ -30,10 +30,10 @@ export default function App() {
               </Badge>
             </div>
             <h1 className="mt-2 text-3xl sm:text-4xl font-bold text-black mb-2">
-              Clean Cloak
+              CleanCloak
             </h1>
             <p className="text-gray-700 text-base sm:text-lg mb-4">
-              Professional car detailing & home cleaning services
+              Professional car detailing services
             </p>
           </div>
         </div>

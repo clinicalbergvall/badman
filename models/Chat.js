@@ -74,13 +74,13 @@ const chatRoomSchema = new mongoose.Schema({
   timestamps: true
 });
 
-// Index for faster queries
+
 chatRoomSchema.index({ booking: 1 });
 chatRoomSchema.index({ client: 1 });
 chatRoomSchema.index({ cleaner: 1 });
 chatRoomSchema.index({ active: 1, updatedAt: -1 });
 
-// Update lastMessage and unreadCount when new message is added
+
 chatRoomSchema.methods.addMessage = function(senderId, senderRole, message, imageUrl = null) {
   const newMessage = {
     sender: senderId,
@@ -94,7 +94,7 @@ chatRoomSchema.methods.addMessage = function(senderId, senderRole, message, imag
   this.messages.push(newMessage);
   this.lastMessage = newMessage;
   
-  // Increment unread count for receiver
+  
   if (senderRole === 'client') {
     this.unreadCount.cleaner += 1;
   } else {
@@ -105,7 +105,7 @@ chatRoomSchema.methods.addMessage = function(senderId, senderRole, message, imag
   return this.save();
 };
 
-// Mark messages as read
+
 chatRoomSchema.methods.markAsRead = function(userRole) {
   const unreadMessages = this.messages.filter(msg => 
     !msg.read && msg.senderRole !== userRole
@@ -115,7 +115,7 @@ chatRoomSchema.methods.markAsRead = function(userRole) {
     msg.read = true;
   });
 
-  // Reset unread count
+  
   if (userRole === 'client') {
     this.unreadCount.client = 0;
   } else {
