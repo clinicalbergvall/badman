@@ -231,12 +231,12 @@ export default function App() {
             }
           >
             <h1
-              className={`text-4xl md:text-5xl font-black tracking-tight mb-3 ${darkMode ? "text-white" : "text-yellow-500 drop-shadow-lg"}`}
+              className={`text-4xl md:text-5xl font-black tracking-tight mb-3 ${darkMode ? "text-white" : "text-black drop-shadow-lg"}`}
             >
               Welcome to CleanCloak
             </h1>
             <p
-              className={`text-base md:text-lg font-semibold ${darkMode ? "text-yellow-100" : "text-yellow-500 drop-shadow-md"} uppercase`}
+              className={`text-base md:text-lg font-semibold ${darkMode ? "text-gray-100" : "text-black drop-shadow-md"} uppercase`}
             >
               ELEVATING SPACES AND EMPOWERING CLEANERS THROUGH TECH
             </p>
@@ -406,10 +406,10 @@ export default function App() {
 
                 <div className="flex flex-col items-center justify-center py-2">
                   <div className="text-center max-w-md mx-auto relative">
-                    <h2 className="text-2xl font-bold mb-4 text-gray-800 dark:text-white">
+                    <h2 className="text-2xl font-bold mb-4 text-black dark:text-white">
                       Welcome to CleanCloak
                     </h2>
-                    <p className="text-gray-600 dark:text-gray-300 mb-6">
+                    <p className="text-black dark:text-gray-300 mb-6">
                       Navigate to the appropriate section using the menu
                     </p>
                   </div>
@@ -422,10 +422,10 @@ export default function App() {
 
           { }
           <footer
-            className={`mt-8 text-center text-sm font-medium ${darkMode ? "text-gray-400" : "text-gray-600"
+            className={`mt-8 text-center text-sm font-medium ${darkMode ? "text-gray-400" : "text-black"
               }`}
           >
-            <p className="backdrop-blur-sm bg-white/10 rounded-full px-6 py-2 inline-block uppercase">
+            <p className="backdrop-blur-sm bg-white/10 rounded-full px-6 py-2 inline-block uppercase text-black">
               ELEVATING SPACES AND EMPOWERING CLEANERS THROUGH TECH
             </p>
           </footer>
