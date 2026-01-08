@@ -9,7 +9,36 @@ const User = require("../models/User");
 const IntaSend = require("intasend-node"); 
 const { v4: uuidv4 } = require("uuid");
 const { sendNotificationToUser, sendNotificationToBookingParticipants } = require('./events');
-const NotificationService = require('../src/lib/notificationService'); 
+let NotificationService;
+try {
+  NotificationService = require('../src/lib/notificationService');
+  console.log('NotificationService loaded successfully');
+} catch (error) {
+  console.warn('NotificationService not available:', error.message);
+  // Create a mock notification service to prevent crashes
+  NotificationService = {
+    sendBookingCreatedNotification: async (bookingId, userId) => {
+      console.warn(`NotificationService not available. Would send booking created notification for booking ${bookingId} to user ${userId}`);
+      return { success: false, message: 'NotificationService not available' };
+    },
+    sendBookingAcceptedNotification: async (bookingId, userId) => {
+      console.warn(`NotificationService not available. Would send booking accepted notification for booking ${bookingId} to user ${userId}`);
+      return { success: false, message: 'NotificationService not available' };
+    },
+    sendBookingCompletedNotification: async (bookingId, userId) => {
+      console.warn(`NotificationService not available. Would send booking completed notification for booking ${bookingId} to user ${userId}`);
+      return { success: false, message: 'NotificationService not available' };
+    },
+    sendPaymentCompletedNotification: async (bookingId, userId) => {
+      console.warn(`NotificationService not available. Would send payment completed notification for booking ${bookingId} to user ${userId}`);
+      return { success: false, message: 'NotificationService not available' };
+    },
+    sendPayoutProcessedNotification: async (bookingId, userId) => {
+      console.warn(`NotificationService not available. Would send payout processed notification for booking ${bookingId} to user ${userId}`);
+      return { success: false, message: 'NotificationService not available' };
+    }
+  };
+}
 
 
 const formatCurrency = new Intl.NumberFormat("en-KE", {
@@ -165,7 +194,13 @@ router.post("/public", async (req, res) => {
     });
     
     
-    NotificationService.sendBookingCreatedNotification(booking._id, user._id);
+    try {
+      if (NotificationService && typeof NotificationService.sendBookingCreatedNotification === 'function') {
+        await NotificationService.sendBookingCreatedNotification(booking._id, user._id);
+      }
+    } catch (error) {
+      console.warn('Failed to send booking created notification:', error.message);
+    }
   } catch (error) {
     console.error("Public booking creation error:", error);
     res.status(500).json({
@@ -201,7 +236,13 @@ router.post("/", protect, async (req, res) => {
     });
     
     
-    NotificationService.sendBookingCreatedNotification(booking._id, req.user.id);
+    try {
+      if (NotificationService && typeof NotificationService.sendBookingCreatedNotification === 'function') {
+        await NotificationService.sendBookingCreatedNotification(booking._id, req.user.id);
+      }
+    } catch (error) {
+      console.warn('Failed to send booking created notification:', error.message);
+    }
   } catch (error) {
     console.error("Booking creation error:", error);
     res.status(500).json({
@@ -422,7 +463,13 @@ router.post("/:id/accept", protect, authorize("cleaner"), async (req, res) => {
     });
     
     
-    NotificationService.sendBookingAcceptedNotification(booking._id, booking.client._id);
+    try {
+      if (NotificationService && typeof NotificationService.sendBookingAcceptedNotification === 'function') {
+        await NotificationService.sendBookingAcceptedNotification(booking._id, booking.client._id);
+      }
+    } catch (error) {
+      console.warn('Failed to send booking accepted notification:', error.message);
+    }
 
     res.json({
       success: true,
@@ -596,9 +643,15 @@ router.put(
         });
         
         
-        NotificationService.sendBookingCompletedNotification(booking._id, booking.client._id);
-        if (booking.cleaner) {
-          NotificationService.sendBookingCompletedNotification(booking._id, booking.cleaner._id);
+        try {
+          if (NotificationService && typeof NotificationService.sendBookingCompletedNotification === 'function') {
+            await NotificationService.sendBookingCompletedNotification(booking._id, booking.client._id);
+            if (booking.cleaner) {
+              await NotificationService.sendBookingCompletedNotification(booking._id, booking.cleaner._id);
+            }
+          }
+        } catch (error) {
+          console.warn('Failed to send booking completed notification:', error.message);
         }
       }
       await booking.save();

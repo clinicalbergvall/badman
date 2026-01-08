@@ -1,5 +1,24 @@
-const admin = require('firebase-admin');
-
+let admin;
+try {
+  admin = require('firebase-admin');
+} catch (error) {
+  console.warn('Firebase Admin SDK not available. Push notifications will not work.');
+  console.warn('Install firebase-admin: npm install firebase-admin');
+  // Create a mock admin object to prevent crashes
+  admin = {
+    apps: [],
+    messaging: () => ({
+      sendMulticast: async () => {
+        console.warn('Firebase Admin not available. Skipping push notification.');
+        return { success: false, message: 'Firebase Admin not available' };
+      }
+    }),
+    initializeApp: () => {},
+    credential: {
+      cert: () => {}
+    }
+  };
+}
 
 
 

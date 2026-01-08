@@ -8,7 +8,24 @@ const CleanerProfile = require('../models/CleanerProfile');
 const IntaSend = require('intasend-node');
 const { protect } = require('../middleware/auth');
 const { sendNotificationToBookingParticipants, sendNotificationToUser } = require('./events');
-const NotificationService = require('../src/lib/notificationService'); 
+let NotificationService;
+try {
+  NotificationService = require('../src/lib/notificationService');
+  console.log('NotificationService loaded successfully in payments');
+} catch (error) {
+  console.warn('NotificationService not available in payments:', error.message);
+  // Create a mock notification service to prevent crashes
+  NotificationService = {
+    sendPaymentCompletedNotification: async (bookingId, userId) => {
+      console.warn(`NotificationService not available. Would send payment completed notification for booking ${bookingId} to user ${userId}`);
+      return { success: false, message: 'NotificationService not available' };
+    },
+    sendPayoutProcessedNotification: async (bookingId, userId) => {
+      console.warn(`NotificationService not available. Would send payout processed notification for booking ${bookingId} to user ${userId}`);
+      return { success: false, message: 'NotificationService not available' };
+    }
+  };
+}
 
 
 router.post('/initiate', protect, async (req, res) => {
@@ -169,9 +186,15 @@ router.post(
           });
           
           
-          NotificationService.sendPaymentCompletedNotification(bookingId, booking.client);
-          if (booking.cleaner) {
-            NotificationService.sendPaymentCompletedNotification(bookingId, booking.cleaner);
+          try {
+            if (NotificationService && typeof NotificationService.sendPaymentCompletedNotification === 'function') {
+              await NotificationService.sendPaymentCompletedNotification(bookingId, booking.client);
+              if (booking.cleaner) {
+                await NotificationService.sendPaymentCompletedNotification(bookingId, booking.cleaner);
+              }
+            }
+          } catch (error) {
+            console.warn('Failed to send payment completed notification:', error.message);
           }
 
           console.log(`Payment SUCCESS: KSh ${pricing.totalPrice} for JOB_${bookingId}`);
@@ -297,7 +320,13 @@ async function processMpesaPayout(transaction, phoneNumber, amount) {
       });
       
       
-      NotificationService.sendPayoutProcessedNotification(booking._id, booking.cleaner);
+      try {
+        if (NotificationService && typeof NotificationService.sendPayoutProcessedNotification === 'function') {
+          await NotificationService.sendPayoutProcessedNotification(booking._id, booking.cleaner);
+        }
+      } catch (error) {
+        console.warn('Failed to send payout processed notification:', error.message);
+      }
 
       console.log(`M-Pesa payout SUCCESS: KSh ${amount} to ${phoneNumber}`);
     } else {
