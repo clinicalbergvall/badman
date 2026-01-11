@@ -85,12 +85,11 @@ const chatRoomSchema = new mongoose.Schema({
 });
 
 
-chatRoomSchema.methods.addMessage = async function(senderId, senderRole, message, imageUrl = '') {
+chatRoomSchema.methods.addMessage = async function(senderId, senderRole, message) {
   const newMessage = {
     sender: senderId,
     senderRole,
     message,
-    imageUrl,
     timestamp: new Date()
   };
 
@@ -102,11 +101,11 @@ chatRoomSchema.methods.addMessage = async function(senderId, senderRole, message
   if (senderRole === 'client') {
     this.unreadCleanerCount += 1;
     
-    newMessage.readByClient = true;
+    newMessage.readByCleaner = true;
   } else {
     this.unreadClientCount += 1;
     
-    newMessage.readByCleaner = true;
+    newMessage.readByClient = true;
   }
 
   return this.save();

@@ -18,3 +18,47 @@ interface Window {
   Capacitor?: any;
   toast?: any;
 }
+
+// Capacitor HTTP plugin type definitions
+interface CapacitorHttpRequest {
+  url: string;
+  method: string;
+  headers?: any;
+  data?: any;
+}
+
+interface CapacitorHttpResponse {
+  status: { code: number; text: string } | number;
+  headers?: any;
+  data: any;
+}
+
+interface CapacitorHttpPlugin {
+  request(options: CapacitorHttpRequest): Promise<CapacitorHttpResponse>;
+}
+
+declare module '@capacitor/http' {
+  export const Http: CapacitorHttpPlugin;
+}
+
+// Capacitor HTTP plugin type definitions
+interface CapacitorHttpRequest {
+  url: string;
+  method: string;
+  headers?: any;
+  data?: any;
+}
+
+interface CapacitorHttpResponse {
+  status: { code: number; text: string } | number;
+  headers?: any;
+  data: any;
+}
+
+interface CapacitorHttpPlugin {
+  request(options: CapacitorHttpRequest): Promise<CapacitorHttpResponse>;
+}
+
+declare module '@capacitor/http' {
+  export const Http: CapacitorHttpPlugin;
+}

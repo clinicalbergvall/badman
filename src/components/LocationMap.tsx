@@ -186,11 +186,6 @@ export default function LocationMap({
       <div className="mb-3">
         <h3 className="font-semibold text-gray-900">{title}</h3>
         <p className="text-sm text-gray-600 mt-1">{displayAddress}</p>
-        {draggable && (
-          <p className="text-xs text-blue-600 font-medium mt-1 animate-pulse">
-            💡 Tip: Drag the marker to pinpoint your exact location
-          </p>
-        )}
       </div>
 
       <div

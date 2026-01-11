@@ -53,8 +53,9 @@ export const AdminLoginForm = ({
       } else {
         toast.error(data.message || "Admin authentication failed");
       }
-    } catch (error) {
-      toast.error("Network error. Please try again.");
+    } catch (error: any) {
+      const errorMessage = error?.message || "Network error. Please try again.";
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }

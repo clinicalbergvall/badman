@@ -198,8 +198,8 @@ router.post(
           }
 
           console.log(`Payment SUCCESS: KSh ${pricing.totalPrice} for JOB_${bookingId}`);
-          console.log(`Platform fee (40%): KSh ${pricing.platformFee}`);
-          console.log(`Cleaner payout (60%): KSh ${pricing.cleanerPayout}`);
+          console.log(`Platform fee (60%): KSh ${pricing.platformFee}`);
+          console.log(`Cleaner payout (40%): KSh ${pricing.cleanerPayout}`);
         } else if (booking?.paid) {
           console.log(`Payment already processed for JOB_${bookingId}`);
         }

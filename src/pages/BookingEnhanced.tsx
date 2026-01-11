@@ -31,7 +31,8 @@ import {
   loadUserSession,
 } from "@/lib/storage";
 import { getCurrentLocation, getLocationPermissionStatus, reverseGeocode } from "@/lib/location";
-import { authAPI, api } from "@/lib/api";
+import authAPI from "@/lib/auth-api";
+import { api } from "@/lib/api";
 import toast from "react-hot-toast";
 import { logger } from "@/lib/logger";
 
@@ -1168,7 +1169,7 @@ export default function BookingEnhanced() {
                 <div className="mt-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">
-                      Confirmed Location
+                      Location
                     </p>
                     <button
                       onClick={() => setLocation({})}

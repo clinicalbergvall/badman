@@ -3,8 +3,8 @@ import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { api } from "@/lib/api";
 import { useNotifications } from "../contexts/NotificationContext";
-import { CompleteJobModal } from "@/components/CompleteJobModal";
-import { Card, Badge, Button, ChatComponent, LocationMap } from "@/components/ui";
+import { CompleteJobModal } from '@/components/CompleteJobModal';
+import { Card, Badge, Button, ChatComponent } from '@/components/ui';
 import CleanerLayout from "@/components/CleanerLayout";
 import { getVehicleCategory } from "@/lib/validation";
 import type { VehicleType } from "@/lib/types";
@@ -50,7 +50,7 @@ export default function CleanerActiveBookings() {
   const [showCompleteModal, setShowCompleteModal] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState<ActiveBooking | null>(null);
   const [selectedChatBooking, setSelectedChatBooking] = useState<ActiveBooking | null>(null);
-  const [selectedLocationBooking, setSelectedLocationBooking] = useState<ActiveBooking | null>(null);
+
 
 
   const ChatWithCurrentUser = ({ bookingId }: { bookingId: string }) => {
@@ -172,7 +172,19 @@ export default function CleanerActiveBookings() {
     setSelectedChatBooking(booking);
   };
 
-  const calculatePayout = (price: number) => Math.round(price * 0.6);
+  const handleGetDirections = (booking: ActiveBooking) => {
+    if (booking.location && booking.location.coordinates) {
+      const [lat, lng] = booking.location.coordinates;
+      // Open Google Maps with directions
+      window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank');
+    } else if (booking.location && (booking.location.address || booking.location.manualAddress)) {
+      const address = booking.location.manualAddress || booking.location.address;
+      // Open Google Maps with the address
+      window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address || '')}`, '_blank');
+    }
+  };
+
+  const calculatePayout = (price: number) => Math.round(price * 0.4);
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return "N/A";
@@ -228,7 +240,7 @@ export default function CleanerActiveBookings() {
                     onComplete={() => handleCompleteJob(booking)}
                     onNavigate={() => navigate(`/bookings/${booking._id || booking.id}`)}
                     onStartChat={handleStartChat}
-                    onViewLocation={setSelectedLocationBooking}
+                    onGetDirections={handleGetDirections}
                   />
                 ))}
               </div>
@@ -316,37 +328,7 @@ export default function CleanerActiveBookings() {
           </div>
         )}
 
-        { }
-        {selectedLocationBooking && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-lg max-w-2xl w-full max-h-[80vh]">
-              <div className="p-4 border-b flex items-center justify-between">
-                <h3 className="text-lg font-semibold">
-                  Client Location -{" "}
-                  {selectedLocationBooking.serviceCategory === "car-detailing"
-                    ? selectedLocationBooking.carServicePackage || "Car Service"
-                    : selectedLocationBooking.cleaningCategory || "Cleaning Service"}
-                </h3>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setSelectedLocationBooking(null)}
-                >
-                  ✕
-                </Button>
-              </div>
-              <div className="p-4">
-                <LocationMap
-                  location={{
-                    address: selectedLocationBooking.location?.address,
-                    manualAddress: selectedLocationBooking.location?.manualAddress,
-                    coordinates: selectedLocationBooking.location?.coordinates
-                  }}
-                  title="Client Location"
-                />              </div>
-            </div>
-          </div>
-        )}
+
       </div>
     </CleanerLayout>
   );
@@ -358,7 +340,7 @@ interface ActiveBookingCardProps {
   onComplete: () => void;
   onNavigate: () => void;
   onStartChat: (booking: ActiveBooking) => void;
-  onViewLocation: (booking: ActiveBooking) => void;
+  onGetDirections: (booking: ActiveBooking) => void;
 }
 
 function ActiveBookingCard({
@@ -366,7 +348,7 @@ function ActiveBookingCard({
   onComplete,
   onNavigate,
   onStartChat,
-  onViewLocation
+  onGetDirections
 }: ActiveBookingCardProps) {
   const formatDate = (dateString?: string) => {
     if (!dateString) return "N/A";
@@ -377,7 +359,7 @@ function ActiveBookingCard({
     });
   };
 
-  const cleanerPayout = Math.round(booking.price * 0.6);
+  const cleanerPayout = Math.round(booking.price * 0.4);
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
@@ -473,12 +455,12 @@ function ActiveBookingCard({
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                onViewLocation(booking);
+                onGetDirections(booking);
               }}
               className="bg-purple-500 hover:bg-purple-600 text-white font-semibold py-2 px-4 rounded-lg
                        transition duration-200 shadow-md hover:shadow-lg flex items-center gap-2"
             >
-              🗺️ View Location
+              🧭 Get Directions
             </button>
           )}
 
@@ -514,7 +496,7 @@ function CompletedBookingCard({ booking }: CompletedBookingCardProps) {
     });
   };
 
-  const cleanerPayout = Math.round(booking.price * 0.6);
+  const cleanerPayout = Math.round(booking.price * 0.4);
   const isPaid = booking.paid || booking.paymentStatus === "paid";
   const payoutProcessed = booking.payoutStatus === "completed";
 

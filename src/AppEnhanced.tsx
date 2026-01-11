@@ -42,6 +42,7 @@ export default function App() {
   const [loading, setLoading] = useState(true);
 
   const [isOnline, setIsOnline] = useState<boolean>(true);
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
 
   useEffect(() => {
     const savedMode = localStorage.getItem("darkMode");
@@ -61,6 +62,30 @@ export default function App() {
     return () => {
       window.removeEventListener("online", handleOnline);
       window.removeEventListener("offline", handleOffline);
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleResize = () => {
+      const isMobile = window.innerWidth <= 768;
+      if (isMobile) {
+        const viewportHeight = window.innerHeight;
+        const documentHeight = document.documentElement.clientHeight;
+        const heightDifference = Math.abs(documentHeight - viewportHeight);
+        
+        setIsKeyboardVisible(heightDifference > 150);
+      }
+    };
+    
+    // Listen for both resize and orientationchange events
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('orientationchange', handleResize);
+    
+    handleResize();
+    
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('orientationchange', handleResize);
     };
   }, []);
 
@@ -185,27 +210,38 @@ export default function App() {
       try {
         const capacitorInstance = await getCapacitor();
         if (capacitorInstance.isNativePlatform()) {
+          console.log('Initializing push notifications for native platform');
           try {
 
             const pushNotificationModule = await import('./lib/pushNotifications');
             if (pushNotificationModule && pushNotificationModule.PushNotificationService) {
               await pushNotificationModule.PushNotificationService.registerForNotifications();
+              console.log('Push notifications registered successfully');
+            } else {
+              console.warn('PushNotificationService not available');
             }
           } catch (importError) {
             console.error('Error importing push notifications:', importError);
           }
+        } else {
+          console.log('Running in web environment, skipping native push notifications');
         }
       } catch (error) {
         console.error('Error in push notification registration process:', error);
       }
     };
 
-    registerPushNotifications();
+    // Delay push notification registration to ensure Capacitor is ready
+    const pushTimer = setTimeout(registerPushNotifications, 2000);
+    
+    return () => {
+      clearTimeout(pushTimer);
+    };
   }, []);
 
   return (
     <ErrorBoundary>
-      <div className={`min-h-screen relative overflow-y-auto overflow-x-hidden`}>
+      <div className={`min-h-screen relative overflow-y-auto overflow-x-hidden ${isKeyboardVisible ? 'safe-area-inset' : ''}`}>
         { }
         <div
           className="fixed inset-0 z-0"

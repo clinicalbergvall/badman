@@ -24,6 +24,7 @@ export default function ChatBox({
   const [isLoading, setIsLoading] = useState(false)
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
 
 
   const scrollToBottom = () => {
@@ -55,8 +56,7 @@ export default function ChatBox({
                 senderRole: msg.senderRole,
                 message: msg.message,
                 timestamp: msg.timestamp,
-                read: msg.senderRole === currentUserRole ? msg.readByCleaner || msg.readByClient : true,
-                imageUrl: msg.imageUrl,
+                read: msg.senderRole !== currentUserRole ? (msg.senderRole === 'client' ? msg.readByClient : msg.readByCleaner) : true,
               }));
               setMessages(transformedMessages);
             }
@@ -94,6 +94,11 @@ export default function ChatBox({
         // Scroll to bottom when keyboard visibility changes
         setTimeout(() => {
           messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+          
+          // If input is focused, ensure it stays visible
+          if (inputRef.current && document.activeElement === inputRef.current) {
+            inputRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
         }, 100);
       }
     };
@@ -144,7 +149,6 @@ export default function ChatBox({
             message: newMessage.message,
             timestamp: newMessage.timestamp || new Date().toISOString(),
             read: newMessage.read || false,
-            imageUrl: newMessage.imageUrl,
           };
           setMessages(prev => [...prev, transformedMessage]);
         }
@@ -156,7 +160,7 @@ export default function ChatBox({
     } catch (e) {
       console.error('Failed to setup Socket for chat:', e)
     }
-  }, [bookingId, messages])
+  }, [bookingId, currentUserId, currentUserName, currentUserRole])
 
   const handleSendMessage = async () => {
     if (!newMessage.trim()) return
@@ -168,8 +172,8 @@ export default function ChatBox({
 
       if (response.ok) {
         const data = await response.json()
-        if (data.success && data.message) {
-          setMessages(prev => [...prev, data.message])
+        if (data.success && data.data) {
+          setMessages(prev => [...prev, data.data])
           setNewMessage('')
         } else {
           toast.error(data.message || 'Failed to send message')
@@ -184,9 +188,7 @@ export default function ChatBox({
     }
   }
 
-  const handleImageUpload = () => {
-    toast('Image upload coming soon!', { icon: '📸' })
-  }
+
 
   const formatTime = (timestamp: string) => {
     const date = new Date(timestamp)
@@ -242,7 +244,7 @@ export default function ChatBox({
   }
 
   return (
-    <Card className={`flex flex-col ${isKeyboardVisible ? 'h-[60vh]' : 'h-[500px]'} max-h-[70vh]`}>
+    <Card className={`flex flex-col ${isKeyboardVisible ? 'h-[50vh]' : 'h-[500px]'} max-h-[70vh]`}>
       { }
       <div className="p-4 border-b border-gray-200">
         <div className="flex items-center justify-between">
@@ -290,25 +292,21 @@ export default function ChatBox({
                       <div
                         className={`rounded-2xl px-4 py-2 ${isOwnMessage
                             ? 'bg-blue-500 text-white rounded-br-none'
-                            : 'bg-green-500 text-white rounded-bl-none'
+                            : 'bg-gray-300 text-gray-800 rounded-bl-none'
                           }`}
                       >
                         {!isOwnMessage && msg.senderName && (
                           <p className="text-xs font-semibold mb-1">{msg.senderName}</p>
                         )}
                         <p className="text-sm whitespace-pre-wrap break-words">{msg.message}</p>
-                        {msg.imageUrl && (
-                          <img
-                            src={msg.imageUrl}
-                            alt="Shared"
-                            className="mt-2 rounded-lg max-w-full"
-                          />
-                        )}
+
                       </div>
-                      <div className={`text-xs ${isOwnMessage ? 'text-blue-100' : 'text-green-100'} mt-1 flex ${isOwnMessage ? 'flex-row-reverse justify-end' : 'justify-start'}`}>
+                      <div className={`text-xs ${isOwnMessage ? 'text-blue-100' : 'text-gray-500'} mt-1 flex ${isOwnMessage ? 'flex-row-reverse justify-end' : 'justify-start'}`}>
                         <span>{formatTime(msg.timestamp)}</span>
-                        {isOwnMessage && msg.read && (
-                          <span className="ml-1">✓✓</span>
+                        {isOwnMessage && (
+                          <span className="ml-1">
+                            {msg.read ? '✓✓' : '✓'}
+                          </span>
                         )}
                       </div>
                     </div>
@@ -322,7 +320,7 @@ export default function ChatBox({
       </div>
 
       { }
-      <div className="p-4 border-t border-gray-200 bg-white sticky bottom-0">
+      <div className={`p-4 border-t border-gray-200 bg-white sticky bottom-0 ${isKeyboardVisible ? 'pb-8' : ''}`}>
         <div className="flex gap-2 items-center">
 
 
@@ -337,16 +335,37 @@ export default function ChatBox({
                 }
               }}
               placeholder="Type a message..."
-              className={`w-full px-4 py-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent resize-none ${isKeyboardVisible ? 'z-10' : ''}`}
+              ref={inputRef}
+              className={`w-full px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent resize-none ${isKeyboardVisible ? 'z-10' : ''}`}
               rows={1}
-              style={{ minHeight: '44px', maxHeight: '120px' }}
+              style={{ minHeight: '40px', maxHeight: '100px' }}
+              onTouchStart={(e) => {
+                // On touch devices, ensure the input is focused
+                setTimeout(() => {
+                  e.currentTarget.focus();
+                }, 100);
+              }}
+              onClick={(e) => {
+                // Additional click handler to ensure focus on mobile
+                if (isKeyboardVisible) {
+                  setTimeout(() => {
+                    e.currentTarget.focus();
+                  }, 0);
+                }
+              }}
               onFocus={(e) => {
                 // Ensure the input stays visible when keyboard appears
                 setTimeout(() => {
                   messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
                   
                   // Additional scroll to ensure input is visible
-                  e.target.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                  e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 100);
+              }}
+              onBlur={() => {
+                // Scroll to bottom when input loses focus
+                setTimeout(() => {
+                  messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
                 }, 100);
               }}
             />

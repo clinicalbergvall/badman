@@ -11,7 +11,7 @@ const { v4: uuidv4 } = require("uuid");
 const { sendNotificationToUser, sendNotificationToBookingParticipants } = require('./events');
 let NotificationService;
 try {
-  NotificationService = require('../src/lib/notificationService');
+  NotificationService = require('../lib/notificationService');
   console.log('NotificationService loaded successfully');
 } catch (error) {
   console.warn('NotificationService not available:', error.message);
@@ -584,7 +584,7 @@ router.post("/:id/pay", protect, authorize("client"), async (req, res) => {
         booking_id: booking._id.toString(),
         split: {
           cleaner_phone: booking.cleaner.phone,
-          percentage: 60, 
+          percentage: 40, 
           platform_fee: pricing.platformFee,
           cleaner_payout: pricing.cleanerPayout,
         },

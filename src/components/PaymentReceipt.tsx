@@ -49,8 +49,8 @@ export function PaymentReceipt({ booking, onClose }: PaymentReceiptProps) {
 
     
     const totalAmount = booking.price
-    const platformFee = Math.round(totalAmount * 0.4)
-    const cleanerEarnings = Math.round(totalAmount * 0.6)
+    const platformFee = Math.round(totalAmount * 0.6)
+    const cleanerEarnings = Math.round(totalAmount * 0.4)
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 print:bg-white">
@@ -153,11 +153,11 @@ export function PaymentReceipt({ booking, onClose }: PaymentReceiptProps) {
                                 </span>
                             </div>
                             <div className="flex justify-between text-xs text-gray-500 dark:text-gray-500">
-                                <span>• Platform Fee (40%)</span>
+                                <span>• Platform Fee (60%)</span>
                                 <span>KSh {platformFee.toLocaleString()}</span>
                             </div>
                             <div className="flex justify-between text-xs text-gray-500 dark:text-gray-500">
-                                <span>• Cleaner Earnings (60%)</span>
+                                <span>• Cleaner Earnings (40%)</span>
                                 <span>KSh {cleanerEarnings.toLocaleString()}</span>
                             </div>
                             <div className="border-t border-gray-300 dark:border-gray-600 pt-2 mt-2">

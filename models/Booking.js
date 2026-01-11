@@ -196,8 +196,8 @@ const bookingSchema = new mongoose.Schema(
 
 bookingSchema.methods.calculatePricing = function () {
   const totalPrice = this.price || 0;
-  const platformFee = Math.round(totalPrice * 0.6); 
-  const cleanerPayout = Math.round(totalPrice * 0.4); 
+  const platformFee = Math.round(totalPrice * 0.6); // 60% to platform
+  const cleanerPayout = Math.round(totalPrice * 0.4); // 40% to cleaner
 
   return {
     totalPrice,

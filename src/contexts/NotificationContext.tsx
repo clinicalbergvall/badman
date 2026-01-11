@@ -3,6 +3,7 @@ import { toast } from 'react-hot-toast'
 import { io, Socket } from 'socket.io-client'
 import { logger } from '@/lib/logger'
 import { loadUserSession } from '@/lib/storage'
+import { NotificationService } from '@/lib/notificationService'
 
 export interface Notification {
   id: string
@@ -69,6 +70,32 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    // Register for FCM notifications
+    const registerFCMNotifications = async () => {
+      try {
+        const permissionGranted = await NotificationService.requestPermission();
+        if (permissionGranted) {
+          const token = await NotificationService.getDeviceToken();
+          if (token) {
+            // Send token to backend
+            await fetch('/api/users/device-token', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
+              },
+              body: JSON.stringify({ deviceToken: token })
+            });
+            console.log('FCM token registered successfully');
+          }
+        }
+      } catch (error) {
+        console.error('Error registering for FCM notifications:', error);
+      }
+    };
+
+    registerFCMNotifications();
+
     try {
       const OVERRIDE_API_URL = localStorage.getItem('apiOverride') || ''
       const VITE_API_URL = import.meta.env.VITE_API_URL
@@ -89,7 +116,6 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
         logger.error('Socket connection error', error instanceof Error ? error : undefined, { eventId: 'socket-connection-error' });
       });
 
-
       const eventTypes = [
         'booking_created',
         'booking_accepted',
@@ -104,6 +130,11 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
         socket?.on(type, (data) => {
           processNotification(type, data);
         });
+      });
+
+      // Listen for FCM messages
+      NotificationService.onMessageReceived((payload) => {
+        processNotification('fcm_message', payload);
       });
 
       return () => {
@@ -126,6 +157,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       payout_processed: 'Payout Sent',
       newMessage: 'New Message',
       cleaner_status_update: 'Cleaner Update',
+      fcm_message: 'New Notification',
     }
     const messageMap: Record<string, (d: any) => string> = {
       booking_created: (d) => `A ${d?.serviceCategory || 'service'} booking is now pending`,
@@ -135,6 +167,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       payout_processed: (d) => `Payout processed for booking ${d?.bookingId?.slice?.(0, 8) || ''}`,
       newMessage: (d) => `New message${d?.message?.senderName ? ` from ${d.message.senderName}` : ''}${d?.bookingId ? ` for booking ${d.bookingId.slice(0, 8)}` : ''}`,
       cleaner_status_update: (d) => `Cleaner status updated to ${d?.status || 'new status'}`,
+      fcm_message: (d) => d?.notification?.body || 'You have received a notification',
     }
 
     const title = titleMap[type] || 'Update'
@@ -149,10 +182,11 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
             type === 'booking_accepted' ? 'cleaner_accepted' :
               type === 'newMessage' ? 'new_message' :
                 type === 'cleaner_status_update' ? 'cleaner_on_way' :
-                  type || 'info') as Notification['type'],
+                  type === 'fcm_message' ? 'info' :
+                    type || 'info') as Notification['type'],
         title,
         message,
-        bookingId: data?.bookingId,
+        bookingId: data?.bookingId || data?.data?.bookingId,
         read: false,
         createdAt: new Date().toISOString(),
       },
@@ -175,6 +209,8 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
                     <span className="text-xl">💰</span>
                   ) : type.includes('booking') ? (
                     <span className="text-xl">🚗</span>
+                  ) : type === 'fcm_message' ? (
+                    <span className="text-xl">🔔</span>
                   ) : (
                     <span className="text-xl">✨</span>
                   )}
@@ -200,6 +236,15 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
           </div>
         </div>
       ), { duration: 5000 });
+    }
+    
+    // Show browser notification if available and type is FCM
+    if (type === 'fcm_message' && 'Notification' in window && Notification.permission === 'granted') {
+      new Notification(title, {
+        body: message,
+        icon: '/favicon.ico',
+        tag: `fcm_${Date.now()}`
+      });
     }
   };
 

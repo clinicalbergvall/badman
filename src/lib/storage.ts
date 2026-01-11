@@ -104,7 +104,7 @@ export function addBookingToCleanerJobs(
   );
 
   
-  const cleanerPayout = Math.round((booking.price || 0) * 0.6);
+  const cleanerPayout = Math.round((booking.price || 0) * 0.4);
 
   const opportunity: CleanerJobOpportunity = {
     id,

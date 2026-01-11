@@ -304,7 +304,7 @@ export const LoginForm = ({
       if (data.success && data.user) {
         
         localStorage.setItem(
-          "clean-cloak-user-session",
+          "cleancloak-user-session",
           JSON.stringify({
             userType: data.user.role as "client" | "cleaner" | "admin",
             name: data.user.name,
@@ -322,8 +322,9 @@ export const LoginForm = ({
           toast.error(data.message || "Authentication failed");
         }
       }
-    } catch (error) {
-      toast.error("Network error. Please try again.");
+    } catch (error: any) {
+      const errorMessage = error?.message || "Network error. Please try again.";
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }

@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Backend Connection Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; }
+        .success { background-color: #d4edda; }
+        .error { background-color: #f8d7da; }
+        button { padding: 10px 15px; margin: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Backend Connection Test</h1>
+    
+    <div class="test-section">
+        <h3>Test 1: Health Check (GET)</h3>
+        <button onclick="testHealth()">Test Health Endpoint</button>
+        <div id="health-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>Test 2: Preflight Check (OPTIONS)</h3>
+        <button onclick="testPreflight()">Test Preflight Request</button>
+        <div id="preflight-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>Test 3: Login Simulation (POST)</h3>
+        <button onclick="testPost()">Test POST Request</button>
+        <div id="post-result"></div>
+    </div>
+
+    <script>
+        const BACKEND_URL = 'https://clean-cloak-b.onrender.com';
+        
+        async function testHealth() {
+            const resultDiv = document.getElementById('health-result');
+            resultDiv.innerHTML = 'Testing...';
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/health`, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                const data = await response.json();
+                resultDiv.innerHTML = `<div class="success">✓ Success: ${JSON.stringify(data, null, 2)}</div>`;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">✗ Error: ${error.message}</div>`;
+            }
+        }
+        
+        async function testPreflight() {
+            const resultDiv = document.getElementById('preflight-result');
+            resultDiv.innerHTML = 'Testing...';
+            
+            try {
+                const response = await fetch(`${BACKEND_URL}/api/health`, {
+                    method: 'OPTIONS',
+                    headers: {
+                        'Origin': window.location.origin,
+                        'Access-Control-Request-Method': 'POST',
+                        'Access-Control-Request-Headers': 'Content-Type, Authorization'
+                    }
+                });
+                
+                resultDiv.innerHTML = `<div class="success">✓ Preflight Success: Status ${response.status}</div>`;
+                console.log('Preflight response headers:', Object.fromEntries(response.headers.entries()));
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">✗ Preflight Error: ${error.message}</div>`;
+            }
+        }
+        
+        async function testPost() {
+            const resultDiv = document.getElementById('post-result');
+            resultDiv.innerHTML = 'Testing...';
+            
+            try {
+                // Try a simple POST to a non-auth endpoint first
+                const response = await fetch(`${BACKEND_URL}/api/health`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Origin': window.location.origin
+                    },
+                    body: JSON.stringify({})
+                });
+                
+                const data = await response.json();
+                resultDiv.innerHTML = `<div class="success">✓ POST Success: ${JSON.stringify(data, null, 2)}</div>`;
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="error">✗ POST Error: ${error.message}</div>`;
+                console.error('POST request failed:', error);
+            }
+        }
+    </script>
+</body>
+</html>

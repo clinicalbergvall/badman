@@ -99,7 +99,7 @@ router.get('/:bookingId', protect, async (req, res) => {
 
 router.post('/:bookingId/message', protect, async (req, res) => {
   try {
-    const { message, imageUrl } = req.body;
+    const { message } = req.body;
 
     const chatRoom = await ChatRoom.findOne({ booking: req.params.bookingId });
 
@@ -123,7 +123,7 @@ router.post('/:bookingId/message', protect, async (req, res) => {
     const senderRole = chatRoom.client.toString() === req.user.id ? 'client' : 'cleaner';
 
     
-    await chatRoom.addMessage(req.user.id, senderRole, message, imageUrl);
+    await chatRoom.addMessage(req.user.id, senderRole, message);
     
     
     const recipientId = senderRole === 'client' ? chatRoom.cleaner : chatRoom.client;
@@ -146,7 +146,7 @@ router.post('/:bookingId/message', protect, async (req, res) => {
     res.json({
       success: true,
       message: 'Message sent successfully',
-      message: {  
+      data: {  
         ...updatedChatRoom.messages[updatedChatRoom.messages.length - 1],
         id: updatedChatRoom.messages[updatedChatRoom.messages.length - 1]._id,
         bookingId: req.params.bookingId,
@@ -156,7 +156,6 @@ router.post('/:bookingId/message', protect, async (req, res) => {
         message: updatedChatRoom.messages[updatedChatRoom.messages.length - 1].message,
         timestamp: updatedChatRoom.messages[updatedChatRoom.messages.length - 1].timestamp,
         read: updatedChatRoom.messages[updatedChatRoom.messages.length - 1].readByClient,
-        imageUrl: updatedChatRoom.messages[updatedChatRoom.messages.length - 1].imageUrl,
       }
     });
   } catch (error) {
