@@ -329,25 +329,10 @@ if (process.env.NODE_ENV === 'production') {
 
   // Serve frontend app for web browser navigation requests that don't match static files
   // This should be registered last, after all API routes
-  app.get('*', (req, res, next) => {
-    // Check if it's an API request (by path or headers)
-    // Enhanced API request detection for mobile apps
-    const isApiRequest = req.path.startsWith('/api/') ||
-      req.headers['x-requested-with'] === 'XMLHttpRequest' ||
-      req.headers.accept?.includes('application/json') ||
-      req.headers['content-type']?.includes('application/json') ||
-      req.headers['x-capacitor'] || // Explicit Capacitor header
-      req.headers.origin === undefined || // Native requests may not have origin
-      req.headers['user-agent']?.toLowerCase().includes('capacitor') ||
-      req.headers['user-agent']?.toLowerCase().includes('mobile');
-    
-    if (isApiRequest) {
-      // This is an API request, let it continue to 404 handler
-      next();
-    } else {
-      // This is a web browser navigation request, serve the frontend app
-      res.sendFile(path.join(__dirname, 'dist', 'index.html'));
-    }
+  app.get(/^((?!\/api\/).)*$/, (req, res) => { // Handle all non-API routes
+    // This route only matches non-API routes due to the regex pattern, so we can serve the frontend
+    // This is a web browser navigation request, serve the frontend app
+    res.sendFile(path.join(__dirname, 'dist', 'index.html'));
   });
 }
 
