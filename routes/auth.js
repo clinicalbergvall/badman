@@ -63,12 +63,14 @@ router.post(
       }
 
       // Create new user
+      console.log('Creating user with data:', { name, phone, passwordExists: !!password, role: role || "client" });
       const user = await User.create({
         name,
         phone,
         password,
         role: role || "client"
       });
+      console.log('User created successfully:', { userId: user._id, passwordSet: !!user.password });
 
       // Generate token
       const token = generateToken(user._id);
@@ -149,8 +151,10 @@ router.post(
       }
 
       // Check password using bcrypt
+      console.log('Comparing passwords:', { userId: user._id, passwordProvided: !!password, userPasswordExists: !!user.password });
       const isPasswordValid = await user.comparePassword(password);
       if (!isPasswordValid) {
+        console.log('Password comparison failed for user:', user._id);
         return res.status(401).json({
           success: false,
           message: "Invalid credentials",
