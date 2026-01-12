@@ -15,6 +15,7 @@ dotenv.config();
 
 
 const app = express();
+app.set('trust proxy', true);
 
 
 app.use(helmet());
@@ -417,18 +418,16 @@ app.use((req, res) => {
 
 process.on('SIGTERM', () => {
   console.log('SIGTERM received, shutting down gracefully');
-  mongoose.connection.close(() => {
-    console.log('MongoDB connection closed');
-    process.exit(0);
-  });
+  mongoose.connection.close();
+  console.log('MongoDB connection closed');
+  process.exit(0);
 });
 
 process.on('SIGINT', () => {
   console.log('SIGINT received, shutting down gracefully');
-  mongoose.connection.close(() => {
-    console.log('MongoDB connection closed');
-    process.exit(0);
-  });
+  mongoose.connection.close();
+  console.log('MongoDB connection closed');
+  process.exit(0);
 });
 
 

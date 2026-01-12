@@ -3,7 +3,7 @@ import { toast } from 'react-hot-toast'
 import { io, Socket } from 'socket.io-client'
 import { logger } from '@/lib/logger'
 import { loadUserSession } from '@/lib/storage'
-import { NotificationService } from '@/lib/notificationService'
+import { NotificationService } from '@/lib/browserNotificationService'
 
 export interface Notification {
   id: string
@@ -133,7 +133,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       });
 
       // Listen for FCM messages
-      NotificationService.onMessageReceived((payload) => {
+      NotificationService.onMessageReceived((payload: any) => {
         processNotification('fcm_message', payload);
       });
 

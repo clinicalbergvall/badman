@@ -1,4 +1,5 @@
-import React, { Suspense, useEffect } from "react";
+import React from "react";
+const { Suspense, useEffect } = React;
 import ReactDOM from "react-dom/client";
 import {
   BrowserRouter,
@@ -242,12 +243,12 @@ const BackButtonHandler = () => {
 
               const atRoot = location.pathname === "/";
               if (!atRoot) {
-                navigate(-1);
+                navigate(-1 as unknown as string);
                 return;
               }
 
               if (window.history.length > 1) {
-                navigate(-1);
+                navigate(-1 as unknown as string);
                 return;
               }
 

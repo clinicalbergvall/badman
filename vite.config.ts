@@ -4,11 +4,15 @@ const path = require("path");
 
 
 module.exports = defineConfig({
-  plugins: [react.default()],
+  plugins: [react({
+    jsxRuntime: 'classic',
+  })],
 
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      'react': require.resolve('react'),
+      'react-dom': require.resolve('react-dom'),
     },
   },
 
@@ -48,11 +52,14 @@ module.exports = defineConfig({
   optimizeDeps: {
     include: [
       "react",
+      "react/jsx-runtime",
       "react-dom",
+      "react-dom/client",
       "react-router-dom",
       "react-hot-toast",
       "zod",
     ],
+    exclude: [],
   },
 
   server: {

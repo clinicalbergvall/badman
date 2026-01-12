@@ -1,8 +1,8 @@
-import { HTMLAttributes } from 'react'
+import React from 'react';
 
-interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
+type BadgeProps = React.HTMLAttributes<HTMLSpanElement> & {
   variant?: 'default' | 'success' | 'warning' | 'error' | 'secondary' | 'outline'
-}
+};
 
 export function Badge({ variant = 'default', className = '', children, ...props }: BadgeProps) {
   const variants: Record<NonNullable<BadgeProps['variant']>, string> = {

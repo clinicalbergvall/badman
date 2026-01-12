@@ -1,6 +1,7 @@
 import Booking from './pages/BookingEnhanced'
 import { Badge } from '@/components/ui'
-import { useEffect, useState } from 'react'
+import React from 'react';
+const { useEffect, useState } = React;
 
 export default function App() {
   const [performanceMode, setPerformanceMode] = useState(false)

@@ -1,5 +1,7 @@
 
-import { useState, useEffect } from "react";
+/// <reference types="./types/global" />
+import React from "react";
+const { useState, useEffect } = React;
 import { useLocation, useNavigate } from "react-router-dom";
 import BookingEnhanced from "./pages/BookingEnhanced";
 import BookingHistory from "./pages/BookingHistory";
@@ -110,7 +112,7 @@ export default function App() {
     setCurrentPage(page);
     const params = new URLSearchParams(location.search);
     params.set("tab", page);
-    navigate({ pathname: "/", search: params.toString() });
+    navigate(`/?${params.toString()}`);
   };
 
 
