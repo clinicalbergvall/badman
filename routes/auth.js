@@ -138,9 +138,9 @@ router.post(
       // Find user by phone or name
       let user;
       if (isPhone) {
-        user = await User.findOne({ phone: identifier });
+        user = await User.findOne({ phone: identifier }).select('+password');
       } else {
-        user = await User.findOne({ name: identifier });
+        user = await User.findOne({ name: identifier }).select('+password');
       }
 
       if (!user) {

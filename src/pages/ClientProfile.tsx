@@ -217,7 +217,7 @@ export default function ClientProfile() {
                   <p className="text-gray-500">No transactions yet</p>
                 ) : (
                   <div className="space-y-2">
-                    {transactions.slice(0, 5).map((transaction) => (
+                    {transactions.slice(0, 5).map((transaction: Transaction) => (
                       <div key={transaction.id} className="border rounded p-3">
                         <div className="flex justify-between">
                           <div>
