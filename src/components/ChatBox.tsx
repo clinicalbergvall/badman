@@ -138,7 +138,7 @@ export default function ChatBox({
         const { message: newMessage } = data || {}
 
         if (newMessage && newMessage.bookingId === bookingId &&
-          !messages.some(msg => msg.id === newMessage.id)) {
+          !messages.some((msg: ChatMessage) => msg.id === newMessage.id)) {
 
           const transformedMessage = {
             id: newMessage._id || Date.now().toString(),
@@ -150,7 +150,7 @@ export default function ChatBox({
             timestamp: newMessage.timestamp || new Date().toISOString(),
             read: newMessage.read || false,
           };
-          setMessages(prev => [...prev, transformedMessage]);
+          setMessages((prev: ChatMessage[]) => [...prev, transformedMessage]);
         }
       });
 
@@ -173,7 +173,7 @@ export default function ChatBox({
       if (response.ok) {
         const data = await response.json()
         if (data.success && data.data) {
-          setMessages(prev => [...prev, data.data])
+          setMessages((prev: ChatMessage[]) => [...prev, data.data])
           setNewMessage('')
         } else {
           toast.error(data.message || 'Failed to send message')
@@ -281,29 +281,29 @@ export default function ChatBox({
                 </span>
               </div>
               {dateMessages.map((msg) => {
-                const isOwnMessage = msg.senderRole === currentUserRole
+                const isClientMessage = msg.senderRole === 'client'
 
                 return (
                   <div
                     key={msg.id}
-                    className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'} mb-3`}
+                    className={`flex ${isClientMessage ? 'justify-end' : 'justify-start'} mb-3`}
                   >
-                    <div className={`max-w-[80%] ${isOwnMessage ? 'order-2' : 'order-1'} ${isOwnMessage ? 'ml-auto' : 'mr-auto'}`}>
+                    <div className={`max-w-[80%] ${isClientMessage ? 'order-2' : 'order-1'} ${isClientMessage ? 'ml-auto' : 'mr-auto'}`}>
                       <div
-                        className={`rounded-2xl px-4 py-2 ${isOwnMessage
+                        className={`rounded-2xl px-4 py-2 ${isClientMessage
                             ? 'bg-blue-500 text-white rounded-br-none'
                             : 'bg-gray-300 text-gray-800 rounded-bl-none'
                           }`}
                       >
-                        {!isOwnMessage && msg.senderName && (
+                        {!isClientMessage && msg.senderName && (
                           <p className="text-xs font-semibold mb-1">{msg.senderName}</p>
                         )}
                         <p className="text-sm whitespace-pre-wrap break-words">{msg.message}</p>
 
                       </div>
-                      <div className={`text-xs ${isOwnMessage ? 'text-blue-100' : 'text-gray-500'} mt-1 flex ${isOwnMessage ? 'flex-row-reverse justify-end' : 'justify-start'}`}>
+                      <div className={`text-xs ${isClientMessage ? 'text-blue-100' : 'text-gray-500'} mt-1 flex ${isClientMessage ? 'flex-row-reverse justify-end' : 'justify-start'}`}>
                         <span>{formatTime(msg.timestamp)}</span>
-                        {isOwnMessage && (
+                        {isClientMessage && (
                           <span className="ml-1">
                             {msg.read ? '✓✓' : '✓'}
                           </span>
