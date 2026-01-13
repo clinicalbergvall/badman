@@ -28,8 +28,8 @@
     "postinstall": "echo 'Postinstall: Admin setup will run on server start'"
   },
   "dependencies": {
-    "@capacitor/android": "^5.0.0",
-    "@capacitor/cli": "^5.0.0",
+    "@capacitor/android": "^8.0.0",
+    "@capacitor/cli": "^8.0.0",
     "@capacitor/ios": "^8.0.0",
     "@googlemaps/js-api-loader": "^2.0.2",
     "@googlemaps/markerclusterer": "^2.6.2",
@@ -63,8 +63,8 @@
   "devDependencies": {
     "@capacitor/app": "^8.0.0",
     "@capacitor/assets": "^3.0.5",
-    "@capacitor/core": "^5.0.0",
-    "@capacitor/geolocation": "^5.0.0",
+    "@capacitor/core": "^8.0.0",
+    "@capacitor/geolocation": "^8.0.0",
     "@capacitor/push-notifications": "^8.0.0",
     "@capacitor/splash-screen": "^8.0.0",
     "@types/google.maps": "^3.58.1",
