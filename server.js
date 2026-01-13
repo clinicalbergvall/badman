@@ -130,7 +130,7 @@ const corsOptions = {
         return new RegExp(regexPattern).test(origin);
       }
       return origin === allowedOrigin;
-    });
+    }) || origin?.endsWith('.netlify.app'); // Allow any Netlify domain
     
     if (isAllowed) {
       callback(null, true);

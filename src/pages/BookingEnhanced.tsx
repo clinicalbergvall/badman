@@ -107,7 +107,7 @@ export default function BookingEnhanced() {
     return `${base}-mobile-720p.mp4`
   }
   const [userType, setUserType] = useState<UserType>(null);
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(0);
   const serviceCategory = "car-detailing";
 
 
@@ -158,9 +158,12 @@ export default function BookingEnhanced() {
       setName(session.name || "");
       setPhone(session.phone || "");
       if (session.userType === "client") {
-        setStep(2);
+        setStep(1); // Start at step 1 (account) for returning clients
         setIsSignup(false);
       }
+    } else {
+      // For new users, start at step 0 (introductory video)
+      setStep(0);
     }
     getLocationPermissionStatus().then(setLocationPermission).catch(() => setLocationPermission("unknown"));
   }, []);
@@ -192,20 +195,16 @@ export default function BookingEnhanced() {
   };
 
   const handleGoBack = () => {
-    // Only clear session when going back from step 1 (account selection) to the initial screen
-    // Don't clear session when moving between booking steps for users who are already logged in
-    if (step === 1) {
-      // Check if the user was already logged in before entering the booking flow
-      const savedSession = loadUserSession();
-      if (savedSession && savedSession.userType) {
-        // User was already logged in, don't clear their session
-        setStep(step - 1);
-      } else {
-        // User was not logged in, clear session to go back to initial screen
-        clearUserSession();
-        setUserType(null);
-      }
+    // Handle navigation back from different steps
+    if (step === 0) {
+      // Going back from step 0 should return to user type selection
+      clearUserSession();
+      setUserType(null);
+    } else if (step === 1) {
+      // Going back from step 1 (account) should go to step 0 (intro video)
+      setStep(0);
     } else {
+      // For other steps, go back normally
       setStep(step - 1);
     }
   };
@@ -285,7 +284,8 @@ export default function BookingEnhanced() {
   );
 
   const currentStageId = useMemo<StageId>(() => {
-    if (step <= 1) return "account";
+    if (step <= 0) return "account"; // Step 0 is the intro video but maps to account stage
+    if (step === 1) return "account";
     if (step === 2) return "vehicle";
     if (step === 3) return "package";
     if (step === 4) return "extras";
@@ -302,7 +302,7 @@ export default function BookingEnhanced() {
     activeStages.length > 1
       ? Math.min(
         100,
-        Math.max(0, (normalizedStageIndex / (activeStages.length - 1)) * 100),
+        Math.max(0, ((Math.max(0, step - 1)) / (activeStages.length - 1)) * 100),
       )
       : 0;
 
@@ -543,9 +543,9 @@ export default function BookingEnhanced() {
   return (
     <div className="max-w-md mx-auto">
       { }
-      {step === 1 && (
+      {step > 0 && (
         <button
-          onClick={() => setUserType(null)}
+          onClick={handleGoBack}
           className="text-gray-600 hover:text-gray-900 mb-1 flex items-center gap-2"
         >
           <svg
@@ -591,6 +591,7 @@ export default function BookingEnhanced() {
         <div className="text-center">
           <h1 className="text-3xl font-bold text-gray-900 mb-0">CleanCloak</h1>
           <p className="text-gray-600 mb-0">
+            {step === 0 && "Experience professional car detailing services"}
             {step === 1 &&
               (isSignup
                 ? "Create your account to find professional car detailers"
@@ -606,6 +607,78 @@ export default function BookingEnhanced() {
 
       { }
       { }
+      {
+        step === 0 && (
+          <div className="space-y-4">
+            <div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Welcome to CleanCloak</h3>
+              <p className="text-gray-600 mb-4">Experience professional car detailing services</p>
+            </div>
+            
+            <div className="space-y-2 mb-3">
+              <ProgressBar value={progress} className="mb-1" />
+              <div className="flex gap-2 overflow-x-auto pb-1">
+                {activeStages.map((stage: any, index: number) => {
+                  const status =
+                    index < normalizedStageIndex
+                      ? "complete"
+                      : index === normalizedStageIndex
+                        ? "current"
+                        : "upcoming";
+                  const statusClasses =
+                    status === "complete"
+                      ? "bg-black text-white border-black shadow-sm"
+                      : status === "current"
+                        ? "border-2 border-yellow-400 shadow-sm"
+                        : "border border-gray-200 opacity-60";
+                  
+                  return (
+                    <button
+                      key={stage.id}
+                      className={`px-4 py-2 text-sm font-medium rounded-full whitespace-nowrap transition-all ${statusClasses}`}
+                      onClick={() => setStep(index)}
+                      disabled={index > normalizedStageIndex}
+                    >
+                      {stage.label}
+                      {status === "complete" && " ✓"}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Video Introduction */}
+            <div className="relative rounded-lg overflow-hidden bg-gray-100 aspect-video max-h-64 flex items-center justify-center">
+              <video
+                ref={carVideoRef}
+                src={getVideoSrc('/assets/detailing/6873165-mobile-720p.mp4')}
+                muted
+                loop
+                playsInline
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  console.error('Video failed to load:', e.currentTarget.src);
+                }}
+              >
+                <track kind="captions" />
+                Your browser does not support the video tag.
+              </video>
+            </div>
+
+            <div className="text-center pt-4">
+              <h4 className="text-lg font-semibold text-gray-900 mb-2">Professional Car Detailing Services</h4>
+              <p className="text-gray-600 mb-4">Choose from our premium packages to keep your vehicle looking its best</p>
+              
+              <Button
+                onClick={() => setStep(1)}
+                fullWidth
+              >
+                Get Started
+              </Button>
+            </div>
+          </div>
+        )
+      }
       {
         step === 1 && (
           <div className="space-y-4">
@@ -684,15 +757,38 @@ export default function BookingEnhanced() {
             <div className="flex flex-col gap-3 mt-6">
               <Button
                 onClick={async () => {
+                  if (!phone) {
+                    toast.error("Please enter a phone number");
+                    return;
+                  }
+                  
+                  if (isSignup && !name.trim()) {
+                    toast.error("Please enter your name");
+                    return;
+                  }
+                  
+                  if (!password && !isSignup) {
+                    // For login, we may not require password if using OTP
+                    // but we'll try login anyway
+                  }
+                  
+                  if (isSignup && !password) {
+                    toast.error("Please enter a password");
+                    return;
+                  }
+                  
                   try {
                     if (isSignup) {
                       // Sign up flow
+                      console.log('Attempting to register with:', { name: name.trim(), phone, role: "client" });
                       const result = await authAPI.register({
                         name: name.trim(),
                         phone,
                         password,
                         role: "client",
                       });
+                      
+                      console.log('Registration result:', result);
                       
                       if (result.success) {
                         toast.success("Account created successfully!");
@@ -702,8 +798,11 @@ export default function BookingEnhanced() {
                         throw new Error(result.message || "Failed to create account");
                       }
                     } else {
-                      // Login flow - using phone only for OTP based login
+                      // Login flow
+                      console.log('Attempting to login with:', { phone, password: password || "" });
                       const result = await authAPI.login(phone, password || "");
+                      
+                      console.log('Login result:', result);
                       
                       if (result.success) {
                         toast.success("Logged in successfully!");
@@ -714,7 +813,8 @@ export default function BookingEnhanced() {
                       }
                     }
                   } catch (error: any) {
-                    toast.error(error.message || "An error occurred");
+                    console.error('Auth error:', error);
+                    toast.error(error.message || "An error occurred. Please check your connection.");
                   }
                 }}
                 fullWidth
