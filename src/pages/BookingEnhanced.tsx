@@ -607,6 +607,136 @@ export default function BookingEnhanced() {
       { }
       { }
       {
+        step === 1 && (
+          <div className="space-y-4">
+            <div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                {isSignup ? "Create Account" : "Sign In"}
+              </h3>
+              <p className="text-gray-600 mb-4">
+                {isSignup
+                  ? "Create an account to get started with CleanCloak"
+                  : "Sign in to continue with your booking"}
+              </p>
+            </div>
+            
+            <div className="space-y-2 mb-3">
+              <ProgressBar value={progress} className="mb-1" />
+              <div className="flex gap-2 overflow-x-auto pb-1">
+                {activeStages.map((stage: any, index: number) => {
+                  const status =
+                    index < normalizedStageIndex
+                      ? "complete"
+                      : index === normalizedStageIndex
+                        ? "current"
+                        : "upcoming";
+                  const statusClasses =
+                    status === "complete"
+                      ? "bg-black text-white border-black shadow-sm"
+                      : status === "current"
+                        ? "border-2 border-yellow-400 shadow-sm"
+                        : "border border-gray-200 opacity-60";
+                  
+                  return (
+                    <button
+                      key={stage.id}
+                      className={`px-4 py-2 text-sm font-medium rounded-full whitespace-nowrap transition-all ${statusClasses}`}
+                      onClick={() => setStep(index + 1)}
+                      disabled={index > normalizedStageIndex}
+                    >
+                      {stage.label}
+                      {status === "complete" && " ✓"}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <Input
+                label="Full Name"
+                placeholder="Enter your full name"
+                value={name}
+                onChange={(e: any) => setName(e.target.value)}
+                required={isSignup}
+              />
+              
+              <Input
+                label="Phone Number"
+                placeholder="07XX XXX XXX"
+                value={phone}
+                onChange={(e: any) => setPhone(formatPhoneNumber(e.target.value))}
+                required
+              />
+              
+              {isSignup && (
+                <Input
+                  label="Password"
+                  type="password"
+                  placeholder="Create a password"
+                  value={password}
+                  onChange={(e: any) => setPassword(e.target.value)}
+                  required
+                />
+              )}
+            </div>
+
+            <div className="flex flex-col gap-3 mt-6">
+              <Button
+                onClick={async () => {
+                  try {
+                    if (isSignup) {
+                      // Sign up flow
+                      const result = await authAPI.register({
+                        name: name.trim(),
+                        phone,
+                        password,
+                        role: "client",
+                      });
+                      
+                      if (result.success) {
+                        toast.success("Account created successfully!");
+                        // Move to next step after successful signup
+                        setStep(2);
+                      } else {
+                        throw new Error(result.message || "Failed to create account");
+                      }
+                    } else {
+                      // Login flow - using phone only for OTP based login
+                      const result = await authAPI.login(phone, password || "");
+                      
+                      if (result.success) {
+                        toast.success("Logged in successfully!");
+                        // Move to next step after successful login
+                        setStep(2);
+                      } else {
+                        throw new Error(result.message || "Failed to login");
+                      }
+                    }
+                  } catch (error: any) {
+                    toast.error(error.message || "An error occurred");
+                  }
+                }}
+                fullWidth
+                disabled={!phone || (isSignup && (!name || !password))}
+              >
+                {isSignup ? "Create Account" : "Sign In"}
+              </Button>
+              
+              <Button
+                variant="ghost"
+                onClick={() => setIsSignup(!isSignup)}
+                fullWidth
+              >
+                {isSignup
+                  ? "Already have an account? Sign In"
+                  : "Don't have an account? Sign Up"}
+              </Button>
+            </div>
+          </div>
+        )
+      }
+      {
         step === 2 && (
           <div className="space-y-4">
             <div>
