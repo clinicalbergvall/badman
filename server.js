@@ -292,7 +292,11 @@ connectToDatabase().then(async () => {
       console.log('✅ Admin user already exists, skipping creation');
     }
   } catch (error) {
-    console.error('Error during admin creation check:', error);
+    if (error.code === 11000 && error.keyValue && error.keyValue.phone === '0700000000') {
+      console.log('✅ Admin user already exists, skipping creation (duplicate key error)');
+    } else {
+      console.error('Error during admin creation check:', error);
+    }
   }
 }).catch(err => {
   console.error('Failed to initialize database connection:', err);
