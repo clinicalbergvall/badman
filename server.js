@@ -260,7 +260,41 @@ process.on('uncaughtException', (err) => {
 });
 
 
-connectToDatabase().catch(err => {
+connectToDatabase().then(async () => {
+  console.log('Database connected, checking for admin user...');
+  
+  // Dynamically import User model after database connection
+  const User = require('./models/User');
+  
+  try {
+    // Check if admin user exists
+    const adminPhone = '0700000000'; // Default admin phone
+    const existingAdmin = await User.findOne({ role: 'admin', phone: adminPhone });
+    
+    if (!existingAdmin) {
+      console.log('No admin user found, creating default admin...');
+      
+      // Create a default admin user
+      const adminUser = new User({
+        name: 'Admin User',
+        phone: adminPhone,
+        password: 'cloak123', // Default password - change after first login
+        role: 'admin',
+        isVerified: true,
+        verificationStatus: 'verified'
+      });
+      
+      await adminUser.save();
+      console.log('✅ Default admin user created successfully!');
+      console.log('📱 Admin phone:', adminUser.phone);
+      console.log('🔐 Default password: cloak123 (CHANGE IMMEDIATELY after first login)');
+    } else {
+      console.log('✅ Admin user already exists, skipping creation');
+    }
+  } catch (error) {
+    console.error('Error during admin creation check:', error);
+  }
+}).catch(err => {
   console.error('Failed to initialize database connection:', err);
 });
 
