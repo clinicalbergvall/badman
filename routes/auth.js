@@ -8,7 +8,10 @@ const router = express.Router();
 
 // Function to generate JWT token
 const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET || 'fallback_secret_key', {
+  if (!process.env.JWT_SECRET) {
+    throw new Error('JWT_SECRET environment variable is required. Application cannot start without it.');
+  }
+  return jwt.sign({ id }, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRE || "7d",
   });
 };
@@ -208,7 +211,13 @@ router.get("/me", async (req, res) => {
 
     try {
       // Verify token
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret_key');
+      if (!process.env.JWT_SECRET) {
+        return res.status(500).json({
+          success: false,
+          message: 'Server configuration error. Please contact support.'
+        });
+      }
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
       
       // Find user by ID
       const user = await User.findById(decoded.id);

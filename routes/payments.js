@@ -48,6 +48,15 @@ router.post('/initiate', protect, async (req, res) => {
     }
     
     
+    // Validate IntaSend credentials
+    if (!process.env.INTASEND_PUBLIC_KEY || !process.env.INTASEND_SECRET_KEY) {
+      console.error('❌ IntaSend credentials not configured');
+      return res.status(500).json({
+        success: false,
+        message: 'Payment service not configured. Please contact support.'
+      });
+    }
+    
     const intasend = new IntaSend(
       process.env.INTASEND_PUBLIC_KEY,        
       process.env.INTASEND_SECRET_KEY,
@@ -57,12 +66,14 @@ router.post('/initiate', protect, async (req, res) => {
     
     const formattedPhone = phoneNumber.replace(/^0/, '254').replace(/^\+/, '');
     
+    // Recalculate pricing to ensure correct amount
+    const pricing = booking.calculatePricing();
     
     const collection = intasend.collection();
     const response = await collection.mpesaStkPush({
-      amount: booking.price,
+      amount: pricing.totalPrice,
       phone_number: formattedPhone,
-      api_ref: bookingId,
+      api_ref: bookingId.toString(),
       callback_url: `${process.env.BACKEND_URL || 'https://clean-cloak-b.onrender.com'}/api/payments/webhook`,
       metadata: {
         booking_id: bookingId,
@@ -128,6 +139,41 @@ router.post(
   express.raw({ type: 'application/json' }), 
   async (req, res) => {
     try {
+      // Verify webhook signature if secret is configured
+      if (process.env.INTASEND_WEBHOOK_SECRET) {
+        const crypto = require('crypto');
+        const signature = req.headers['x-intasend-signature'] || req.headers['signature'];
+        
+        if (signature) {
+          const expectedSignature = crypto
+            .createHmac('sha256', process.env.INTASEND_WEBHOOK_SECRET)
+            .update(req.body)
+            .digest('hex');
+          
+          // Use timing-safe comparison to prevent timing attacks
+          if (!crypto.timingSafeEqual(Buffer.from(signature), Buffer.from(expectedSignature))) {
+            console.error('❌ Webhook signature verification failed');
+            return res.status(401).json({ 
+              success: false, 
+              message: 'Invalid webhook signature' 
+            });
+          }
+        } else {
+          console.warn('⚠️ Webhook received without signature - accepting in development only');
+          if (process.env.NODE_ENV === 'production') {
+            return res.status(401).json({ 
+              success: false, 
+              message: 'Webhook signature required' 
+            });
+          }
+        }
+      } else {
+        console.warn('⚠️ INTASEND_WEBHOOK_SECRET not set - webhook verification disabled');
+        if (process.env.NODE_ENV === 'production') {
+          console.error('❌ CRITICAL: Running in production without webhook secret!');
+        }
+      }
+      
       const data = JSON.parse(req.body);
 
       
@@ -142,64 +188,112 @@ router.post(
 
         const booking = await Booking.findById(bookingId).populate('cleaner');
 
+        // Check if payment already processed (idempotency)
+        if (booking && booking.paid) {
+          console.log(`Payment already processed for booking ${bookingId}`);
+          return res.json({ success: true, message: 'Payment already processed' });
+        }
+
+        // Verify transaction ID hasn't been used before
+        if (data.id || data.transaction_id) {
+          const existingTransaction = await Transaction.findOne({
+            transactionId: data.id || data.transaction_id,
+            type: 'payment'
+          });
+          
+          if (existingTransaction) {
+            console.log(`Duplicate transaction detected: ${data.id || data.transaction_id}`);
+            return res.json({ success: true, message: 'Transaction already processed' });
+          }
+        }
+
         if (booking && !booking.paid) {
           
           const pricing = booking.calculatePricing();
           
+          // Verify payment amount matches booking price
+          const paymentAmount = parseFloat(data.amount || data.value || 0);
+          const expectedAmount = pricing.totalPrice;
           
-          booking.paid = true;
-          booking.paidAt = new Date();
-          booking.paymentStatus = 'paid';
-          booking.transactionId = data.id || data.transaction_id || '';
-          await booking.save();
-
+          if (Math.abs(paymentAmount - expectedAmount) > 1) { // Allow 1 KES difference for rounding
+            console.error(`❌ Payment amount mismatch: received ${paymentAmount}, expected ${expectedAmount} for booking ${bookingId}`);
+            return res.status(400).json({
+              success: false,
+              message: `Payment amount mismatch. Expected ${expectedAmount}, received ${paymentAmount}`
+            });
+          }
           
-          const paymentTransaction = new Transaction({
-            booking: booking._id,
-            client: booking.client,
-            cleaner: booking.cleaner,
-            type: 'payment',
-            amount: pricing.totalPrice,
-            paymentMethod: booking.paymentMethod,
-            transactionId: data.id || data.transaction_id || '',
-            reference: `JOB_${booking._id}`,
-            description: `Payment for cleaning service - ${booking.serviceCategory}`,
-            status: 'completed',
-            processedAt: new Date(),
-            metadata: {
-              intasendData: data,
-              split: {
-                platformFee: pricing.platformFee,
-                cleanerPayout: pricing.cleanerPayout
-              }
-            }
-          });
-          await paymentTransaction.save();
-
-          
-          await processCleanerPayout(booking, pricing.cleanerPayout);
-          
-          
-          sendNotificationToBookingParticipants(bookingId, 'payment_completed', {
-            bookingId: bookingId,
-            amount: pricing.totalPrice
-          });
-          
+          // Use MongoDB transaction for atomicity
+          const session = await mongoose.startSession();
+          session.startTransaction();
           
           try {
-            if (NotificationService && typeof NotificationService.sendPaymentCompletedNotification === 'function') {
-              await NotificationService.sendPaymentCompletedNotification(bookingId, booking.client);
-              if (booking.cleaner) {
-                await NotificationService.sendPaymentCompletedNotification(bookingId, booking.cleaner);
-              }
-            }
-          } catch (error) {
-            console.warn('Failed to send payment completed notification:', error.message);
-          }
+            booking.paid = true;
+            booking.paidAt = new Date();
+            booking.paymentStatus = 'paid';
+            booking.transactionId = data.id || data.transaction_id || '';
+            await booking.save({ session });
 
-          console.log(`Payment SUCCESS: KSh ${pricing.totalPrice} for JOB_${bookingId}`);
-          console.log(`Platform fee (60%): KSh ${pricing.platformFee}`);
-          console.log(`Cleaner payout (40%): KSh ${pricing.cleanerPayout}`);
+            const paymentTransaction = new Transaction({
+              booking: booking._id,
+              client: booking.client,
+              cleaner: booking.cleaner,
+              type: 'payment',
+              amount: pricing.totalPrice,
+              paymentMethod: booking.paymentMethod,
+              transactionId: data.id || data.transaction_id || '',
+              reference: `JOB_${booking._id}`,
+              description: `Payment for cleaning service - ${booking.serviceCategory}`,
+              status: 'completed',
+              processedAt: new Date(),
+              metadata: {
+                intasendData: data,
+                split: {
+                  platformFee: pricing.platformFee,
+                  cleanerPayout: pricing.cleanerPayout
+                }
+              }
+            });
+            await paymentTransaction.save({ session });
+
+            // Only process payout if cleaner is assigned
+            if (booking.cleaner) {
+              await processCleanerPayout(booking, pricing.cleanerPayout, session);
+            } else {
+              console.warn(`⚠️ Payment received for booking ${bookingId} but no cleaner assigned yet`);
+            }
+
+            // Commit transaction
+            await session.commitTransaction();
+            session.endSession();
+
+            // Send notifications after successful transaction
+            sendNotificationToBookingParticipants(bookingId, 'payment_completed', {
+              bookingId: bookingId,
+              amount: pricing.totalPrice
+            });
+            
+            try {
+              if (NotificationService && typeof NotificationService.sendPaymentCompletedNotification === 'function') {
+                await NotificationService.sendPaymentCompletedNotification(bookingId, booking.client);
+                if (booking.cleaner) {
+                  await NotificationService.sendPaymentCompletedNotification(bookingId, booking.cleaner);
+                }
+              }
+            } catch (error) {
+              console.warn('Failed to send payment completed notification:', error.message);
+            }
+
+            console.log(`Payment SUCCESS: KSh ${pricing.totalPrice} for JOB_${bookingId}`);
+            console.log(`Platform fee (60%): KSh ${pricing.platformFee}`);
+            console.log(`Cleaner payout (40%): KSh ${pricing.cleanerPayout}`);
+          } catch (error) {
+            // Rollback transaction on error
+            await session.abortTransaction();
+            session.endSession();
+            console.error('❌ Payment processing transaction failed:', error);
+            throw error;
+          }
         } else if (booking?.paid) {
           console.log(`Payment already processed for JOB_${bookingId}`);
         }
@@ -215,8 +309,13 @@ router.post(
 );
 
 
-async function processCleanerPayout(booking, payoutAmount) {
+async function processCleanerPayout(booking, payoutAmount, session = null) {
   try {
+    // Check if cleaner is assigned
+    if (!booking.cleaner) {
+      console.warn(`⚠️ Cannot process payout for booking ${booking._id} - no cleaner assigned yet`);
+      return; // Silently return, don't throw error
+    }
     
     const cleanerProfile = await CleanerProfile.findOne({ user: booking.cleaner });
     
@@ -246,14 +345,30 @@ async function processCleanerPayout(booking, payoutAmount) {
       }
     });
     
-    await payoutTransaction.save();
+    if (session) {
+      await payoutTransaction.save({ session });
+    } else {
+      await payoutTransaction.save();
+    }
     
     
     booking.payoutStatus = 'pending';
-    await booking.save();
+    if (session) {
+      await booking.save({ session });
+    } else {
+      await booking.save();
+    }
     
     
-    await processMpesaPayout(payoutTransaction, cleanerProfile.mpesaPhoneNumber, payoutAmount);
+    // Process payout outside transaction (IntaSend API call)
+    // If this fails, we'll handle it separately
+    try {
+      await processMpesaPayout(payoutTransaction, cleanerProfile.mpesaPhoneNumber, payoutAmount);
+    } catch (payoutError) {
+      // Log error but don't fail the payment transaction
+      console.error('Payout processing failed, but payment was successful:', payoutError);
+      // Payout will be retried later via admin dashboard
+    }
     
   } catch (error) {
     console.error('Error processing cleaner payout:', error);
@@ -370,6 +485,15 @@ router.post('/retry/:bookingId', protect, async (req, res) => {
     }
     
     
+    // Validate IntaSend credentials
+    if (!process.env.INTASEND_PUBLIC_KEY || !process.env.INTASEND_SECRET_KEY) {
+      console.error('❌ IntaSend credentials not configured');
+      return res.status(500).json({
+        success: false,
+        message: 'Payment service not configured. Please contact support.'
+      });
+    }
+    
     const intasend = new IntaSend(
       process.env.INTASEND_PUBLIC_KEY,        
       process.env.INTASEND_SECRET_KEY,
@@ -379,12 +503,14 @@ router.post('/retry/:bookingId', protect, async (req, res) => {
     
     const formattedPhone = phoneNumber.replace(/^0/, '254').replace(/^\+/, '');
     
+    // Recalculate pricing to ensure correct amount
+    const pricing = booking.calculatePricing();
     
     const collection = intasend.collection();
     const response = await collection.mpesaStkPush({
-      amount: booking.price,
+      amount: pricing.totalPrice,
       phone_number: formattedPhone,
-      api_ref: booking._id,
+      api_ref: booking._id.toString(),
       callback_url: `${process.env.BACKEND_URL || 'https://clean-cloak-b.onrender.com'}/api/payments/webhook`,
       metadata: {
         booking_id: booking._id.toString(),

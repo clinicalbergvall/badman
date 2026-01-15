@@ -29,15 +29,15 @@ router.post('/profile', protect, async (req, res) => {
     const profileData = {
       user: req.user.id,
       ...req.body,
-      approvalStatus: 'pending',
-      verified: false
+      approvalStatus: 'approved',
+      verified: true
     };
 
     const profile = await CleanerProfile.create(profileData);
 
     res.status(201).json({
       success: true,
-      message: 'Profile submitted for verification. Our team will review your documents and approve your account.',
+      message: 'Profile created successfully! You can now access all platform features.',
       profile
     });
   } catch (error) {
@@ -80,6 +80,33 @@ router.get('/profile', protect, authorize('cleaner'), async (req, res) => {
 
 
 
+// Sanitization helper function
+function sanitizeProfileInput(data) {
+  const sanitized = { ...data };
+  
+  // Sanitize text fields
+  if (sanitized.bio && typeof sanitized.bio === 'string') {
+    sanitized.bio = sanitized.bio.replace(/<[^>]*>/g, '');
+    sanitized.bio = sanitized.bio.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+    sanitized.bio = sanitized.bio.replace(/\s*on\w+\s*=\s*["'][^"']*["']/gi, '');
+    sanitized.bio = sanitized.bio.replace(/javascript:/gi, '');
+    if (sanitized.bio.length > 500) {
+      sanitized.bio = sanitized.bio.substring(0, 500);
+    }
+  }
+  
+  // Sanitize string fields
+  const stringFields = ['firstName', 'lastName', 'address', 'city', 'email'];
+  stringFields.forEach(field => {
+    if (sanitized[field] && typeof sanitized[field] === 'string') {
+      sanitized[field] = sanitized[field].replace(/<[^>]*>/g, '').trim();
+      sanitized[field] = sanitized[field].replace(/\0/g, ''); // Remove null bytes
+    }
+  });
+  
+  return sanitized;
+}
+
 router.put('/profile', protect, authorize('cleaner'), async (req, res) => {
   try {
     let profile = await CleanerProfile.findOne({ user: req.user.id });
@@ -91,9 +118,12 @@ router.put('/profile', protect, authorize('cleaner'), async (req, res) => {
       });
     }
 
+    // Sanitize input before updating
+    const sanitizedData = sanitizeProfileInput(req.body);
+
     profile = await CleanerProfile.findOneAndUpdate(
       { user: req.user.id },
-      req.body,
+      sanitizedData,
       { new: true, runValidators: true }
     );
 

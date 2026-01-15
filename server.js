@@ -260,6 +260,52 @@ process.on('uncaughtException', (err) => {
 });
 
 
+// Validate critical environment variables on startup
+function validateEnvironmentVariables() {
+  const required = [
+    'JWT_SECRET',
+    'MONGODB_URI'
+  ];
+  
+  const missing = required.filter(key => !process.env[key]);
+  
+  if (missing.length > 0) {
+    console.error('❌ CRITICAL: Missing required environment variables:');
+    missing.forEach(key => {
+      console.error(`   - ${key}`);
+    });
+    console.error('⚠️  Application may not function correctly without these variables.');
+    
+    if (process.env.NODE_ENV === 'production') {
+      console.error('🚨 PRODUCTION MODE: Application should not run without required variables.');
+      // In production, you might want to exit here
+      // process.exit(1);
+    }
+  }
+  
+  // Warn about payment variables
+  const paymentRequired = [
+    'INTASEND_PUBLIC_KEY',
+    'INTASEND_SECRET_KEY'
+  ];
+  
+  const missingPayment = paymentRequired.filter(key => !process.env[key]);
+  if (missingPayment.length > 0) {
+    console.warn('⚠️  Payment functionality will not work without:');
+    missingPayment.forEach(key => {
+      console.warn(`   - ${key}`);
+    });
+  }
+  
+  // Warn about webhook secret
+  if (!process.env.INTASEND_WEBHOOK_SECRET && process.env.NODE_ENV === 'production') {
+    console.error('❌ CRITICAL: INTASEND_WEBHOOK_SECRET not set in production!');
+    console.error('   Payment webhook security is compromised.');
+  }
+}
+
+validateEnvironmentVariables();
+
 connectToDatabase().then(async () => {
   console.log('Database connected, checking for admin user...');
   

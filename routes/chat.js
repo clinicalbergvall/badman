@@ -5,6 +5,25 @@ const ChatRoom = require('../models/ChatRoom');
 const Booking = require('../models/Booking');
 const { sendNotificationToUser } = require('./events');
 
+// Simple sanitization function for server-side
+function sanitizeMessage(message) {
+  if (!message || typeof message !== 'string') {
+    return '';
+  }
+  // Remove HTML tags
+  let sanitized = message.replace(/<[^>]*>/g, '');
+  // Remove script tags and their content
+  sanitized = sanitized.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+  // Remove event handlers
+  sanitized = sanitized.replace(/\s*on\w+\s*=\s*["'][^"']*["']/gi, '');
+  sanitized = sanitized.replace(/javascript:/gi, '');
+  // Limit length
+  if (sanitized.length > 1000) {
+    sanitized = sanitized.substring(0, 1000);
+  }
+  return sanitized.trim();
+}
+
 
 
 
@@ -17,6 +36,14 @@ router.post('/', protect, async (req, res) => {
       return res.status(404).json({
         success: false,
         message: 'Booking not found'
+      });
+    }
+
+    // Check if cleaner is assigned before creating chat room
+    if (!booking.cleaner) {
+      return res.status(400).json({
+        success: false,
+        message: 'Cannot create chat room - no cleaner assigned to this booking yet'
       });
     }
 
@@ -99,7 +126,24 @@ router.get('/:bookingId', protect, async (req, res) => {
 
 router.post('/:bookingId/message', protect, async (req, res) => {
   try {
-    const { message } = req.body;
+    let { message } = req.body;
+    
+    // Sanitize message input
+    if (!message || typeof message !== 'string') {
+      return res.status(400).json({
+        success: false,
+        message: 'Message is required and must be a string'
+      });
+    }
+    
+    message = sanitizeMessage(message);
+    
+    if (!message || message.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Message cannot be empty'
+      });
+    }
 
     const chatRoom = await ChatRoom.findOne({ booking: req.params.bookingId });
 

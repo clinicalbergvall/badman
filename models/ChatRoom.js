@@ -86,26 +86,41 @@ const chatRoomSchema = new mongoose.Schema({
 
 
 chatRoomSchema.methods.addMessage = async function(senderId, senderRole, message) {
+  // Sanitize message input
+  if (!message || typeof message !== 'string') {
+    throw new Error('Message is required and must be a string');
+  }
+  
+  // Remove HTML tags and dangerous content
+  let sanitized = message.replace(/<[^>]*>/g, '');
+  sanitized = sanitized.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+  sanitized = sanitized.replace(/\s*on\w+\s*=\s*["'][^"']*["']/gi, '');
+  sanitized = sanitized.replace(/javascript:/gi, '');
+  
+  if (sanitized.length > 1000) {
+    sanitized = sanitized.substring(0, 1000);
+  }
+  
   const newMessage = {
     sender: senderId,
     senderRole,
-    message,
+    message: sanitized.trim(),
     timestamp: new Date()
   };
 
   this.messages.push(newMessage);
-  this.lastMessage = message;
-  this.lastMessageTime = new Date;
+  this.lastMessage = sanitized.trim();
+  this.lastMessageTime = new Date();
 
   
   if (senderRole === 'client') {
     this.unreadCleanerCount += 1;
     
-    newMessage.readByCleaner = true;
+    newMessage.readByCleaner = false; // Fixed: message not read by cleaner yet
   } else {
     this.unreadClientCount += 1;
     
-    newMessage.readByClient = true;
+    newMessage.readByClient = false; // Fixed: message not read by client yet
   }
 
   return this.save();

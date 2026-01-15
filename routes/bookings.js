@@ -216,8 +216,11 @@ router.post("/public", async (req, res) => {
 
 router.post("/", protect, async (req, res) => {
   try {
+    // Sanitize input before creating booking
+    const sanitizedBody = sanitizeBookingInput(req.body);
+    
     const bookingData = {
-      ...req.body,
+      ...sanitizedBody,
       client: req.user.id,
     };
 
@@ -418,39 +421,56 @@ router.get(
 
 router.post("/:id/accept", protect, authorize("cleaner"), async (req, res) => {
   try {
-    const booking = await Booking.findById(req.params.id).populate(
-      "client",
-      "name phone email",
-    );
+    // Use atomic operation to prevent race condition
+    const booking = await Booking.findOneAndUpdate(
+      {
+        _id: req.params.id,
+        cleaner: null, // Only match if no cleaner assigned
+        status: "pending" // Only match if status is pending
+      },
+      {
+        $set: {
+          cleaner: req.user.id,
+          status: "confirmed",
+          acceptedAt: new Date()
+        }
+      },
+      {
+        new: true, // Return updated document
+        runValidators: true
+      }
+    ).populate("client", "name phone email");
 
     if (!booking) {
-      return res.status(404).json({
+      // Try to find booking to give better error message
+      const existingBooking = await Booking.findById(req.params.id);
+      if (!existingBooking) {
+        return res.status(404).json({
+          success: false,
+          message: "Booking not found",
+        });
+      }
+      
+      if (existingBooking.cleaner) {
+        return res.status(400).json({
+          success: false,
+          message: "This booking has already been accepted by another cleaner",
+        });
+      }
+      
+      if (existingBooking.status !== "pending") {
+        return res.status(400).json({
+          success: false,
+          message: "This booking is no longer available",
+        });
+      }
+      
+      // If we get here, something else went wrong
+      return res.status(409).json({
         success: false,
-        message: "Booking not found",
+        message: "Booking was just accepted by another cleaner. Please try a different booking.",
       });
     }
-
-    
-    if (booking.cleaner) {
-      return res.status(400).json({
-        success: false,
-        message: "This booking has already been accepted by another cleaner",
-      });
-    }
-
-    
-    if (booking.status !== "pending") {
-      return res.status(400).json({
-        success: false,
-        message: "This booking is no longer available",
-      });
-    }
-
-    
-    booking.cleaner = req.user.id;
-    booking.status = "confirmed";
-    booking.acceptedAt = new Date();
-    await booking.save();
 
     
     await booking.populate("cleaner", "name phone email");
@@ -478,10 +498,11 @@ router.post("/:id/accept", protect, authorize("cleaner"), async (req, res) => {
     });
   } catch (error) {
     console.error("Accept booking error:", error);
+    const { getUserFriendlyError } = require('../src/lib/errorHandler');
     res.status(500).json({
       success: false,
       message: "Error accepting booking",
-      error: error.message,
+      error: getUserFriendlyError(error),
     });
   }
 });
@@ -558,6 +579,22 @@ router.post("/:id/pay", protect, authorize("client"), async (req, res) => {
       return res.status(400).json({ success: false, message: "Already paid" });
     }
 
+    // Validate cleaner is assigned
+    if (!booking.cleaner) {
+      return res.status(400).json({
+        success: false,
+        message: "Cannot pay for booking - no cleaner assigned yet. Please wait for a cleaner to accept the booking.",
+      });
+    }
+
+    // Validate IntaSend credentials
+    if (!process.env.INTASEND_PUBLIC_KEY || !process.env.INTASEND_SECRET_KEY) {
+      console.error('❌ IntaSend credentials not configured');
+      return res.status(500).json({
+        success: false,
+        message: 'Payment service not configured. Please contact support.'
+      });
+    }
     
     const client = new IntaSend(
       process.env.INTASEND_PUBLIC_KEY,  
@@ -574,6 +611,9 @@ router.post("/:id/pay", protect, authorize("client"), async (req, res) => {
     booking.cleanerPayout = pricing.cleanerPayout;
     await booking.save();
 
+    // Get cleaner phone number safely (already populated)
+    const cleanerPhone = booking.cleaner?.phone || null;
+
     const response = await client.collection().stkPush({
       amount: pricing.totalPrice,
       phone: booking.client.phone,
@@ -583,7 +623,7 @@ router.post("/:id/pay", protect, authorize("client"), async (req, res) => {
       metadata: {
         booking_id: booking._id.toString(),
         split: {
-          cleaner_phone: booking.cleaner.phone,
+          cleaner_phone: cleanerPhone,
           percentage: 40, 
           platform_fee: pricing.platformFee,
           cleaner_payout: pricing.cleanerPayout,
@@ -636,9 +676,20 @@ router.put(
 
       booking.status = status;
       
-      // Handle notes if provided
+      // Handle notes if provided - sanitize input
       if (req.body.notes !== undefined) {
-        booking.completionNotes = req.body.notes;
+        let notes = req.body.notes;
+        if (typeof notes === 'string') {
+          // Sanitize notes: remove HTML tags and dangerous content
+          notes = notes.replace(/<[^>]*>/g, '');
+          notes = notes.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+          notes = notes.replace(/\s*on\w+\s*=\s*["'][^"']*["']/gi, '');
+          notes = notes.replace(/javascript:/gi, '');
+          if (notes.length > 500) {
+            notes = notes.substring(0, 500);
+          }
+        }
+        booking.completionNotes = notes;
       }
       
       if (status === "completed") {
@@ -675,7 +726,7 @@ router.put(
 
 const rateBookingHandler = async (req, res) => {
   try {
-    const { rating, review } = req.body;
+    let { rating, review } = req.body;
     const booking = await Booking.findById(req.params.id);
     if (!booking)
       return res.status(404).json({ success: false, message: "Not found" });
@@ -690,6 +741,44 @@ const rateBookingHandler = async (req, res) => {
       return res
         .status(400)
         .json({ success: false, message: "Must be completed" });
+    }
+
+    // Validate and sanitize rating
+    if (rating && (typeof rating !== 'number' || rating < 1 || rating > 5)) {
+      return res.status(400).json({
+        success: false,
+        message: "Rating must be a number between 1 and 5"
+      });
+    }
+
+    // Sanitize review text
+    if (review && typeof review === 'string') {
+      review = review.replace(/<[^>]*>/g, '');
+      review = review.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+      review = review.replace(/\s*on\w+\s*=\s*["'][^"']*["']/gi, '');
+      review = review.replace(/javascript:/gi, '');
+      if (review.length > 500) {
+        review = review.substring(0, 500);
+      }
+    }
+
+    // Validate and sanitize rating
+    if (rating && (typeof rating !== 'number' || rating < 1 || rating > 5)) {
+      return res.status(400).json({
+        success: false,
+        message: "Rating must be a number between 1 and 5"
+      });
+    }
+
+    // Sanitize review text
+    if (review && typeof review === 'string') {
+      review = review.replace(/<[^>]*>/g, '');
+      review = review.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '');
+      review = review.replace(/\s*on\w+\s*=\s*["'][^"']*["']/gi, '');
+      review = review.replace(/javascript:/gi, '');
+      if (review.length > 500) {
+        review = review.substring(0, 500);
+      }
     }
 
     booking.rating = rating;
