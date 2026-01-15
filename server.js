@@ -95,7 +95,7 @@ const corsOptions = {
     if (!origin) return callback(null, true);
     
     // Get allowed origins from environment or use defaults
-    const allowedOrigins = process.env.FRONTEND_URL 
+    let allowedOrigins = process.env.FRONTEND_URL 
       ? process.env.FRONTEND_URL.split(',').map(url => url.trim())
       : [
           'https://sprightly-trifle-9b980c.netlify.app',
@@ -112,13 +112,8 @@ const corsOptions = {
       return callback(null, true);
     }
     
-    // In production, check against allowed origins
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
-    
-    // For production, you should specify your frontend domains
-    const allowedOrigins = [
+    // In production, extend allowed origins with additional domains
+    const productionOrigins = [
       'http://localhost:5173',
       'http://localhost:3000',
       'http://localhost:8080',
@@ -137,6 +132,9 @@ const corsOptions = {
       'chrome',
       'chrome-extension://'
     ];
+    
+    // Combine environment origins with production origins
+    allowedOrigins = [...allowedOrigins, ...productionOrigins];
     
     // Check if the origin matches any of the allowed origins
     const isAllowed = allowedOrigins.some(allowedOrigin => {
