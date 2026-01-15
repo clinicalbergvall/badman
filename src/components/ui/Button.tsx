@@ -32,18 +32,18 @@ export const Button = forwardRef(
     ref: any,
   ) => {
     const baseStyles =
-      "inline-flex items-center justify-center font-medium rounded-xl transition-all duration-200 shadow-sm hover:shadow-md active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed";
+      "inline-flex items-center justify-center font-medium rounded-xl transition-all duration-300 shadow-sm hover:shadow-lg active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed hover:-translate-y-0.5";
 
     const variants = {
       primary:
-        "bg-yellow-400 text-gray-900 hover:bg-yellow-300 shadow-sm hover:shadow-md",
+        "bg-gradient-to-r from-yellow-400 to-yellow-500 text-gray-900 hover:from-yellow-300 hover:to-yellow-400 shadow-lg hover:shadow-xl",
       secondary:
-        "bg-gray-100 text-gray-700 hover:bg-gray-200 shadow-sm hover:shadow-md",
+        "bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 hover:from-gray-200 hover:to-gray-300 shadow-lg hover:shadow-xl",
       outline:
-        "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 shadow-sm hover:shadow-md",
-      ghost: "text-gray-600 hover:bg-gray-100 hover:shadow-sm",
+        "border-2 border-gray-300 bg-white text-gray-700 hover:bg-gray-50 hover:border-gray-400 shadow-lg hover:shadow-xl",
+      ghost: "text-gray-600 hover:bg-gray-100 hover:shadow-md",
       destructive:
-        "bg-red-500 text-white hover:bg-red-600 shadow-sm hover:shadow-md",
+        "bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700 shadow-lg hover:shadow-xl",
     };
 
     const sizes = {
@@ -55,7 +55,7 @@ export const Button = forwardRef(
     return (
       <button
         ref={ref}
-        className={`${baseStyles} ${(variants as any)[variant!]} ${(sizes as any)[size!]} ${fullWidth ? "w-full" : ""} ${className}`}
+        className={`${baseStyles} ${(variants as any)[variant!]} ${(sizes as any)[size!]} ${fullWidth ? "w-full" : ""} ${pressedStyles} ${className}`}
         disabled={disabled || loading}
         {...props}
       >

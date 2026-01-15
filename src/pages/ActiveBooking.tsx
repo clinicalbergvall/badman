@@ -102,8 +102,8 @@ export default function ActiveBooking() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-6">
-      <div className="max-w-6xl mx-auto space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-950 to-black p-4 md:p-6">
+      <div className="w-full space-y-6">
         { }
         <div className="flex items-center gap-4">
           <button
@@ -115,13 +115,13 @@ export default function ActiveBooking() {
             </svg>
           </button>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Active Booking</h1>
-            <p className="text-sm text-gray-600">Booking #{booking.id.slice(0, 8)}</p>
+            <h1 className="text-2xl font-bold text-gray-100">Active Booking</h1>
+            <p className="text-sm text-gray-400">Booking #{booking.id.slice(0, 8)}</p>
           </div>
         </div>
 
         { }
-        <Card className="p-6">
+        <Card className="p-6 bg-gray-800/90 border-gray-700 text-gray-100">
           <div className="flex items-start gap-4">
             <div className="w-16 h-16 bg-gradient-to-br from-yellow-400 to-yellow-600 rounded-full flex items-center justify-center text-white text-2xl font-bold">
               {booking.cleanerName.split(' ').map((n: string) => n[0]).join('')}
@@ -129,20 +129,20 @@ export default function ActiveBooking() {
             <div className="flex-1">
               <div className="flex items-start justify-between">
                 <div>
-                  <h2 className="text-xl font-semibold text-gray-900">{booking.cleanerName}</h2>
-                  <p className="text-sm text-gray-600">{booking.cleanerPhone}</p>
+                  <h2 className="text-xl font-semibold text-gray-100">{booking.cleanerName}</h2>
+                  <p className="text-sm text-gray-400">{booking.cleanerPhone}</p>
                 </div>
                 <VerificationBadge verification={cleanerVerification} size="sm" />
               </div>
 
               <div className="mt-4 grid grid-cols-2 gap-4">
                 <div>
-                  <p className="text-xs text-gray-500">Service</p>
-                  <p className="text-sm font-medium text-gray-900">{booking.serviceType}</p>
+                  <p className="text-xs text-gray-400">Service</p>
+                  <p className="text-sm font-medium text-gray-100">{booking.serviceType}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-gray-500">Vehicle</p>
-                  <p className="text-sm font-medium text-gray-900">{booking.vehicleType}</p>
+                  <p className="text-xs text-gray-400">Vehicle</p>
+                  <p className="text-sm font-medium text-gray-100">{booking.vehicleType}</p>
                 </div>
               </div>
 
@@ -179,12 +179,12 @@ export default function ActiveBooking() {
         </Card>
 
         { }
-        <div className="flex gap-2 border-b border-gray-200">
+        <div className="flex gap-2 border-b border-gray-700">
           <button
             onClick={() => setActiveTab('tracking')}
             className={`px-6 py-3 font-medium transition-colors relative ${activeTab === 'tracking'
-              ? 'text-yellow-600'
-              : 'text-gray-600 hover:text-gray-900'
+              ? 'text-yellow-400'
+              : 'text-gray-400 hover:text-gray-200'
               }`}
           >
             <div className="flex items-center gap-2">
@@ -202,8 +202,8 @@ export default function ActiveBooking() {
           <button
             onClick={() => setActiveTab('chat')}
             className={`px-6 py-3 font-medium transition-colors relative ${activeTab === 'chat'
-              ? 'text-yellow-600'
-              : 'text-gray-600 hover:text-gray-900'
+              ? 'text-yellow-400'
+              : 'text-gray-400 hover:text-gray-200'
               }`}
           >
             <div className="flex items-center gap-2">
@@ -234,7 +234,7 @@ export default function ActiveBooking() {
         </div>
 
         { }
-        <Card className="p-4 bg-red-50 border-red-200">
+        <Card className="p-4 bg-red-900/30 border-red-800">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center">
@@ -243,13 +243,13 @@ export default function ActiveBooking() {
                 </svg>
               </div>
               <div>
-                <p className="font-medium text-red-900">Need Help?</p>
-                <p className="text-sm text-red-700">Report an issue</p>
+                <p className="font-medium text-red-100">Need Help?</p>
+                <p className="text-sm text-red-300">Report an issue</p>
               </div>
             </div>
             <Button
               variant="outline"
-              className="border-red-300 text-red-700 hover:bg-red-100"
+              className="border-red-600 text-red-300 hover:bg-red-900/50"
               onClick={handleReportIssue}
             >
               Report Issue

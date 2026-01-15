@@ -56,7 +56,6 @@ const createEmptyBeforeAfterForm = (): BeforeAfterForm => ({
 export default function CleanerProfile() {
   const [profile, setProfile] = useState<Partial<CleanerProfile>>(() => createEmptyProfile())
   const [beforeAfterForm, setBeforeAfterForm] = useState<BeforeAfterForm>(() => createEmptyBeforeAfterForm())
-  const [isEditingAfterRejection, setIsEditingAfterRejection] = useState(false)
   const previousApprovalStatus = useRef<CleanerProfile['approvalStatus']>()
   const [authChecked, setAuthChecked] = useState(false)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -189,7 +188,6 @@ export default function CleanerProfile() {
       toast('Cleared form', { icon: '🧼' })
     }
     setBeforeAfterForm(createEmptyBeforeAfterForm())
-    setIsEditingAfterRejection(false)
   }
 
   const handleAuthLogin = async () => {
@@ -273,16 +271,7 @@ export default function CleanerProfile() {
       return
     }
 
-    
-    if (!profile.passportPhoto || !profile.fullBodyPhoto) {
-      toast.error('Upload both passport and full-body photos')
-      return
-    }
-
-    if (!profile.verification?.idDocumentFront || !profile.verification?.idDocumentBack) {
-      toast.error('Upload both sides of your ID')
-      return
-    }
+    // Photo uploads are now optional - no verification required
 
     const profileId = profile.id || Date.now().toString()
 
@@ -302,8 +291,8 @@ export default function CleanerProfile() {
       services: profile.services || [],
       rating: 0,
       totalJobs: 0,
-      verified: false,
-      approvalStatus: 'pending',
+      verified: true,
+      approvalStatus: 'approved',
       beforeAfterPhotos: profile.beforeAfterPhotos || [],
       verification: profile.verification,
       mpesaPhoneNumber: profile.mpesaPhoneNumber || '',
@@ -335,27 +324,22 @@ export default function CleanerProfile() {
       }
       const data = await response.json()
       if (data?.success) {
-        toast.success('Profile submitted for verification ✅')
+        toast.success('Profile saved successfully! You can now access all features ✅')
         
         saveCleanerProfile(savedProfile)
         addPendingCleaner(savedProfile)
         setProfile(savedProfile)
-        setIsEditingAfterRejection(false)
       } else {
         throw new Error(data?.message || 'Submission failed')
       }
     } catch (error) {
-      console.error('Failed to save to backend:', error)
-      const msg = error instanceof Error ? error.message : 'Submission error'
-      toast.error(`${msg}. Please sign in as a cleaner and try again.`)
+      const { getUserFriendlyError } = await import('@/lib/errorHandler');
+      toast.error(`${getUserFriendlyError(error)}. Please sign in as a cleaner and try again.`)
       
     }
   }
 
-  const hasSubmittedProfile = Boolean(profile.id)
-  const isPendingApproval = hasSubmittedProfile && profile.approvalStatus === 'pending'
-  const isRejected = hasSubmittedProfile && profile.approvalStatus === 'rejected'
-
+  // Removed verification blocking - cleaners can access immediately
   if (!authChecked || !isAuthenticated || !isCleaner) {
     return (
       <CleanerLayout currentPage="profile">
@@ -425,49 +409,7 @@ export default function CleanerProfile() {
     )
   }
 
-  if (isPendingApproval) {
-    return (
-      <CleanerLayout currentPage="profile">
-        <div className="max-w-2xl mx-auto space-y-6">
-          <Card className="p-6 space-y-4">
-            <Badge variant="warning" className="w-fit">Under Review</Badge>
-            <h2 className="text-2xl font-semibold text-gray-900">Hang tight! We&rsquo;re verifying your profile</h2>
-            <p className="text-gray-700">
-              Our admin team is reviewing your documents and photos. Once approved, you&rsquo;ll unlock the full cleaner dashboard and can start receiving jobs.
-            </p>
-            <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">
-              <li>Approval typically takes less than 24 hours.</li>
-              <li>Ensure your phone number is reachable for any follow up.</li>
-              <li>You&rsquo;ll get a notification here once you&rsquo;re verified.</li>
-            </ul>
-          </Card>
-          <Card className="p-6 bg-yellow-50 border-yellow-200">
-            <h3 className="font-semibold text-gray-900 mb-2">Need to update something?</h3>
-            <p className="text-sm text-gray-700">
-              Contact CleanCloak support to unlock editing, or wait for the admin decision.
-            </p>
-          </Card>
-        </div>
-      </CleanerLayout>
-    )
-  }
-
-  if (isRejected && !isEditingAfterRejection) {
-    return (
-      <CleanerLayout currentPage="profile">
-        <div className="max-w-2xl mx-auto space-y-6">
-          <Card className="p-6 space-y-3">
-            <Badge variant="error" className="w-fit">Action Needed</Badge>
-            <h2 className="text-2xl font-semibold text-gray-900">Your submission needs updates</h2>
-            <p className="text-gray-700">
-              Our admin team couldn&rsquo;t approve your documents. Review the feedback you received via SMS/email, then update your details and resubmit.
-            </p>
-            <Button onClick={() => setIsEditingAfterRejection(true)}>Update Submission</Button>
-          </Card>
-        </div>
-      </CleanerLayout>
-    )
-  }
+  // Removed verification blocking screens - cleaners can access immediately
 
   return (
     <CleanerLayout currentPage="profile">
@@ -478,20 +420,7 @@ export default function CleanerProfile() {
           <p className="text-gray-600">Tell us about yourself and showcase your work</p>
         </div>
 
-        {profile.approvalStatus === 'approved' && (
-          <Card className="p-5 border-2 border-emerald-200 bg-emerald-50 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div>
-              <Badge variant="success" className="mb-2">Approved</Badge>
-              <h2 className="text-xl font-semibold text-gray-900">You&rsquo;re verified and live!</h2>
-              <p className="text-sm text-gray-700">Head to the Job Hub to start claiming gigs and managing payouts.</p>
-            </div>
-            <div className="md:w-auto w-full">
-              <Link to="/jobs">
-                <Button fullWidth>Open Job Hub</Button>
-              </Link>
-            </div>
-          </Card>
-        )}
+        {/* Verification status removed - all cleaners are automatically approved */}
 
         {}
         <Card className="p-6">
@@ -579,10 +508,10 @@ export default function CleanerProfile() {
         {}
         <Card className="p-6 space-y-4">
           <div className="flex items-center gap-2">
-            <Badge variant="success">Required</Badge>
-            <h2 className="text-xl font-semibold text-gray-900">Identity Verification</h2>
+            <Badge variant="outline">Optional</Badge>
+            <h2 className="text-xl font-semibold text-gray-900">Identity Verification (Optional)</h2>
           </div>
-          <p className="text-sm text-gray-600">Upload clear photos of your national ID. These are only shown to clients after they select you.</p>
+          <p className="text-sm text-gray-600">Upload clear photos of your national ID if you want to be verified. These are only shown to clients after they select you.</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="block text-sm font-semibold text-gray-900">National ID - Front</label>
@@ -721,9 +650,8 @@ export default function CleanerProfile() {
           <Button
             fullWidth
             onClick={handleSaveProfile}
-            disabled={profile.approvalStatus === 'approved'}
           >
-            {profile.approvalStatus === 'approved' ? 'Profile Approved' : 'Submit for Verification'}
+            Save Profile
           </Button>
         </div>
       </div>

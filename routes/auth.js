@@ -154,7 +154,10 @@ router.post(
       }
 
       // Check password using bcrypt
-      console.log('Comparing passwords:', { userId: user._id, passwordProvided: !!password, userPasswordExists: !!user.password });
+      // Password comparison debug (only in development)
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Comparing passwords:', { userId: user._id, passwordProvided: !!password, userPasswordExists: !!user.password });
+      }
       const isPasswordValid = await user.comparePassword(password);
       if (!isPasswordValid) {
         console.log('Password comparison failed for user:', user._id);

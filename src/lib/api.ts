@@ -1,6 +1,7 @@
 import { API_BASE_URL, getApiUrl } from './config';
 import { logger } from './logger';
-import { USER_SESSION_KEY } from './storage';
+import { USER_SESSION_KEY, saveUserSession, clearUserSession } from './storage';
+import { safeLogError, getUserFriendlyError, sanitizeErrorMessage } from './errorHandler';
 
 // Function to get CapacitorHttp dynamically
 const getCapacitorHttp = async (): Promise<any | null> => {
@@ -32,7 +33,9 @@ const addCorsHeaders = (headers: HeadersInit = {}): HeadersInit => {
 export const api = {
   get: async (endpoint: string, options: RequestInit = {}) => {
     const url = getApiUrl(endpoint);
-    console.log(`API GET Request to: ${url}`);
+      if (import.meta.env.DEV) {
+        console.log(`API GET Request to: ${url}`);
+      }
     
     // Check if we're running in a Capacitor environment
     const isNative = typeof (window as any).Capacitor !== 'undefined' && (window as any).Capacitor.isNativePlatform?.();
@@ -45,14 +48,33 @@ export const api = {
           ...getAuthHeaders(),
           ...options.headers,
         }),
-        credentials: endpoint.includes('/auth/') ? 'include' : (isNative ? 'omit' : 'include'), // Always include credentials for auth endpoints
+        credentials: 'include', // Always include credentials for all endpoints
         mode: 'cors', // Explicitly set CORS mode
       });
-      console.log(`API GET Response from: ${url}`, response.status, response.statusText);
+      if (import.meta.env.DEV) {
+        console.log(`API GET Response from: ${url}`, response.status, response.statusText);
+      }
       if (response.status === 401) {
         
-        localStorage.removeItem(USER_SESSION_KEY);
-        
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          try {
+            const errorData = await response.clone().json();
+            
+            if (errorData.message && !errorData.message.includes('connection') && 
+                !errorData.message.includes('timeout') && 
+                !errorData.message.includes('network') &&
+                !errorData.message.includes('fetch')) {
+              localStorage.removeItem(USER_SESSION_KEY);
+            }
+          } catch (e) {
+            
+            localStorage.removeItem(USER_SESSION_KEY);
+          }
+        } else {
+          
+          localStorage.removeItem(USER_SESSION_KEY);
+        }
       }
       
       // Check if the response is HTML instead of JSON for API calls
@@ -60,28 +82,31 @@ export const api = {
       if ((endpoint.includes('/auth/') || endpoint.includes('/api/')) && 
           contentType && 
           contentType.toLowerCase().includes('text/html')) {
-        console.error(`HTML response received for API endpoint ${endpoint} at ${url}`);
+        safeLogError(`API PUT:HTML response for ${endpoint}`, new Error('HTML response received'));
         const htmlResponse = await response.text();
-        console.error('HTML Response preview:', htmlResponse.substring(0, 500));
-        throw new Error(`API call to ${endpoint} returned HTML instead of JSON. This indicates a server routing issue.`);
+        if (import.meta.env.DEV) {
+          console.error('HTML Response preview:', htmlResponse.substring(0, 200));
+        }
+        throw new Error(`API call returned unexpected response format.`);
       }
       
       return response;
     } catch (error) {
-      console.error(`API GET Request failed to: ${url}`, error);
+      safeLogError(`API GET:${endpoint}`, error);
       
       // Check if this is a network error
       if (error instanceof TypeError && error.message.includes('fetch')) {
-        console.error('Network error - server may be down or unreachable');
-        throw new Error(`Network error: Could not reach the server at ${url}. Make sure the backend is running.`);
+        throw new Error(getUserFriendlyError(new Error('Network connection failed')));
       }
       
-      throw new Error(`Failed to fetch data: ${error instanceof Error ? error.message : 'Network error'}`);
+      throw new Error(getUserFriendlyError(error));
     }
   },
   post: async (endpoint: string, data: Record<string, any>, options: RequestInit = {}) => {
     const url = getApiUrl(endpoint);
-    console.log(`API POST Request to: ${url}`, data);
+      if (import.meta.env.DEV) {
+        console.log(`API POST Request to: ${url}`);
+      }
     
     // Check if we're running in a Capacitor environment
     const isNative = typeof (window as any).Capacitor !== 'undefined' && (window as any).Capacitor.isNativePlatform?.();
@@ -95,13 +120,33 @@ export const api = {
           ...getAuthHeaders(),
           ...options.headers,
         }),
-        credentials: endpoint.includes('/auth/') ? 'include' : (isNative ? 'omit' : 'include'), // Always include credentials for auth endpoints
+        credentials: 'include', // Always include credentials for all endpoints
         mode: 'cors', // Explicitly set CORS mode
         body: JSON.stringify(data),
       });
-      console.log(`API POST Response from: ${url}`, response.status, response.statusText);
+      if (import.meta.env.DEV) {
+        console.log(`API POST Response from: ${url}`, response.status, response.statusText);
+      }
       if (response.status === 401) {
-        localStorage.removeItem(USER_SESSION_KEY);
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          try {
+            const errorData = await response.clone().json();
+            
+            if (errorData.message && !errorData.message.includes('connection') && 
+                !errorData.message.includes('timeout') && 
+                !errorData.message.includes('network') &&
+                !errorData.message.includes('fetch')) {
+              localStorage.removeItem(USER_SESSION_KEY);
+            }
+          } catch (e) {
+            
+            localStorage.removeItem(USER_SESSION_KEY);
+          }
+        } else {
+          
+          localStorage.removeItem(USER_SESSION_KEY);
+        }
       }
       
       // Check if the response is HTML instead of JSON for API calls
@@ -109,10 +154,12 @@ export const api = {
       if ((endpoint.includes('/auth/') || endpoint.includes('/api/')) && 
           contentType && 
           contentType.toLowerCase().includes('text/html')) {
-        console.error(`HTML response received for API endpoint ${endpoint} at ${url}`);
+        safeLogError(`API PUT:HTML response for ${endpoint}`, new Error('HTML response received'));
         const htmlResponse = await response.text();
-        console.error('HTML Response preview:', htmlResponse.substring(0, 500));
-        throw new Error(`API call to ${endpoint} returned HTML instead of JSON. This indicates a server routing issue.`);
+        if (import.meta.env.DEV) {
+          console.error('HTML Response preview:', htmlResponse.substring(0, 200));
+        }
+        throw new Error(`API call returned unexpected response format.`);
       }
       
       // Check if response is not OK and extract error message
@@ -150,14 +197,14 @@ export const api = {
       // If we get here, response.ok is true, so we can return it for the caller to parse
       return response;
     } catch (error) {
-      console.error(`API POST Request failed to: ${url}`, error);
+      safeLogError(`API POST:${endpoint}`, error);
       
-      // If it's already an Error with a message, throw it as-is
-      if (error instanceof Error && error.message && !error.message.startsWith('Failed to submit data')) {
+      // If it's already a sanitized error, throw as-is
+      if (error instanceof Error && error.message && !error.message.includes('Failed to submit')) {
         throw error;
       }
       
-      throw new Error(`Failed to submit data: ${error instanceof Error ? error.message : 'Network error'}`);
+      throw new Error(getUserFriendlyError(error));
     }
   },
   put: async (endpoint: string, data: any, options: RequestInit = {}) => {
@@ -175,12 +222,30 @@ export const api = {
           ...getAuthHeaders(),
           ...options.headers,
         }),
-        credentials: endpoint.includes('/auth/') ? 'include' : (isNative ? 'omit' : 'include'), // Always include credentials for auth endpoints
+        credentials: 'include', // Always include credentials for all endpoints
         mode: 'cors', // Explicitly set CORS mode
         body: JSON.stringify(data),
       });
       if (response.status === 401) {
-        localStorage.removeItem(USER_SESSION_KEY);
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          try {
+            const errorData = await response.clone().json();
+            
+            if (errorData.message && !errorData.message.includes('connection') && 
+                !errorData.message.includes('timeout') && 
+                !errorData.message.includes('network') &&
+                !errorData.message.includes('fetch')) {
+              localStorage.removeItem(USER_SESSION_KEY);
+            }
+          } catch (e) {
+            
+            localStorage.removeItem(USER_SESSION_KEY);
+          }
+        } else {
+          
+          localStorage.removeItem(USER_SESSION_KEY);
+        }
       }
       
       // Check if the response is HTML instead of JSON for API calls
@@ -188,17 +253,19 @@ export const api = {
       if ((endpoint.includes('/auth/') || endpoint.includes('/api/')) && 
           contentType && 
           contentType.toLowerCase().includes('text/html')) {
-        console.error(`HTML response received for API endpoint ${endpoint} at ${url}`);
+        safeLogError(`API PUT:HTML response for ${endpoint}`, new Error('HTML response received'));
         const htmlResponse = await response.text();
-        console.error('HTML Response preview:', htmlResponse.substring(0, 500));
-        throw new Error(`API call to ${endpoint} returned HTML instead of JSON. This indicates a server routing issue.`);
+        if (import.meta.env.DEV) {
+          console.error('HTML Response preview:', htmlResponse.substring(0, 200));
+        }
+        throw new Error(`API call returned unexpected response format.`);
       }
       
       return response;
     } catch (error) {
-      console.error(`API PUT Request failed to: ${url}`, error);
+      safeLogError(`API PUT:${endpoint}`, error);
       
-      throw new Error(`Failed to update data: ${error instanceof Error ? error.message : 'Network error'}`);
+      throw new Error(getUserFriendlyError(error));
     }
   },
   delete: async (endpoint: string, options: RequestInit = {}) => {
@@ -216,11 +283,29 @@ export const api = {
           ...getAuthHeaders(),
           ...options.headers,
         }),
-        credentials: endpoint.includes('/auth/') ? 'include' : (isNative ? 'omit' : 'include'), // Always include credentials for auth endpoints
+        credentials: 'include', // Always include credentials for all endpoints
         mode: 'cors', // Explicitly set CORS mode
       });
       if (response.status === 401) {
-        localStorage.removeItem(USER_SESSION_KEY);
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          try {
+            const errorData = await response.clone().json();
+            
+            if (errorData.message && !errorData.message.includes('connection') && 
+                !errorData.message.includes('timeout') && 
+                !errorData.message.includes('network') &&
+                !errorData.message.includes('fetch')) {
+              localStorage.removeItem(USER_SESSION_KEY);
+            }
+          } catch (e) {
+            
+            localStorage.removeItem(USER_SESSION_KEY);
+          }
+        } else {
+          
+          localStorage.removeItem(USER_SESSION_KEY);
+        }
       }
       
       // Check if the response is HTML instead of JSON for API calls
@@ -228,17 +313,19 @@ export const api = {
       if ((endpoint.includes('/auth/') || endpoint.includes('/api/')) && 
           contentType && 
           contentType.toLowerCase().includes('text/html')) {
-        console.error(`HTML response received for API endpoint ${endpoint} at ${url}`);
+        safeLogError(`API DELETE:HTML response for ${endpoint}`, new Error('HTML response received'));
         const htmlResponse = await response.text();
-        console.error('HTML Response preview:', htmlResponse.substring(0, 500));
-        throw new Error(`API call to ${endpoint} returned HTML instead of JSON. This indicates a server routing issue.`);
+        if (import.meta.env.DEV) {
+          console.error('HTML Response preview:', htmlResponse.substring(0, 200));
+        }
+        throw new Error(`API call returned unexpected response format.`);
       }
       
       return response;
     } catch (error) {
-      console.error(`API DELETE Request failed to: ${url}`, error);
+      safeLogError(`API DELETE:${endpoint}`, error);
       
-      throw new Error(`Failed to delete data: ${error instanceof Error ? error.message : 'Network error'}`);
+      throw new Error(getUserFriendlyError(error));
     }
   },
 };
@@ -246,67 +333,97 @@ export const api = {
 export const authAPI = {
   login: async (identifier: string, password: string): Promise<any> => {
     try {
-      console.log('Making login request to /auth/login');
+      if (import.meta.env.DEV) {
+        console.log('Making login request to /auth/login');
+      }
       const response = await api.post('/auth/login', { identifier, password });
       
       // If we get here, response.ok is true (api.post throws if not OK)
-      console.log('Response status:', response.status, 'Response URL:', response.url);
+      if (import.meta.env.DEV) {
+        console.log('Response status:', response.status);
+      }
       
       // Check if response is not JSON before parsing
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
         const textResponse = await response.text();
-        console.error('Received non-JSON response from login:', textResponse.substring(0, 500));
-        throw new Error(`Expected JSON response but got ${contentType}. Response preview: ${textResponse.substring(0, 200)}`);
+        safeLogError('API:login:non-JSON response', new Error('Non-JSON response received'));
+        if (import.meta.env.DEV) {
+          console.error('Response preview:', textResponse.substring(0, 200));
+        }
+        throw new Error(`Unexpected response format. Please try again.`);
       }
       
       const data = await response.json();
-      console.log('Login response data:', data);
+      if (import.meta.env.DEV) {
+        console.log('Login successful');
+      }
 
       if (data.success && data.user) {
-        localStorage.setItem(USER_SESSION_KEY, JSON.stringify(data.user));
+        const hydrated = {
+          ...data.user,
+          userType: data.user.userType || data.user.role,
+          name: data.user.name || "",
+          phone: data.user.phone || "",
+          lastSignedIn: new Date().toISOString(),
+        };
+        saveUserSession(hydrated);
       }
 
       return data;
     } catch (error) {
-      console.error('Login error details:', error);
+      safeLogError('API:login', error);
       logger.error('API Error /auth/login', error instanceof Error ? error : undefined);
-      // Re-throw the error so it can be handled by the calling code
-      // The error message from api.post should already contain the server's error message
-      throw error;
+      // Re-throw with sanitized message
+      throw new Error(getUserFriendlyError(error));
     }
   },
 
   register: async (userData: any) => {
     try {
-      console.log('Making register request to /auth/register');
+      if (import.meta.env.DEV) {
+        console.log('Making register request to /auth/register');
+      }
       const response = await api.post('/auth/register', userData);
       
       // If we get here, response.ok is true (api.post throws if not OK)
-      console.log('Register response status:', response.status, 'Response URL:', response.url);
+      if (import.meta.env.DEV) {
+        console.log('Register response status:', response.status);
+      }
       
       // Check if response is not JSON before parsing
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
         const textResponse = await response.text();
-        console.error('Received non-JSON response from register:', textResponse.substring(0, 500));
-        throw new Error(`Expected JSON response but got ${contentType}. Response preview: ${textResponse.substring(0, 200)}`);
+        safeLogError('API:register:non-JSON response', new Error('Non-JSON response received'));
+        if (import.meta.env.DEV) {
+          console.error('Response preview:', textResponse.substring(0, 200));
+        }
+        throw new Error(`Unexpected response format. Please try again.`);
       }
       
       const data = await response.json();
-      console.log('Register response data:', data);
+      if (import.meta.env.DEV) {
+        console.log('Registration successful');
+      }
 
       if (data.success && data.user) {
-        localStorage.setItem(USER_SESSION_KEY, JSON.stringify(data.user));
+        const hydrated = {
+          ...data.user,
+          userType: data.user.userType || data.user.role,
+          name: data.user.name || "",
+          phone: data.user.phone || "",
+          lastSignedIn: new Date().toISOString(),
+        };
+        saveUserSession(hydrated);
       }
 
       return data;
     } catch (error) {
-      console.error('Register error details:', error);
+      safeLogError('API:register', error);
       logger.error('API Error /auth/register', error instanceof Error ? error : undefined);
-      // Re-throw the error so it can be handled by the calling code
-      // The error message from api.post should already contain the server's error message
-      throw error;
+      // Re-throw with sanitized message
+      throw new Error(getUserFriendlyError(error));
     }
   },
 
@@ -324,10 +441,11 @@ export const authAPI = {
   logout: async () => {
     try {
       await api.post('/auth/logout', {});
-      localStorage.removeItem(USER_SESSION_KEY);
+      clearUserSession();
       logger.info('User logged out');
     } catch (error) {
       logger.error('Logout error', error instanceof Error ? error : undefined);
+      clearUserSession();
     }
   }
 };

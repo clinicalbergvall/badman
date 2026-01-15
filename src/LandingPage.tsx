@@ -29,7 +29,7 @@ export default function LandingPage() {
       className="min-h-screen bg-cover bg-center bg-no-repeat"
       style={{ backgroundImage: 'url(/assets/images/CLOAKED.jpeg)' }}
     >
-      <div className="container max-w-4xl mx-auto px-4 py-12">
+      <div className="w-full px-1 py-4">
         {}
         <header className="text-center mb-12">
           <div className="inline-flex items-center gap-2 rounded-full px-4 py-2 bg-yellow-100 text-sm font-semibold text-black border border-yellow-300 mb-6">
@@ -41,7 +41,7 @@ export default function LandingPage() {
             CleanCloak
           </h1>
 
-          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto font-inter">
+          <p className="text-xl text-gray-600 mb-8 w-full font-inter">
             Connecting you with professional cleaners for your car and home.
             Quality service, verified professionals, seamless experience.
           </p>
@@ -58,7 +58,7 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-8 w-full">
             {}
             <Card className="p-8 text-center hover:shadow-xl transition-shadow cursor-pointer border-2 border-transparent hover:border-blue-200"
               onClick={() => {
@@ -108,11 +108,10 @@ export default function LandingPage() {
                 <span className="text-3xl">🧹</span>
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-3">
-                I'm a Cleaner
+                Join the Clean Cloak Family and Offer Premium Detailing Services
               </h3>
               <p className="text-gray-600 mb-6">
-                Join our network of professional cleaners.
-                Find jobs, manage your profile, and grow your business.
+                
               </p>
               <div className="space-y-2 text-sm text-gray-500">
                 <div className="flex items-center justify-center gap-2">

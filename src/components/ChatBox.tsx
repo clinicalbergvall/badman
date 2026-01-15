@@ -5,6 +5,7 @@ import type { ChatMessage } from '@/lib/types'
 import toast from 'react-hot-toast'
 import { api } from '@/lib/api'
 import { io, Socket } from 'socket.io-client'
+import { safeLogError, getUserFriendlyError } from '@/lib/errorHandler'
 
 interface ChatBoxProps {
   bookingId: string
@@ -63,9 +64,7 @@ export default function ChatBox({
           }
         }
       } catch (error) {
-
-        console.error('Error fetching messages:', error)
-
+        safeLogError('ChatBox:fetchMessages', error);
         if (messages.length === 0) {
           toast.error('Failed to load messages. Please try again.');
         }
@@ -86,32 +85,64 @@ export default function ChatBox({
       const isMobile = window.innerWidth <= 768;
       if (isMobile) {
         const viewportHeight = window.innerHeight;
-        const documentHeight = document.documentElement.clientHeight;
+        const documentHeight = document.documentElement.scrollHeight;
         const heightDifference = Math.abs(documentHeight - viewportHeight);
         
-        setIsKeyboardVisible(heightDifference > 150);
+        const keyboardVisible = heightDifference > 150 || viewportHeight < window.screen.height * 0.75;
+        setIsKeyboardVisible(keyboardVisible);
         
         // Scroll to bottom when keyboard visibility changes
-        setTimeout(() => {
-          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-          
-          // If input is focused, ensure it stays visible
-          if (inputRef.current && document.activeElement === inputRef.current) {
-            inputRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          }
-        }, 100);
+        if (keyboardVisible && inputRef.current && document.activeElement === inputRef.current) {
+          setTimeout(() => {
+            // Scroll input into view
+            inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end', inline: 'nearest' });
+            // Scroll messages to show latest
+            setTimeout(() => {
+              messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+            }, 200);
+          }, 300);
+        }
+      } else {
+        setIsKeyboardVisible(false);
+      }
+    };
+    
+    // Listen for visual viewport changes (better for mobile keyboard detection)
+    const handleViewportChange = () => {
+      if (window.visualViewport) {
+        const viewportHeight = window.visualViewport.height;
+        const windowHeight = window.innerHeight;
+        const keyboardVisible = viewportHeight < windowHeight * 0.75;
+        setIsKeyboardVisible(keyboardVisible);
+        
+        if (keyboardVisible && inputRef.current && document.activeElement === inputRef.current) {
+          setTimeout(() => {
+            inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+            setTimeout(() => {
+              messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+            }, 200);
+          }, 300);
+        }
       }
     };
     
     // Listen for both resize and orientationchange events
     window.addEventListener('resize', handleResize);
     window.addEventListener('orientationchange', handleResize);
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', handleViewportChange);
+      window.visualViewport.addEventListener('scroll', handleViewportChange);
+    }
     
     handleResize();
     
     return () => {
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('orientationchange', handleResize);
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', handleViewportChange);
+        window.visualViewport.removeEventListener('scroll', handleViewportChange);
+      }
     };
   }, []);
 
@@ -158,7 +189,7 @@ export default function ChatBox({
         if (socket) socket.disconnect();
       }
     } catch (e) {
-      console.error('Failed to setup Socket for chat:', e)
+      safeLogError('ChatBox:socketSetup', e);
     }
   }, [bookingId, currentUserId, currentUserName, currentUserRole])
 
@@ -183,8 +214,8 @@ export default function ChatBox({
         toast.error(errorData.message || 'Failed to send message')
       }
     } catch (error) {
-      console.error('Error sending message:', error)
-      toast.error('Failed to send message. Please try again.')
+      safeLogError('ChatBox:sendMessage', error);
+      toast.error(getUserFriendlyError(error));
     }
   }
 
@@ -244,9 +275,9 @@ export default function ChatBox({
   }
 
   return (
-    <Card className={`flex flex-col ${isKeyboardVisible ? 'h-[50vh]' : 'h-[500px]'} max-h-[70vh]`}>
+    <Card className={`flex flex-col ${isKeyboardVisible ? 'h-[calc(100vh-200px)]' : 'h-[500px]'} max-h-[70vh]`}>
       { }
-      <div className="p-4 border-b border-gray-200">
+      <div className="p-4 border-b border-gray-200 flex-shrink-0">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="font-semibold text-gray-900">Chat</h3>
@@ -256,7 +287,10 @@ export default function ChatBox({
       </div>
 
       { }
-      <div className="flex-1 overflow-y-auto p-4 space-y-4" ref={messagesEndRef}>
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-4" ref={messagesEndRef} style={{ 
+        WebkitOverflowScrolling: 'touch',
+        paddingBottom: isKeyboardVisible ? '20px' : '16px'
+      }}>
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-gray-500">
             <svg className="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -288,7 +322,7 @@ export default function ChatBox({
                     key={msg.id}
                     className={`flex ${isClientMessage ? 'justify-end' : 'justify-start'} mb-3`}
                   >
-                    <div className={`max-w-[80%] ${isClientMessage ? 'order-2' : 'order-1'} ${isClientMessage ? 'ml-auto' : 'mr-auto'}`}>
+                    <div className={`${isClientMessage ? 'order-2' : 'order-1'} ${isClientMessage ? 'ml-auto' : 'mr-auto'}`}>
                       <div
                         className={`rounded-2xl px-4 py-2 ${isClientMessage
                             ? 'bg-blue-500 text-white rounded-br-none'
@@ -320,8 +354,10 @@ export default function ChatBox({
       </div>
 
       { }
-      <div className={`p-4 border-t border-gray-200 bg-white sticky bottom-0 ${isKeyboardVisible ? 'pb-8' : ''}`}>
-        <div className="flex gap-2 items-center">
+      <div className={`p-4 border-t border-gray-200 bg-white flex-shrink-0 ${isKeyboardVisible ? 'pb-safe' : ''}`} style={{
+        paddingBottom: isKeyboardVisible ? 'env(safe-area-inset-bottom, 20px)' : '16px'
+      }}>
+        <div className="flex gap-2 items-end">
 
 
           <div className="flex-1 relative">
@@ -354,13 +390,17 @@ export default function ChatBox({
                 }
               }}
               onFocus={(e) => {
-                // Ensure the input stays visible when keyboard appears
-                setTimeout(() => {
-                  messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-                  
-                  // Additional scroll to ensure input is visible
-                  e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }, 100);
+                // Ensure the input stays visible when keyboard appears on mobile
+                if (window.innerWidth <= 768) {
+                  setTimeout(() => {
+                    // Scroll input into view
+                    e.target.scrollIntoView({ behavior: 'smooth', block: 'end', inline: 'nearest' });
+                    // Also scroll messages to show latest
+                    setTimeout(() => {
+                      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+                    }, 150);
+                  }, 300);
+                }
               }}
               onBlur={() => {
                 // Scroll to bottom when input loses focus

@@ -61,7 +61,7 @@ function RatingModal({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+      <div className="bg-white rounded-2xl shadow-xl w-full p-6">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-gray-900">
             Rate Your Service
@@ -391,7 +391,7 @@ export default function BookingHistory() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8 px-2 sm:px-4 overflow-x-hidden">
+    <div className="min-h-screen bg-gray-50 py-8 px-0 overflow-x-hidden">
       <style>{`
         .hide-scrollbar::-webkit-scrollbar {
           display: none;
@@ -401,10 +401,10 @@ export default function BookingHistory() {
           scrollbar-width: none;
         }
       `}</style>
-      <div className="max-w-4xl mx-auto w-full">
+      <div className="w-full">
         {}
-        <div className="mb-8 w-full">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4 w-full">
+        <div className="mb-8 w-full px-0">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4 w-full px-0">
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2 mb-2">
                 <button
@@ -455,7 +455,7 @@ export default function BookingHistory() {
           </div>
 
           {}
-          <div className="flex gap-2 overflow-x-auto pb-2 border-b hide-scrollbar w-full">
+          <div className="flex gap-2 overflow-x-auto pb-2 border-b hide-scrollbar w-full px-0">
             {['all', 'pending', 'confirmed', 'completed'].map((status) => (
               <button
                 key={status}
@@ -498,7 +498,7 @@ export default function BookingHistory() {
             </p>
           </div>
         ) : (
-          <div className="grid gap-4 w-full">
+          <div className="grid gap-4 w-full px-0">
             {filteredHistory.map((booking: any) => {
               const isCarService = booking.serviceCategory === "car-detailing";
               const vType = isCarService ? booking.vehicleType : undefined;
@@ -539,13 +539,13 @@ export default function BookingHistory() {
               return (
                 <div
                   key={booking.id}
-                  className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow cursor-pointer w-full overflow-hidden"
+                  className="bg-white shadow-sm border border-gray-200 p-4 hover:shadow-md transition-shadow cursor-pointer w-full overflow-hidden"
                   onClick={() => setSelectedBooking(booking)}
                 >
                   {}
-                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-3 w-full min-w-0 overflow-hidden">
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-3 w-full min-w-0 overflow-hidden px-0">
                     <div className="flex items-start gap-3 min-w-0 overflow-hidden">
-                      <div className="w-10 h-10 bg-yellow-100 rounded-lg flex items-center justify-center text-xl flex-shrink-0">
+                      <div className="w-10 h-10 bg-yellow-100 flex items-center justify-center text-xl flex-shrink-0">
                         {vehicleOrProperty?.icon}
                       </div>
                       <div className="flex-1 min-w-0 overflow-hidden">

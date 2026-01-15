@@ -63,7 +63,7 @@ export const AdminLoginForm = ({
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-950 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
+      <div className="w-full space-y-8">
         <div className="text-center">
           <div className="mx-auto h-12 w-12 flex items-center justify-center rounded-full bg-yellow-400/20">
             <span className="text-yellow-400 text-2xl">🔐</span>

@@ -201,22 +201,24 @@ export default function AdminDashboard() {
     return ['all', ...Array.from(cities)]
   }, [pending, approved])
 
-  const filteredList = (selectedTab === 'pending' ? pending : approved)
+  const filteredList = (selectedTab === 'pending' ? allCleaners : approved)
     .filter((profile: CleanerProfile) => `${profile.firstName} ${profile.lastName}`.toLowerCase().includes(search.toLowerCase()))
     .filter((profile: CleanerProfile) => cityFilter === 'all' || profile.city === cityFilter)
 
 
 
   const monitoringSignals = useMemo(() => {
-    const missingDocs = pending.filter(
-      (cleaner: CleanerProfile) => !cleaner.passportPhoto || !cleaner.fullBodyPhoto || !cleaner.verification?.idDocumentFront
-    ).length
-
     const lowRatings = approved.filter((cleaner: CleanerProfile) => (cleaner.rating || 0) < 3).length
     const idleCleaners = approved.filter((cleaner: CleanerProfile) => (cleaner.totalJobs || 0) === 0).length
+    const newCleaners = approved.filter((cleaner: CleanerProfile) => {
+      const createdAt = cleaner.createdAt ? new Date(cleaner.createdAt) : null
+      if (!createdAt) return false
+      const daysSinceCreation = (Date.now() - createdAt.getTime()) / (1000 * 60 * 60 * 24)
+      return daysSinceCreation <= 7
+    }).length
 
     return [
-      { label: 'Docs Missing', value: missingDocs, subtitle: 'Need follow-up', tone: 'warning' as const },
+      { label: 'New This Week', value: newCleaners, subtitle: 'Recently joined', tone: 'warning' as const },
       { label: 'Low Ratings', value: lowRatings, subtitle: '< 3 ★ rating', tone: 'alert' as const },
       { label: 'Idle Cleaners', value: idleCleaners, subtitle: '0 recent jobs', tone: 'neutral' as const }
     ]
@@ -224,7 +226,7 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto space-y-8">
+      <div className="w-full space-y-8">
         <header className="relative rounded-3xl border border-yellow-400/40 bg-gradient-to-br from-slate-900 via-slate-950 to-black p-6 sm:p-8 shadow-[0_0_35px_rgba(234,179,8,0.25)]">
           <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
             <div className="space-y-4">
@@ -243,7 +245,7 @@ export default function AdminDashboard() {
                 <p className="text-xs tracking-[0.3em] uppercase text-yellow-400">Command Center</p>
                 <h1 className="mt-2 text-4xl font-black tracking-tight text-white">Cleaner Intelligence Dashboard</h1>
                 <p className="mt-3 max-w-2xl text-sm text-slate-300">
-                  Monitor the entire cleaner lifecycle in real time — pending verifications, compliance, ratings, and output all from one neon cockpit.
+                  Monitor the entire cleaner lifecycle in real time — active cleaners, compliance, ratings, and output all from one neon cockpit.
                 </p>
               </div>
             </div>
@@ -257,7 +259,7 @@ export default function AdminDashboard() {
 
           <div className="mt-8 grid gap-4 md:grid-cols-2">
             <StatCard label="Total Cleaners" value={stats?.totalCleaners || 0} accent="from-yellow-300/80 to-yellow-500/60" />
-            <StatCard label="Pending Reviews" value={stats?.pendingCleaners || 0} accent="from-orange-300/70 to-rose-500/50" />
+            <StatCard label="Active Cleaners" value={stats?.approvedCleaners || 0} accent="from-emerald-300/70 to-emerald-500/50" />
           </div>
         </header>
 
@@ -272,7 +274,7 @@ export default function AdminDashboard() {
                     }`}
                   onClick={() => setSelectedTab('pending')}
                 >
-                  Pending ({pending.length})
+                  All Cleaners ({pending.length + approved.length})
                 </button>
                 <button
                   className={`flex-1 px-6 py-3 text-sm font-semibold tracking-wide transition ${selectedTab === 'approved'
@@ -308,7 +310,7 @@ export default function AdminDashboard() {
 
             {filteredList.length === 0 ? (
               <Card className="bg-slate-900/50 border border-slate-800 text-center text-slate-400">
-                {selectedTab === 'pending' ? 'No pending cleaners match your filters' : 'No approved cleaners match your filters'}
+                {selectedTab === 'pending' ? 'No cleaners match your filters' : 'No approved cleaners match your filters'}
               </Card>
             ) : (
               <div className="space-y-4">
@@ -316,7 +318,7 @@ export default function AdminDashboard() {
                   <CleanerCard
                     key={profile.id}
                     profile={profile}
-                    isPending={selectedTab === 'pending'}
+                    isPending={profile.approvalStatus === 'pending'}
                     onApprove={() => handleApprove(profile)}
                     onReject={() => handleReject(profile)}
                   />

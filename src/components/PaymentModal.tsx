@@ -223,7 +223,7 @@ export function PaymentModal({
 
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black bg-opacity-50 animate-fadeIn">
-      <Card className="w-full max-w-md bg-white rounded-2xl shadow-2xl p-6 animate-up">
+      <Card className="w-full bg-white rounded-2xl shadow-2xl p-6 animate-up">
         {}
         <div className="text-center mb-6">
           <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center mx-auto mb-3">

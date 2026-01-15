@@ -146,7 +146,7 @@ export default function ServiceShowcase({ serviceCategory = 'car-detailing' }: S
 
       {openIndex !== null && (
         <div className="fixed inset-0 z-[9999] bg-black/80 backdrop-blur-sm flex items-center justify-center" onClick={() => setOpenIndex(null)}>
-          <div className="max-w-3xl w-[92%] rounded-2xl overflow-hidden border border-gray-700 shadow-2xl relative" onClick={(e) => e.stopPropagation()}>
+          <div className="w-full rounded-2xl overflow-hidden border border-gray-700 shadow-2xl relative" onClick={(e) => e.stopPropagation()}>
             {items[openIndex].type === 'image' ? (
               <img src={items[openIndex].src} alt={items[openIndex].title} className="w-full h-full object-contain bg-black" />
             ) : failed[items[openIndex].id] ? (

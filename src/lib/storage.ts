@@ -346,7 +346,12 @@ export function updateStoredCleanerProfile(
 
 export function saveUserSession(session: UserAccountSession): void {
   try {
-    localStorage.setItem(USER_SESSION_KEY, JSON.stringify(session));
+    const sessionString = JSON.stringify(session);
+    localStorage.setItem(USER_SESSION_KEY, sessionString);
+    
+    window.dispatchEvent(new CustomEvent('userSessionChanged', { detail: session }));
+    
+    logger.info("User session saved successfully");
   } catch (error) {
     logger.error("Failed to save user session:", error instanceof Error ? error : undefined);
   }
@@ -365,7 +370,38 @@ export const loadUserSession = (): UserAccountSession | null => {
 export const clearUserSession = () => {
   try {
     localStorage.removeItem(USER_SESSION_KEY);
+    
+    
+    window.dispatchEvent(new CustomEvent('userSessionChanged', { detail: null }));
   } catch (error) {
     logger.error("Failed to clear user session:", error instanceof Error ? error : undefined);
   }
+};
+
+
+export const setupSessionSync = (onSessionChange: (sessionData: UserAccountSession | null) => void) => {
+  
+  const handleStorageChange = (event: StorageEvent) => {
+    if (event.key === USER_SESSION_KEY) {
+      try {
+        const newSession = event.newValue ? JSON.parse(event.newValue) : null;
+        onSessionChange(newSession);
+      } catch (error) {
+        logger.error("Failed to parse session from storage event:", error instanceof Error ? error : undefined);
+      }
+    }
+  };
+  
+  window.addEventListener('storage', handleStorageChange);
+  
+  const handleCustomEvent = (event: any) => {
+    onSessionChange(event.detail);
+  };
+  
+  window.addEventListener('userSessionChanged', handleCustomEvent);
+  
+  return () => {
+    window.removeEventListener('storage', handleStorageChange);
+    window.removeEventListener('userSessionChanged', handleCustomEvent);
+  };
 };

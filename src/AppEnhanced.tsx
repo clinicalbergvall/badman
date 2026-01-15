@@ -243,7 +243,7 @@ export default function App() {
 
   return (
     <ErrorBoundary>
-      <div className={`min-h-screen relative overflow-y-auto overflow-x-hidden ${isKeyboardVisible ? 'safe-area-inset' : ''}`}>
+      <div className={`min-h-screen relative overflow-y-auto overflow-x-hidden m-0 p-0 max-w-md mx-auto ${isKeyboardVisible ? 'safe-area-inset' : ''}`}>
         { }
         <div
           className="fixed inset-0 z-0"
@@ -261,20 +261,15 @@ export default function App() {
         </div>
 
         { }
-        <div className="relative z-10 container max-w-5xl mx-auto px-4 py-2 animate-fade">
+        <div className="relative z-10 w-full m-0 p-0 animate-fade">
           { }
           <div
             className={
-              `relative text-center mb-0 py-3 px-6 rounded-3xl ${darkMode ? "bg-gray-800/40 border-gray-600/50" : "bg-white/60 border-white/40"} border`
+              `relative text-center my-0 mx-0 py-2 px-0 bg-gradient-to-br from-gray-900 via-gray-950 to-black`
             }
           >
-            <h1
-              className={`text-4xl md:text-5xl font-black tracking-tight mb-3 ${darkMode ? "text-white" : "text-black drop-shadow-lg"}`}
-            >
-              Welcome to CleanCloak
-            </h1>
             <p
-              className={`text-base md:text-lg font-semibold ${darkMode ? "text-gray-100" : "text-black drop-shadow-md"} uppercase`}
+              className={`text-base md:text-lg font-semibold text-gray-100 uppercase`}
             >
               ELEVATING SPACES AND EMPOWERING CLEANERS THROUGH TECH
             </p>
@@ -296,21 +291,14 @@ export default function App() {
             { }
             {isValidTabRoute && !isExcludedPath && !isSubRoute && (
               <div
-                className={`mb-1 rounded-2xl backdrop-blur-sm border ${darkMode
-                  ? "bg-gray-900/40 border-gray-700/50"
-                  : "bg-white/40 border-white/50"
-                  }`}
+                className={`mb-0 bg-gradient-to-t from-gray-900 to-gray-950/80 backdrop-blur-sm border-t border-gray-700`}
               >
-                <div className="flex justify-around py-3">
+                <div className="flex justify-between py-2 px-0">
                   <button
                     onClick={() => setTab("booking")}
-                    className={`flex flex-col items-center gap-1 p-3 rounded-xl transition-all duration-300 ${currentPage === "booking"
-                      ? darkMode
-                        ? "text-yellow-400 bg-gray-800/30"
-                        : "text-yellow-600 bg-white/50 shadow-md"
-                      : darkMode
-                        ? "text-gray-400 hover:text-gray-200"
-                        : "text-gray-500 hover:text-gray-700"
+                    className={`flex flex-col items-center gap-1 flex-1 transition-all duration-300 p-3 rounded-xl ${currentPage === "booking"
+                      ? "text-amber-400 bg-gray-800/40 shadow-inner"
+                      : "text-gray-300 hover:text-gray-100 hover:bg-gray-800/20"
                       }`}
                   >
                     <svg
@@ -330,13 +318,9 @@ export default function App() {
                   </button>
                   <button
                     onClick={() => setTab("history")}
-                    className={`flex flex-col items-center gap-1 p-3 rounded-xl transition-all duration-300 ${currentPage === "history"
-                      ? darkMode
-                        ? "text-yellow-400 bg-gray-800/30"
-                        : "text-yellow-600 bg-white/50 shadow-md"
-                      : darkMode
-                        ? "text-gray-400 hover:text-gray-200"
-                        : "text-gray-500 hover:text-gray-700"
+                    className={`flex flex-col items-center gap-1 flex-1 transition-all duration-300 p-3 rounded-xl ${currentPage === "history"
+                      ? "text-amber-400 bg-gray-800/40 shadow-inner"
+                      : "text-gray-300 hover:text-gray-100 hover:bg-gray-800/20"
                       }`}
                   >
                     <svg
@@ -356,13 +340,9 @@ export default function App() {
                   </button>
                   <button
                     onClick={() => setTab("profile")}
-                    className={`flex flex-col items-center gap-1 p-3 rounded-xl transition-all duration-300 ${currentPage === "profile"
-                      ? darkMode
-                        ? "text-yellow-400 bg-gray-800/30"
-                        : "text-yellow-600 bg-white/50 shadow-md"
-                      : darkMode
-                        ? "text-gray-400 hover:text-gray-200"
-                        : "text-gray-500 hover:text-gray-700"
+                    className={`flex flex-col items-center gap-1 flex-1 transition-all duration-300 p-3 rounded-xl ${currentPage === "profile"
+                      ? "text-amber-400 bg-gray-800/40 shadow-inner"
+                      : "text-gray-300 hover:text-gray-100 hover:bg-gray-800/20"
                       }`}
                   >
                     <svg
@@ -387,21 +367,22 @@ export default function App() {
             { }
             <main
               className={
-                `rounded-3xl border p-6 pt-1 overflow-x-auto max-w-full mb-2 ${darkMode
-                  ? "bg-gray-900/30 border-gray-700/40"
-                  : "bg-white/70 border-white/40"
+                `w-full min-h-screen max-w-md mx-auto overflow-x-hidden px-0 ${darkMode
+                  ? "bg-gray-900"
+                  : "bg-white"
                 }`
               }
+              style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
             >
               {(isValidTabRoute && !isExcludedPath && !isSubRoute) ? (
                 <>
                   {currentPage === "booking" && <BookingEnhanced />}
                   {currentPage === "history" && <BookingHistory />}
                   {currentPage === "profile" && (
-                    <div className="flex gap-4 max-w-2xl mx-auto">
+                    <div className="flex gap-0 w-full">
                       <button
                         onClick={() => navigate("/profile")}
-                        className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+                        className="flex-1 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white font-semibold py-4 px-6 transition-all duration-300 flex items-center justify-center gap-2"
                       >
                         <svg
                           className="w-5 h-5"
@@ -420,7 +401,7 @@ export default function App() {
                       </button>
                       <button
                         onClick={() => navigate("/completed-bookings")}
-                        className="flex-1 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold py-4 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+                        className="flex-1 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold py-4 px-6 transition-all duration-300 flex items-center justify-center gap-2"
                       >
                         <svg
                           className="w-5 h-5"
@@ -443,11 +424,11 @@ export default function App() {
               ) : (
 
                 <div className="flex flex-col items-center justify-center py-2">
-                  <div className="text-center max-w-md mx-auto relative">
-                    <h2 className="text-2xl font-bold mb-4 text-black dark:text-white">
-                      Welcome to CleanCloak
+                  <div className="text-center w-full relative">
+                    <h2 className="text-2xl font-bold mb-4 text-gray-100">
+                      CleanCloak
                     </h2>
-                    <p className="text-black dark:text-gray-300 mb-6">
+                    <p className="text-gray-400 mb-6">
                       Navigate to the appropriate section using the menu
                     </p>
                   </div>
@@ -458,15 +439,6 @@ export default function App() {
 
 
 
-          { }
-          <footer
-            className={`mt-8 text-center text-sm font-medium ${darkMode ? "text-gray-400" : "text-black"
-              }`}
-          >
-            <p className="backdrop-blur-sm bg-white/10 rounded-full px-6 py-2 inline-block uppercase text-black">
-              ELEVATING SPACES AND EMPOWERING CLEANERS THROUGH TECH
-            </p>
-          </footer>
         </div>
       </div>
     </ErrorBoundary>

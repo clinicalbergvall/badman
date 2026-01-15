@@ -22,7 +22,7 @@ import CleanerActiveBookings from "./pages/CleanerActiveBookings";
 import CompletedBookings from "./pages/CompletedBookings";
 import Earnings from "./pages/Earnings";
 import { LoginForm, AdminLoginForm } from "./components/ui";
-import { loadUserSession, getStoredAuthToken } from "./lib/storage";
+import { loadUserSession, getStoredAuthToken, setupSessionSync, saveUserSession, clearUserSession } from './lib/storage';
 import { NotificationProvider } from "./contexts/NotificationContext";
 import { API_BASE_URL } from "./lib/config";
 import { api } from "./lib/api";
@@ -90,57 +90,80 @@ const ProtectedRoute = ({
 }) => {
   const [checked, setChecked] = React.useState(false);
   const [localSession, setLocalSession] = React.useState(loadUserSession());
+  const hasValidatedRef = React.useRef(false);
 
   useEffect(() => {
     let cancelled = false;
 
     
     const timeoutId = setTimeout(() => {
-      if (!cancelled) {
+      if (!cancelled && !hasValidatedRef.current) {
         setChecked(true);
       }
     }, 5000); 
 
-    if (!localSession) {
-      (async () => {
-        try {
-          const res = await api.get("/auth/me");
-          if (res.ok) {
-            const data = await res.json();
-            const u = (data && (data.user || data)) || {};
-            const hydrated = {
-              ...u,
-              userType: u.userType || u.role,
-              name: u.name || "",
-              phone: u.phone || "",
-              lastSignedIn: new Date().toISOString(),
-            };
-            localStorage.setItem(
-              "cleancloak-user-session",
-              JSON.stringify(hydrated),
-            );
-            if (!cancelled) setLocalSession(hydrated);
-          }
-        } catch (error) {
-          console.error('Error fetching user session:', error);
+    
+    const cleanup = setupSessionSync((sessionData) => {
+      if (!cancelled) {
+        setLocalSession(sessionData);
+      }
+    });
+
+    
+    const validateSession = async () => {
+      if (hasValidatedRef.current) return;
+      hasValidatedRef.current = true;
+
+      try {
+        const res = await api.get("/auth/me");
+        if (res.ok) {
+          const data = await res.json();
+          const u = (data && (data.user || data)) || {};
+          const hydrated = {
+            ...u,
+            userType: u.userType || u.role,
+            name: u.name || "",
+            phone: u.phone || "",
+            lastSignedIn: new Date().toISOString(),
+          };
           
-          if (!cancelled) setChecked(true);
+          saveUserSession(hydrated);
+          if (!cancelled) {
+            setLocalSession(hydrated);
+          }
+        } else {
+          clearUserSession();
+          if (!cancelled) {
+            setLocalSession(null);
+          }
         }
+      } catch (error) {
+        if (import.meta.env.DEV) {
+          console.error('Error validating session:', error);
+        }
+        
+        const fallbackSession = loadUserSession();
+        if (fallbackSession && !cancelled) {
+          setLocalSession(fallbackSession);
+        } else if (!cancelled) {
+          setLocalSession(null);
+        }
+      } finally {
         if (!cancelled) {
           clearTimeout(timeoutId);
           setChecked(true);
         }
-      })();
-    } else {
-      clearTimeout(timeoutId);
-      setChecked(true);
-    }
+      }
+    };
+
+    validateSession();
 
     return () => {
       cancelled = true;
       clearTimeout(timeoutId);
+      if (cleanup) cleanup();
     };
-  }, [localSession]);
+  }, []); 
 
   if (!checked) {
     return (

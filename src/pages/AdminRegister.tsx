@@ -54,7 +54,7 @@ export default function AdminRegister() {
 
   return (
     <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
-      <div className="bg-slate-900 border border-yellow-400/40 rounded-2xl p-8 max-w-md w-full shadow-[0_0_35px_rgba(234,179,8,0.25)]">
+      <div className="bg-slate-900 border border-yellow-400/40 rounded-2xl p-8 w-full shadow-[0_0_35px_rgba(234,179,8,0.25)]">
         <div className="text-center mb-8">
           <h1 className="text-yellow-400 text-3xl font-bold mb-2">Admin Registration</h1>
           <p className="text-slate-300">Create administrator account</p>

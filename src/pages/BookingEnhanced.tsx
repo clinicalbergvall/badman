@@ -114,7 +114,8 @@ export default function BookingEnhanced() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
-  const [isSignup, setIsSignup] = useState(false);
+  const [isSignup, setIsSignup] = useState(false); // Kept for potential future use
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
 
 
   const [vehicleType, setVehicleType] = useState<VehicleType | "">("");
@@ -129,6 +130,7 @@ export default function BookingEnhanced() {
   >([]);
   const [selectedCarServices, setSelectedCarServices] = useState<string[]>([]);
   const [failedPackage, setFailedPackage] = useState<Record<string, boolean>>({});
+  const [vehicleVideoFailed, setVehicleVideoFailed] = useState(false);
 
 
 
@@ -158,11 +160,11 @@ export default function BookingEnhanced() {
       setName(session.name || "");
       setPhone(session.phone || "");
       if (session.userType === "client") {
-        setStep(1); // Start at step 1 (account) for returning clients
+        setStep(2); // Start at step 2 (vehicle selection) for returning clients
         setIsSignup(false);
       }
     } else {
-      // For new users, start at step 0 (introductory video)
+      // For new users, start at step 0 (user type selection)
       setStep(0);
     }
     getLocationPermissionStatus().then(setLocationPermission).catch(() => setLocationPermission("unknown"));
@@ -201,7 +203,7 @@ export default function BookingEnhanced() {
       clearUserSession();
       setUserType(null);
     } else if (step === 1) {
-      // Going back from step 1 (account) should go to step 0 (intro video)
+      // Going back from step 1 (account) should go to step 0 (user type selection)
       setStep(0);
     } else {
       // For other steps, go back normally
@@ -284,8 +286,7 @@ export default function BookingEnhanced() {
   );
 
   const currentStageId = useMemo<StageId>(() => {
-    if (step <= 0) return "account"; // Step 0 is the intro video but maps to account stage
-    if (step === 1) return "account";
+    if (step <= 1) return "account"; // Steps 0 and 1 map to account stage
     if (step === 2) return "vehicle";
     if (step === 3) return "package";
     if (step === 4) return "extras";
@@ -347,9 +348,8 @@ export default function BookingEnhanced() {
 
   if (!userType) {
     return (
-      <div className="max-w-md mx-auto">
+      <div className="w-full">
         <div className="text-center mb-8">
-
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             Complete Your Profile
           </h1>
@@ -363,7 +363,10 @@ export default function BookingEnhanced() {
             variant="outlined"
             hoverable
             className="p-6 cursor-pointer transition-all hover:border-gray-400"
-            onClick={() => handleUserTypeSelect("client")}
+            onClick={() => {
+              handleUserTypeSelect("client");
+              setStep(1); // Go to login page first
+            }}
           >
             <div className="flex items-start gap-4">
               <div className="text-3xl">🏠</div>
@@ -497,8 +500,22 @@ export default function BookingEnhanced() {
       const response = await api.post("/bookings/public", bookingPayload);
 
       if (!response.ok) {
-        const errorBody = await response.json().catch(() => ({}));
-        throw new Error(errorBody.message || "Failed to submit booking");
+        let errorMessage = "Failed to submit booking";
+        try {
+          const errorBody = await response.json().catch(() => ({}));
+          errorMessage = errorBody.message || errorBody.error || errorMessage;
+        } catch (e) {
+          // If JSON parsing fails, try to get text
+          try {
+            const errorText = await response.text();
+            if (errorText) {
+              errorMessage = errorText.substring(0, 200);
+            }
+          } catch (textError) {
+            // Use default error message
+          }
+        }
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
@@ -529,48 +546,29 @@ export default function BookingEnhanced() {
         setFleetCarCount(5);
         setSelectedCarExtras([]);
       }, 1000);
-    } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "Booking failed. Please try again.";
-      toast.error(message);
+    } catch (error: any) {
+      console.error("Booking submission error:", error);
+      const errorMessage = error?.message || error?.toString() || "Failed to submit booking. Please check your connection and try again.";
+      
+      // Check if it's a network error
+      if (errorMessage.includes('fetch') || errorMessage.includes('network') || errorMessage.includes('Failed to fetch')) {
+        toast.error("Network error. Please check your internet connection and try again.");
+      } else {
+        toast.error(errorMessage);
+      }
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="max-w-md mx-auto">
+    <div className="w-full min-h-screen min-w-full mx-auto m-0 p-0 bg-white overflow-x-hidden">
       { }
-      {step > 0 && (
-        <button
-          onClick={handleGoBack}
-          className="text-gray-600 hover:text-gray-900 mb-1 flex items-center gap-2"
-        >
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M15 19l-7-7 7-7"
-            />
-          </svg>
-          Back
-        </button>
-      )}
-
-      { }
-      <div className="mb-0">
-        {step > 1 && (
+      <div className="mb-6 bg-gradient-to-br from-gray-900 via-gray-950 to-black shadow-lg border-b border-gray-800 backdrop-blur-sm -mx-4 px-4 pt-6 pb-8">
+        {step > 0 && (
           <button
             onClick={handleGoBack}
-            className="text-gray-600 hover:text-gray-900 mb-0 flex items-center gap-2"
+            className="text-gray-300 hover:text-white mb-2 flex items-center gap-2 font-medium px-0"
           >
             <svg
               className="w-5 h-5"
@@ -589,9 +587,9 @@ export default function BookingEnhanced() {
           </button>
         )}
         <div className="text-center">
-          <h1 className="text-3xl font-bold text-gray-900 mb-0">CleanCloak</h1>
-          <p className="text-gray-600 mb-0">
-            {step === 0 && "Experience professional car detailing services"}
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600 bg-clip-text text-transparent mb-2">CleanCloak</h1>
+          <p className="text-gray-100 font-medium text-lg">
+            {step === 0 && "Complete your profile to get started"}
             {step === 1 &&
               (isSignup
                 ? "Create your account to find professional car detailers"
@@ -609,93 +607,80 @@ export default function BookingEnhanced() {
       { }
       {
         step === 0 && (
-          <div className="space-y-4">
-            <div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Welcome to CleanCloak</h3>
-              <p className="text-gray-600 mb-4">Experience professional car detailing services</p>
-            </div>
-            
-            <div className="space-y-2 mb-3">
-              <ProgressBar value={progress} className="mb-1" />
-              <div className="flex gap-2 overflow-x-auto pb-1">
-                {activeStages.map((stage: any, index: number) => {
-                  const status =
-                    index < normalizedStageIndex
-                      ? "complete"
-                      : index === normalizedStageIndex
-                        ? "current"
-                        : "upcoming";
-                  const statusClasses =
-                    status === "complete"
-                      ? "bg-black text-white border-black shadow-sm"
-                      : status === "current"
-                        ? "border-2 border-yellow-400 shadow-sm"
-                        : "border border-gray-200 opacity-60";
-                  
-                  return (
-                    <button
-                      key={stage.id}
-                      className={`px-4 py-2 text-sm font-medium rounded-full whitespace-nowrap transition-all ${statusClasses}`}
-                      onClick={() => setStep(index)}
-                      disabled={index > normalizedStageIndex}
-                    >
-                      {stage.label}
-                      {status === "complete" && " ✓"}
-                    </button>
-                  );
-                })}
-              </div>
+          <div className="w-full max-w-2xl mx-auto px-4">
+            <div className="text-center mb-8">
             </div>
 
-            {/* Video Introduction */}
-            <div className="relative rounded-lg overflow-hidden bg-gray-100 aspect-video max-h-64 flex items-center justify-center">
-              <video
-                ref={carVideoRef}
-                src={getVideoSrc('/assets/detailing/6873165-mobile-720p.mp4')}
-                muted
-                loop
-                playsInline
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  console.error('Video failed to load:', e.currentTarget.src);
+            <div className="space-y-4">
+              <p className="font-semibold text-gray-100 mb-3">I want to:</p>
+
+              <Card
+                variant="outlined"
+                hoverable
+                className="p-6 cursor-pointer transition-all hover:border-yellow-400 shadow-sm hover:shadow-md"
+                onClick={() => {
+                  handleUserTypeSelect("client");
+                  setStep(1); // Go to login/signup page
                 }}
               >
-                <track kind="captions" />
-                Your browser does not support the video tag.
-              </video>
-            </div>
+                <div className="flex items-start gap-4">
+                  <div className="flex-shrink-0 w-12 h-12 rounded-full bg-gradient-to-br from-yellow-400 to-yellow-600 flex items-center justify-center text-white text-2xl">
+                    🚗
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-bold text-xl text-gray-900 mb-1">
+                      Find Professional Car Detailers
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      Connect with expert detailers to elevate and maintain your vehicle
+                    </p>
+                  </div>
+                  <div className="flex-shrink-0 text-yellow-500">
+                    ›
+                  </div>
+                </div>
+              </Card>
 
-            <div className="text-center pt-4">
-              <h4 className="text-lg font-semibold text-gray-900 mb-2">Professional Car Detailing Services</h4>
-              <p className="text-gray-600 mb-4">Choose from our premium packages to keep your vehicle looking its best</p>
-              
-              <Button
-                onClick={() => setStep(1)}
-                fullWidth
+              <Card
+                variant="outlined"
+                hoverable
+                className="p-6 cursor-pointer transition-all border-2 border-yellow-400 bg-yellow-50 hover:border-yellow-500 shadow-sm hover:shadow-md"
+                onClick={() => handleUserTypeSelect("cleaner")}
               >
-                Get Started
-              </Button>
+                <div className="flex items-start gap-4">
+                  <div className="flex-shrink-0 w-12 h-12 rounded-full bg-gradient-to-br from-yellow-500 to-yellow-700 flex items-center justify-center text-white text-2xl">
+                    💼
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-bold text-xl text-gray-900 mb-1">
+                      Join the Clean Cloak Family
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      Offer Premium Detailing Services
+                    </p>
+                  </div>
+                  <div className="flex-shrink-0 text-yellow-500">
+                    ›
+                  </div>
+                </div>
+              </Card>
             </div>
           </div>
         )
       }
       {
         step === 1 && (
-          <div className="space-y-4">
-            <div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                {isSignup ? "Create Account" : "Sign In"}
-              </h3>
-              <p className="text-gray-600 mb-4">
-                {isSignup
-                  ? "Create an account to get started with CleanCloak"
-                  : "Sign in to continue with your booking"}
-              </p>
-            </div>
+          <div className="space-y-6 w-full max-w-2xl mx-auto px-4">
             
-            <div className="space-y-2 mb-3">
-              <ProgressBar value={progress} className="mb-1" />
-              <div className="flex gap-2 overflow-x-auto pb-1">
+            <div className="space-y-3 mb-6 bg-gray-800/90 backdrop-blur-lg rounded-2xl border border-gray-700 shadow-sm -mx-4 px-4">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-semibold text-gray-100">Booking Progress</h3>
+                <span className="text-sm font-medium text-amber-400 bg-amber-900/50 px-3 py-1 rounded-full">
+                  Step {normalizedStageIndex + 1} of {activeStages.length}
+                </span>
+              </div>
+              <ProgressBar value={progress} className="mb-3" />
+              <div className="flex gap-2 overflow-x-auto pb-2">
                 {activeStages.map((stage: any, index: number) => {
                   const status =
                     index < normalizedStageIndex
@@ -705,20 +690,26 @@ export default function BookingEnhanced() {
                         : "upcoming";
                   const statusClasses =
                     status === "complete"
-                      ? "bg-black text-white border-black shadow-sm"
+                      ? "bg-gradient-to-r from-yellow-500 to-yellow-600 text-white border-0 shadow-lg"
                       : status === "current"
-                        ? "border-2 border-yellow-400 shadow-sm"
-                        : "border border-gray-200 opacity-60";
+                        ? "border-2 border-yellow-500 shadow-md bg-gradient-to-r from-yellow-50 to-white"
+                        : "border border-gray-200 bg-white shadow-sm text-gray-400";
                   
                   return (
                     <button
                       key={stage.id}
-                      className={`px-4 py-2 text-sm font-medium rounded-full whitespace-nowrap transition-all ${statusClasses}`}
+                      className={`px-4 py-2.5 text-sm font-semibold rounded-xl whitespace-nowrap transition-all duration-300 transform hover:scale-105 ${statusClasses}`}
                       onClick={() => setStep(index + 1)}
                       disabled={index > normalizedStageIndex}
                     >
-                      {stage.label}
-                      {status === "complete" && " ✓"}
+                      <div className="flex items-center gap-2">
+                        {status === "complete" && (
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                        )}
+                        {stage.label}
+                      </div>
                     </button>
                   );
                 })}
@@ -726,36 +717,40 @@ export default function BookingEnhanced() {
             </div>
 
             <div className="space-y-4">
-              <Input
-                label="Full Name"
-                placeholder="Enter your full name"
-                value={name}
-                onChange={(e: any) => setName(e.target.value)}
-                required={isSignup}
-              />
-              
-              <Input
-                label="Phone Number"
-                placeholder="07XX XXX XXX"
-                value={phone}
-                onChange={(e: any) => setPhone(formatPhoneNumber(e.target.value))}
-                required
-              />
-              
               {isSignup && (
                 <Input
-                  label="Password"
-                  type="password"
-                  placeholder="Create a password"
-                  value={password}
-                  onChange={(e: any) => setPassword(e.target.value)}
+                  label="Full Name"
+                  placeholder="e.g. John Kamau"
+                  value={name}
+                  onChange={(e: any) => setName(e.target.value)}
                   required
                 />
               )}
+              
+              <Input
+                label="Phone Number"
+                placeholder="07XX XXX XXX (for M-Pesa payments)"
+                value={phone}
+                onChange={(e: any) => setPhone(formatPhoneNumber(e.target.value))}
+                required
+                helperText="Use your Safaricom number registered for M-Pesa (07XXXXXXXX or 01XXXXXXXX)"
+              />
+              
+              <Input
+                label="Password"
+                type="password"
+                placeholder="Enter your password"
+                value={password}
+                onChange={(e: any) => setPassword(e.target.value)}
+                required
+                helperText="Minimum 6 characters"
+              />
             </div>
 
-            <div className="flex flex-col gap-3 mt-6">
+            <div className="flex flex-col sm:flex-row gap-3 mt-6 w-full">
               <Button
+                loading={isAuthenticating}
+                disabled={isAuthenticating || !phone || (isSignup && (!name || !password))}
                 onClick={async () => {
                   if (!phone) {
                     toast.error("Please enter a phone number");
@@ -767,16 +762,12 @@ export default function BookingEnhanced() {
                     return;
                   }
                   
-                  if (!password && !isSignup) {
-                    // For login, we may not require password if using OTP
-                    // but we'll try login anyway
-                  }
-                  
-                  if (isSignup && !password) {
+                  if (!password) {
                     toast.error("Please enter a password");
                     return;
                   }
                   
+                  setIsAuthenticating(true);
                   try {
                     if (isSignup) {
                       // Sign up flow
@@ -792,21 +783,37 @@ export default function BookingEnhanced() {
                       
                       if (result.success) {
                         toast.success("Account created successfully!");
-                        // Move to next step after successful signup
+                        // Save user session after successful signup
+                        saveUserSession({
+                          userType: "client",
+                          name: name.trim(),
+                          phone,
+                          lastSignedIn: new Date().toISOString(),
+                        });
+                        // Set user type and move to next step
+                        setUserType("client");
                         setStep(2);
                       } else {
                         throw new Error(result.message || "Failed to create account");
                       }
                     } else {
-                      // Login flow
-                      console.log('Attempting to login with:', { phone, password: password || "" });
-                      const result = await authAPI.login(phone, password || "");
+                      // Login flow with phone and password
+                      console.log('Attempting to login with:', { phone, password });
+                      const result = await authAPI.login(phone, password);
                       
                       console.log('Login result:', result);
                       
                       if (result.success) {
                         toast.success("Logged in successfully!");
-                        // Move to next step after successful login
+                        // Save user session after successful login
+                        saveUserSession({
+                          userType: "client",
+                          name: result.user?.name || name,
+                          phone,
+                          lastSignedIn: new Date().toISOString(),
+                        });
+                        // Set user type and move to next step
+                        setUserType("client");
                         setStep(2);
                       } else {
                         throw new Error(result.message || "Failed to login");
@@ -815,10 +822,13 @@ export default function BookingEnhanced() {
                   } catch (error: any) {
                     console.error('Auth error:', error);
                     toast.error(error.message || "An error occurred. Please check your connection.");
+                  } finally {
+                    setIsAuthenticating(false);
                   }
                 }}
                 fullWidth
                 disabled={!phone || (isSignup && (!name || !password))}
+                className="min-h-12"
               >
                 {isSignup ? "Create Account" : "Sign In"}
               </Button>
@@ -827,6 +837,7 @@ export default function BookingEnhanced() {
                 variant="ghost"
                 onClick={() => setIsSignup(!isSignup)}
                 fullWidth
+                className="min-h-12"
               >
                 {isSignup
                   ? "Already have an account? Sign In"
@@ -838,15 +849,17 @@ export default function BookingEnhanced() {
       }
       {
         step === 2 && (
-          <div className="space-y-4">
-            <div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Select Vehicle Type</h3>
-              <p className="text-gray-600 mb-4">Choose the type of vehicle you want detailed</p>
-            </div>
+          <div className="space-y-6 w-full max-w-2xl mx-auto px-4">
             
-            <div className="space-y-2 mb-3">
-              <ProgressBar value={progress} className="mb-1" />
-              <div className="flex gap-2 overflow-x-auto pb-1">
+            <div className="space-y-3 mb-6 p-5 bg-gray-800/90 backdrop-blur-lg rounded-2xl border border-gray-700 shadow-sm">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-semibold text-gray-100">Booking Progress</h3>
+                <span className="text-sm font-medium text-amber-400 bg-amber-900/50 px-3 py-1 rounded-full">
+                  Step {normalizedStageIndex + 1} of {activeStages.length}
+                </span>
+              </div>
+              <ProgressBar value={progress} className="mb-3" />
+              <div className="flex gap-2 overflow-x-auto pb-2">
                 {activeStages.map((stage: any, index: number) => {
                   const status =
                     index < normalizedStageIndex
@@ -856,27 +869,62 @@ export default function BookingEnhanced() {
                         : "upcoming";
                   const statusClasses =
                     status === "complete"
-                      ? "bg-black text-white border-black shadow-sm"
+                      ? "bg-gradient-to-r from-yellow-500 to-yellow-600 text-white border-0 shadow-lg"
                       : status === "current"
-                        ? "border-2 border-yellow-400 shadow-sm"
-                        : "border border-gray-200 opacity-60";
+                        ? "border-2 border-yellow-500 shadow-md bg-gradient-to-r from-yellow-50 to-white"
+                        : "border border-gray-200 bg-white shadow-sm text-gray-400";
                   
                   return (
                     <button
                       key={stage.id}
-                      className={`px-4 py-2 text-sm font-medium rounded-full whitespace-nowrap transition-all ${statusClasses}`}
+                      className={`px-4 py-2.5 text-sm font-semibold rounded-xl whitespace-nowrap transition-all duration-300 transform hover:scale-105 ${statusClasses}`}
                       onClick={() => setStep(index + 1)}
                       disabled={index > normalizedStageIndex}
                     >
-                      {stage.label}
-                      {status === "complete" && " ✓"}
+                      <div className="flex items-center gap-2">
+                        {status === "complete" && (
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                        )}
+                        {stage.label}
+                      </div>
                     </button>
                   );
                 })}
               </div>
             </div>
 
-            <div className="space-y-4">
+            {/* Video for vehicle selection */}
+            <div className="relative rounded-xl overflow-hidden bg-gradient-to-br from-gray-100 to-gray-200 aspect-video max-h-[320px] w-full flex items-center justify-center mb-4 shadow-inner max-w-2xl mx-auto">
+              <video
+                ref={carVideoRef}
+                src={getVideoSrc('/assets/detailing/6873165-mobile-720p.mp4')}
+                muted
+                loop
+                playsInline
+                autoPlay
+                className="w-full h-full object-cover rounded-lg"
+                onError={(e) => {
+                  console.error('Video failed to load:', e.currentTarget.src);
+                  // Set a state to show fallback image when video fails
+                  setVehicleVideoFailed(true);
+                }}
+              >
+                <track kind="captions" />
+                Your browser does not support the video tag.
+              </video>
+              {vehicleVideoFailed && (
+                <img
+                  src="/assets/detailing/wash-1.png"
+                  alt="Vehicle selection"
+                  className="absolute inset-0 w-full h-full object-cover rounded-lg max-w-2xl mx-auto"
+                />
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none"></div>
+            </div>
+
+            <div className="space-y-4 w-full max-w-lg mx-auto">
               {VEHICLE_CATEGORIES.map((vehicle) => {
                 const status =
                   vehicleType === vehicle.id
@@ -890,25 +938,32 @@ export default function BookingEnhanced() {
                 return (
                   <Card
                     key={vehicle.id}
-                    variant={vehicleType === vehicle.id ? "default" : "outlined"}
+                    variant="glass"
                     hoverable
                     selected={vehicleType === vehicle.id}
-                    className={`p-4 cursor-pointer transition-all ${statusClasses}`}
+                    className={`p-5 cursor-pointer transition-all duration-300 transform hover:scale-[1.03] border-2 ${vehicleType === vehicle.id ? 'border-yellow-500 shadow-2xl ring-2 ring-yellow-200' : 'border-gray-200 shadow-lg hover:shadow-xl'} rounded-2xl`}
                     onClick={() => {
                       setVehicleType(vehicle.id);
                       // Auto-progress to next step
                       setStep(3);
                     }}
                   >
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <div className="text-2xl mb-1">{vehicle.icon}</div>
-                        <h4 className="font-semibold text-gray-900">
+                    <div className="flex items-center gap-5">
+                      <div className="flex-shrink-0 w-14 h-14 rounded-xl bg-gradient-to-br from-yellow-400 to-yellow-600 flex items-center justify-center text-white text-2xl shadow-md">
+                        {vehicle.icon}
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-bold text-gray-900 text-xl">
                           {vehicle.name}
                         </h4>
-                        <p className="text-sm text-gray-600">
+                        <p className="text-sm text-gray-600 mt-1.5">
                           {vehicle.description}
                         </p>
+                      </div>
+                      <div className="flex-shrink-0 text-yellow-500">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
                       </div>
                     </div>
                   </Card>
@@ -916,16 +971,9 @@ export default function BookingEnhanced() {
               })}
             </div>
 
-            <div className="flex gap-3 mt-6">
-              <Button variant="outline" onClick={() => setUserType(null)} fullWidth>
+            <div className="flex flex-col sm:flex-row gap-3 mt-6">
+              <Button variant="outline" onClick={handleGoBack} fullWidth>
                 Back
-              </Button>
-              <Button
-                onClick={() => setStep(3)}
-                fullWidth
-                disabled={!vehicleType}
-              >
-                Continue
               </Button>
             </div>
           </div>
@@ -933,15 +981,18 @@ export default function BookingEnhanced() {
       }
       {
         step === 3 && (
-          <div className="space-y-4">
-            <div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">Select Service Package</h3>
-              <p className="text-gray-600 mb-4">Choose the detailing package that best fits your needs</p>
-            </div>
+          <div className="space-y-6 w-full max-w-2xl mx-auto px-4">
             
-            <div className="space-y-2 mb-3">
-              <ProgressBar value={progress} className="mb-1" />
-              <div className="flex gap-2 overflow-x-auto pb-1">
+
+            <div className="space-y-3 mb-6 p-5 bg-gray-800/90 backdrop-blur-lg rounded-2xl border border-gray-700 shadow-sm">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-semibold text-gray-100">Booking Progress</h3>
+                <span className="text-sm font-medium text-amber-400 bg-amber-900/50 px-3 py-1 rounded-full">
+                  Step {normalizedStageIndex + 1} of {activeStages.length}
+                </span>
+              </div>
+              <ProgressBar value={progress} className="mb-3" />
+              <div className="flex gap-2 overflow-x-auto pb-2">
                 {activeStages.map((stage: any, index: number) => {
                   const status =
                     index < normalizedStageIndex
@@ -951,35 +1002,52 @@ export default function BookingEnhanced() {
                         : "upcoming";
                   const statusClasses =
                     status === "complete"
-                      ? "bg-black text-white border-black shadow-sm"
+                      ? "bg-gradient-to-r from-yellow-500 to-yellow-600 text-white border-0 shadow-lg"
                       : status === "current"
-                        ? "border-2 border-yellow-400 shadow-sm"
-                        : "border border-gray-200 opacity-60";
+                        ? "border-2 border-yellow-500 shadow-md bg-gradient-to-r from-yellow-50 to-white"
+                        : "border border-gray-200 bg-white shadow-sm text-gray-400";
                   
                   return (
                     <button
                       key={stage.id}
-                      className={`px-4 py-2 text-sm font-medium rounded-full whitespace-nowrap transition-all ${statusClasses}`}
+                      className={`px-4 py-2.5 text-sm font-semibold rounded-xl whitespace-nowrap transition-all duration-300 transform hover:scale-105 ${statusClasses}`}
                       onClick={() => setStep(index + 1)}
                       disabled={index > normalizedStageIndex}
                     >
-                      {stage.label}
-                      {status === "complete" && " ✓"}
+                      <div className="flex items-center gap-2">
+                        {status === "complete" && (
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                        )}
+                        {stage.label}
+                      </div>
                     </button>
                   );
                 })}
               </div>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-5 w-full">
               {CAR_SERVICE_PACKAGES.map((pkg) => {
-                const displayPrice = getCarDetailingPrice(
+                let displayPrice = getCarDetailingPrice(
                   vehicleType as VehicleType,
                   pkg.id,
                   paintStage || undefined,
                   midSUVTier,
                   fleetCarCount,
                 );
+                
+                if (pkg.id === "PAINT-CORRECTION") {
+                  // For paint correction package card, always show Stage 1 price
+                  displayPrice = getCarDetailingPrice(
+                    vehicleType as VehicleType,
+                    pkg.id,
+                    "STAGE-1",
+                    midSUVTier,
+                    fleetCarCount,
+                  );
+                }
                 
                 const status =
                   carServicePackage === pkg.id
@@ -993,10 +1061,10 @@ export default function BookingEnhanced() {
                 return (
                   <Card
                     key={pkg.id}
-                    variant={carServicePackage === pkg.id ? "default" : "outlined"}
+                    variant="glass"
                     hoverable
                     selected={carServicePackage === pkg.id}
-                    className={`p-4 cursor-pointer transition-all ${statusClasses}`}
+                    className={`p-5 cursor-pointer transition-all duration-300 transform hover:scale-[1.02] border-2 ${carServicePackage === pkg.id ? 'border-indigo-500 shadow-2xl ring-2 ring-indigo-200' : 'border-gray-200 shadow-lg hover:shadow-xl'} rounded-2xl`}
                     onClick={() => {
                       setCarServicePackage(pkg.id);
                       // Auto-progress if not a special package that requires additional selections
@@ -1012,48 +1080,58 @@ export default function BookingEnhanced() {
                       }
                     }}
                   >
-                    <div className="-mt-2 -mx-2 mb-4">
+                    <div className="-mt-1 -mx-1 mb-2">
                       {pkg.id !== "FLEET-PACKAGE" && ( // Don't show media for fleet package
                         PACKAGE_VIDEOS[pkg.id] && !failedPackage[pkg.id] ? (
-                          <video
-                            className="w-full h-32 sm:h-40 object-cover rounded-xl"
-                            src={getVideoSrc(PACKAGE_VIDEOS[pkg.id])}
-                            muted
-                            loop
-                            playsInline
-                            preload="none"
-                            autoPlay
-                            controls={false}
-                            poster={PACKAGE_FALLBACK_IMAGES[pkg.id]}
-                            onError={() => setFailedPackage((p: any) => ({ ...p, [pkg.id]: true }))}
-                          />
+                          <div className="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-lg overflow-hidden shadow-lg relative aspect-video max-h-[220px] w-full border border-indigo-100 max-w-2xl mx-auto">
+                            <video
+                              className="w-full h-full object-cover"
+                              src={getVideoSrc(PACKAGE_VIDEOS[pkg.id])}
+                              muted
+                              loop
+                              playsInline
+                              preload="none"
+                              autoPlay
+                              controls={false}
+                              poster={PACKAGE_FALLBACK_IMAGES[pkg.id]}
+                              onError={() => setFailedPackage((p: any) => ({ ...p, [pkg.id]: true }))}
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none"></div>
+                          </div>
                         ) : PACKAGE_FALLBACK_IMAGES[pkg.id] ? (
-                          <img
-                            src={PACKAGE_FALLBACK_IMAGES[pkg.id]}
-                            alt={pkg.name}
-                            className="w-full h-32 sm:h-40 object-cover rounded-xl"
-                            loading="lazy"
-                          />
+                          <div className="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-lg overflow-hidden shadow-lg relative aspect-video max-h-[220px] w-full border border-indigo-100 max-w-2xl mx-auto">
+                            <img
+                              src={PACKAGE_FALLBACK_IMAGES[pkg.id]}
+                              alt={pkg.name}
+                              className="w-full h-full object-cover"
+                              loading="lazy"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent pointer-events-none"></div>
+                          </div>
                         ) : null
                       )}
                     </div>
                     <div className="flex justify-between items-start">
                       <div>
-                        <h4 className="font-semibold text-gray-900">
+                        <h4 className="font-bold text-gray-900 text-base">
                           {pkg.name}
                         </h4>
-                        <p className="text-sm text-gray-600">
+                        <p className="text-xs text-gray-600 mt-1">
                           {pkg.description}
                         </p>
                         <p className="text-xs text-gray-500 mt-1">
-                          ⏱️ {pkg.duration}
+                          {pkg.duration}
                         </p>
                       </div>
-                      <span className="font-bold text-yellow-600 min-w-[140px] text-left whitespace-nowrap">
-                        {pkg.id === "FLEET-PACKAGE"
-                          ? `${formatCurrency(displayPrice)}/car`
-                          : formatCurrency(displayPrice)}
-                      </span>
+                      <div className="flex flex-col items-end">
+                        <span className="font-bold text-yellow-600 min-w-[140px] text-right whitespace-nowrap">
+                          {pkg.id === "FLEET-PACKAGE"
+                            ? formatCurrency(displayPrice)
+                            : pkg.id === "PAINT-CORRECTION"
+                              ? (displayPrice > 0 ? formatCurrency(displayPrice) : `KSH 5,000`)
+                              : formatCurrency(displayPrice)}
+                        </span>
+                      </div>
                     </div>
                   </Card>
                 );
@@ -1062,7 +1140,7 @@ export default function BookingEnhanced() {
 
             { }
             {carServicePackage === "PAINT-CORRECTION" && (
-              <div className="mt-6">
+              <div className="mt-6 p-5 bg-gradient-to-br from-indigo-50 to-blue-50 border border-indigo-200 rounded-xl shadow-sm">
                 <p className="font-semibold text-gray-900 mb-3">
                   Select Paint Correction Stage:
                 </p>
@@ -1077,20 +1155,18 @@ export default function BookingEnhanced() {
                     return (
                       <Card
                         key={stage.id}
-                        variant={
-                          paintStage === stage.id ? "default" : "outlined"
-                        }
+                        variant="elevated"
                         hoverable
                         selected={paintStage === stage.id}
-                        className="p-4 cursor-pointer"
+                        className={`py-3 px-3 cursor-pointer border-2 ${paintStage === stage.id ? 'border-indigo-500 shadow-xl ring-2 ring-indigo-200' : 'border-indigo-200 shadow-md hover:shadow-lg'} rounded-xl transition-all duration-300`}
                         onClick={() => setPaintStage(stage.id)}
                       >
                         <div className="flex justify-between items-start">
                           <div>
-                            <h5 className="font-semibold text-gray-900">
+                            <h5 className="font-semibold text-gray-900 text-sm">
                               {stage.name}
                             </h5>
-                            <p className="text-sm text-gray-600">
+                            <p className="text-xs text-gray-600">
                               {stage.description}
                             </p>
                           </div>
@@ -1107,7 +1183,7 @@ export default function BookingEnhanced() {
 
             { }
             {carServicePackage === "FLEET-PACKAGE" && (
-              <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <div className="mt-6 p-6 bg-gradient-to-br from-indigo-50 to-blue-50 border border-indigo-200 rounded-xl shadow-sm">
                 <p className="font-semibold text-gray-900 mb-3">
                   Number of Cars:
                 </p>
@@ -1115,7 +1191,7 @@ export default function BookingEnhanced() {
                   <button
                     type="button"
                     onClick={() => setFleetCarCount((prev: number) => Math.max(2, prev - 1))}
-                    className="w-12 h-12 rounded-full bg-white border border-gray-300 flex items-center justify-center text-xl font-bold hover:bg-gray-50 active:scale-95 transition-all"
+                    className="w-12 h-12 rounded-full bg-gradient-to-b from-indigo-50 to-white border border-indigo-200 flex items-center justify-center text-xl font-bold hover:from-indigo-100 active:scale-95 transition-all duration-300 shadow-sm hover:shadow-md"
                   >
                     -
                   </button>
@@ -1127,7 +1203,7 @@ export default function BookingEnhanced() {
                   <button
                     type="button"
                     onClick={() => setFleetCarCount((prev: number) => Math.min(100, prev + 1))}
-                    className="w-12 h-12 rounded-full bg-white border border-gray-300 flex items-center justify-center text-xl font-bold hover:bg-gray-50 active:scale-95 transition-all"
+                    className="w-12 h-12 rounded-full bg-gradient-to-b from-indigo-50 to-white border border-indigo-200 flex items-center justify-center text-xl font-bold hover:from-indigo-100 active:scale-95 transition-all duration-300 shadow-sm hover:shadow-md"
                   >
                     +
                   </button>
@@ -1138,7 +1214,7 @@ export default function BookingEnhanced() {
               </div>
             )}
 
-            <div className="flex gap-3 mt-6">
+            <div className="flex flex-col sm:flex-row gap-3 mt-6">
               <Button variant="outline" onClick={() => setStep(2)} fullWidth>
                 Back
               </Button>
@@ -1169,7 +1245,50 @@ export default function BookingEnhanced() {
       { }
       {
         step === 4 && (
-          <div className="space-y-4">
+          <div className="space-y-6 w-full max-w-2xl mx-auto px-4">
+            <div className="space-y-3 mb-6 p-5 bg-gray-800/90 backdrop-blur-lg rounded-2xl border border-gray-700 shadow-sm">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-semibold text-gray-100">Booking Progress</h3>
+                <span className="text-sm font-medium text-amber-400 bg-amber-900/50 px-3 py-1 rounded-full">
+                  Step {normalizedStageIndex + 1} of {activeStages.length}
+                </span>
+              </div>
+              <ProgressBar value={progress} className="mb-3" />
+              <div className="flex gap-2 overflow-x-auto pb-2">
+                {activeStages.map((stage: any, index: number) => {
+                  const status =
+                    index < normalizedStageIndex
+                      ? "complete"
+                      : index === normalizedStageIndex
+                        ? "current"
+                        : "upcoming";
+                  const statusClasses =
+                    status === "complete"
+                      ? "bg-gradient-to-r from-yellow-500 to-yellow-600 text-white border-0 shadow-lg"
+                      : status === "current"
+                        ? "border-2 border-yellow-500 shadow-md bg-gradient-to-r from-yellow-50 to-white"
+                        : "border border-gray-200 bg-white shadow-sm text-gray-400";
+                  
+                  return (
+                    <button
+                      key={stage.id}
+                      className={`px-4 py-2.5 text-sm font-semibold rounded-xl whitespace-nowrap transition-all duration-300 transform hover:scale-105 ${statusClasses}`}
+                      onClick={() => setStep(index + 1)}
+                      disabled={index > normalizedStageIndex}
+                    >
+                      <div className="flex items-center gap-2">
+                        {status === "complete" && (
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                        )}
+                        {stage.label}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
             <div className="mb-4">
               <p className="text-sm font-medium text-gray-600">Selected Package:</p>
               <div className="flex items-center gap-3 mt-1 px-3 py-2 bg-gray-50 rounded-lg border border-gray-200">
@@ -1205,7 +1324,7 @@ export default function BookingEnhanced() {
               <h4 className="font-semibold text-gray-900 mb-3">
                 Optional Extras
               </h4>
-              <div className="space-y-3">
+              <div className="space-y-3 w-full max-w-lg mx-auto">
                 {CAR_DETAILING_EXTRAS.map((extra) => {
                   const isSelected = selectedCarExtras.includes(extra.id);
                   return (
@@ -1271,8 +1390,8 @@ export default function BookingEnhanced() {
               </div>
             )}
 
-            <div className="flex gap-3 mt-6">
-              <Button variant="outline" onClick={() => setStep(3)} fullWidth>
+            <div className="flex flex-col sm:flex-row gap-3 mt-6 w-full">
+              <Button variant="outline" onClick={() => setStep(3)} fullWidth className="min-h-12">
                 Back
               </Button>
               <Button 
@@ -1284,7 +1403,7 @@ export default function BookingEnhanced() {
                   }
                   setStep(5);
                 }}
-                fullWidth>
+                fullWidth className="min-h-12">
                 Continue
                 {selectedCarExtras.length > 0 &&
                   `(${selectedCarExtras.length} extras)`}
@@ -1297,8 +1416,51 @@ export default function BookingEnhanced() {
       { }
       {
         step === 5 && (
-          <div className="space-y-4">
-            <div>
+          <div className="space-y-6 w-full max-w-2xl mx-auto px-4">
+            <div className="space-y-3 mb-6 p-5 bg-gray-800/90 backdrop-blur-lg rounded-2xl border border-gray-700 shadow-sm">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-semibold text-gray-100">Booking Progress</h3>
+                <span className="text-sm font-medium text-amber-400 bg-amber-900/50 px-3 py-1 rounded-full">
+                  Step {normalizedStageIndex + 1} of {activeStages.length}
+                </span>
+              </div>
+              <ProgressBar value={progress} className="mb-3" />
+              <div className="flex gap-2 overflow-x-auto pb-2">
+                {activeStages.map((stage: any, index: number) => {
+                  const status =
+                    index < normalizedStageIndex
+                      ? "complete"
+                      : index === normalizedStageIndex
+                        ? "current"
+                        : "upcoming";
+                  const statusClasses =
+                    status === "complete"
+                      ? "bg-gradient-to-r from-yellow-500 to-yellow-600 text-white border-0 shadow-lg"
+                      : status === "current"
+                        ? "border-2 border-yellow-500 shadow-md bg-gradient-to-r from-yellow-50 to-white"
+                        : "border border-gray-200 bg-white shadow-sm text-gray-400";
+                  
+                  return (
+                    <button
+                      key={stage.id}
+                      className={`px-4 py-2.5 text-sm font-semibold rounded-xl whitespace-nowrap transition-all duration-300 transform hover:scale-105 ${statusClasses}`}
+                      onClick={() => setStep(index + 1)}
+                      disabled={index > normalizedStageIndex}
+                    >
+                      <div className="flex items-center gap-2">
+                        {status === "complete" && (
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                        )}
+                        {stage.label}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="w-full">
               <p className="font-semibold text-gray-900 mb-3">Location:</p>
               <Button
                 variant="outline"
@@ -1354,7 +1516,7 @@ export default function BookingEnhanced() {
               )}
             </div>
 
-            <div>
+            <div className="w-full">
               <p className="font-semibold text-gray-900 mb-3">
                 When do you need this service?
               </p>
@@ -1399,7 +1561,7 @@ export default function BookingEnhanced() {
               </div>
             )}
 
-            <div>
+            <div className="w-full">
               <p className="font-semibold text-gray-900 mb-3">Payment Method:</p>
               <Card
                 variant="default"
@@ -1415,11 +1577,11 @@ export default function BookingEnhanced() {
               </Card>
             </div>
 
-            <div className="flex gap-3 mt-6">
-              <Button variant="outline" onClick={() => setStep(4)} fullWidth>
+            <div className="flex flex-col sm:flex-row gap-3 mt-6 w-full">
+              <Button variant="outline" onClick={() => setStep(4)} fullWidth className="min-h-12">
                 Back
               </Button>
-              <Button onClick={() => setStep(6)} fullWidth>
+              <Button onClick={() => setStep(6)} fullWidth className="min-h-12">
                 Review
               </Button>
             </div>
@@ -1430,8 +1592,51 @@ export default function BookingEnhanced() {
       { }
       {
         step === 6 && (
-          <div className="space-y-4">
-            <Card className="p-6 bg-gray-50">
+          <div className="space-y-6 w-full max-w-2xl mx-auto px-4">
+            <div className="space-y-3 mb-6 p-5 bg-gray-800/90 backdrop-blur-lg rounded-2xl border border-gray-700 shadow-sm">
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-semibold text-gray-100">Booking Progress</h3>
+                <span className="text-sm font-medium text-amber-400 bg-amber-900/50 px-3 py-1 rounded-full">
+                  Step {normalizedStageIndex + 1} of {activeStages.length}
+                </span>
+              </div>
+              <ProgressBar value={progress} className="mb-3" />
+              <div className="flex gap-2 overflow-x-auto pb-2">
+                {activeStages.map((stage: any, index: number) => {
+                  const status =
+                    index < normalizedStageIndex
+                      ? "complete"
+                      : index === normalizedStageIndex
+                        ? "current"
+                        : "upcoming";
+                  const statusClasses =
+                    status === "complete"
+                      ? "bg-gradient-to-r from-yellow-500 to-yellow-600 text-white border-0 shadow-lg"
+                      : status === "current"
+                        ? "border-2 border-yellow-500 shadow-md bg-gradient-to-r from-yellow-50 to-white"
+                        : "border border-gray-200 bg-white shadow-sm text-gray-400";
+                  
+                  return (
+                    <button
+                      key={stage.id}
+                      className={`px-4 py-2.5 text-sm font-semibold rounded-xl whitespace-nowrap transition-all duration-300 transform hover:scale-105 ${statusClasses}`}
+                      onClick={() => setStep(index + 1)}
+                      disabled={index > normalizedStageIndex}
+                    >
+                      <div className="flex items-center gap-2">
+                        {status === "complete" && (
+                          <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                        )}
+                        {stage.label}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <Card className="p-4 sm:p-6 bg-gray-50">
               <h3 className="font-bold text-lg mb-4">Booking Summary</h3>
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between">
@@ -1441,8 +1646,10 @@ export default function BookingEnhanced() {
 
                 <div className="flex justify-between">
                   <span className="text-gray-600">Location:</span>
-                  <span className="font-semibold">
-                    {location.address || location.manualAddress || (location.coordinates ? `${location.coordinates[0].toFixed(6)}, ${location.coordinates[1].toFixed(6)}` : 'No location set')}
+                  <span className="font-semibold text-right">
+                    {location.address || location.manualAddress || (location.coordinates ? 
+                      `${location.coordinates[0].toFixed(4)}, ${location.coordinates[1].toFixed(4)}` : 
+                      'No location set')}
                   </span>
                 </div>
 
@@ -1520,15 +1727,15 @@ export default function BookingEnhanced() {
               </div>
             </Card>
 
-            <div className="flex gap-3">
-              <Button variant="outline" onClick={() => setStep(5)} fullWidth>
+            <div className="flex flex-col sm:flex-row gap-3 w-full">
+              <Button variant="outline" onClick={() => setStep(5)} fullWidth className="min-h-12">
                 Back
               </Button>
               <Button
                 fullWidth
                 onClick={handleBookingSubmit}
                 disabled={isSubmitting}
-                className="mt-4"
+                className="min-h-12 mt-4"
               >
                 {isSubmitting ? "Submitting..." : "Confirm Booking"}
               </Button>

@@ -203,10 +203,17 @@ router.post("/public", async (req, res) => {
     }
   } catch (error) {
     console.error("Public booking creation error:", error);
+    // Sanitize error message to prevent data leaks
+    let errorMessage = "Error creating booking";
+    if (error && typeof error === 'object' && 'message' in error) {
+      errorMessage = String(error.message).substring(0, 200);
+    } else if (typeof error === 'string') {
+      errorMessage = error.substring(0, 200);
+    }
     res.status(500).json({
       success: false,
       message: "Error creating booking",
-      error: error.message,
+      error: errorMessage,
     });
   }
 });

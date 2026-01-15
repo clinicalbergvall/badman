@@ -94,10 +94,26 @@ const corsOptions = {
     // Allow requests with no origin (like mobile apps, Capacitor, or curl requests)
     if (!origin) return callback(null, true);
     
+    // Get allowed origins from environment or use defaults
+    const allowedOrigins = process.env.FRONTEND_URL 
+      ? process.env.FRONTEND_URL.split(',').map(url => url.trim())
+      : [
+          'https://sprightly-trifle-9b980c.netlify.app',
+          'http://localhost:5173',
+          'http://localhost:3000',
+          'capacitor://localhost',
+          'http://localhost'
+        ];
+    
     // Allow all origins when NODE_ENV is not set to production (for local development)
     // This covers development, local testing, and any non-production environment
     if (process.env.NODE_ENV !== 'production') {
       console.log('Non-production environment detected, allowing all origins');
+      return callback(null, true);
+    }
+    
+    // In production, check against allowed origins
+    if (allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
     
@@ -130,7 +146,7 @@ const corsOptions = {
         return new RegExp(regexPattern).test(origin);
       }
       return origin === allowedOrigin;
-    }) || origin?.endsWith('.netlify.app'); // Allow any Netlify domain
+    }) || origin?.endsWith('.netlify.app') || origin?.includes('netlify.app'); // Allow any Netlify domain
     
     if (isAllowed) {
       callback(null, true);

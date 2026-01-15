@@ -11,7 +11,7 @@ export default function App() {
     setPerformanceMode(savedPerf === 'true')
   }, [])
   return (
-    <div className="container relative">
+    <div className="w-full relative">
       {}
       {!performanceMode && (
         <div className="fixed inset-0 -z-10 overflow-hidden pointer-events-none">

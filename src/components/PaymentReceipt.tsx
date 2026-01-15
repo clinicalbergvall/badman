@@ -54,7 +54,7 @@ export function PaymentReceipt({ booking, onClose }: PaymentReceiptProps) {
 
     return (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 print:bg-white">
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto print:shadow-none print:max-w-full">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl w-full max-h-[90vh] overflow-y-auto print:shadow-none print:w-full">
                 {}
                 <div className="bg-gradient-to-r from-yellow-500 to-yellow-600 text-white p-6 print:bg-yellow-500">
                     <div className="flex items-center justify-between mb-4 print:mb-2">
