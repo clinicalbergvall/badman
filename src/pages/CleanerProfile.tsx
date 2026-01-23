@@ -1,20 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { Button, Input, Card, Badge } from '@/components/ui'
 import CleanerLayout from '@/components/CleanerLayout'
-import ServiceShowcase from '@/components/ServiceShowcase'
+
 import toast from 'react-hot-toast'
-import CompletedJobsGallery from '@/components/CompletedJobsGallery'
-import type { BeforeAfterPhoto, CleanerProfile, ServiceCategory } from '@/lib/types'
+import type { CleanerProfile, ServiceCategory } from '@/lib/types'
 import { addPendingCleaner, loadCleanerProfile, saveCleanerProfile } from '@/lib/storage'
 import { authAPI, api } from '@/lib/api'
-
-type BeforeAfterForm = {
-  beforeImage?: string
-  afterImage?: string
-  description: string
-  servicesUsed: string
-}
 
 const createEmptyProfile = (): Partial<CleanerProfile> => ({
   firstName: '',
@@ -24,16 +15,12 @@ const createEmptyProfile = (): Partial<CleanerProfile> => ({
   address: '',
   city: '',
   bio: '',
-  profileImage: '',
-  passportPhoto: '',
-  fullBodyPhoto: '',
-  portfolioImages: [],
+
   services: [],
   rating: 0,
   totalJobs: 0,
   verified: false,
   approvalStatus: 'pending',
-  beforeAfterPhotos: [],
   verification: {
     idVerified: false,
     idNumber: '',
@@ -46,16 +33,8 @@ const createEmptyProfile = (): Partial<CleanerProfile> => ({
   mpesaPhoneNumber: ''
 })
 
-const createEmptyBeforeAfterForm = (): BeforeAfterForm => ({
-  beforeImage: '',
-  afterImage: '',
-  description: '',
-  servicesUsed: ''
-})
-
 export default function CleanerProfile() {
   const [profile, setProfile] = useState<Partial<CleanerProfile>>(() => createEmptyProfile())
-  const [beforeAfterForm, setBeforeAfterForm] = useState<BeforeAfterForm>(() => createEmptyBeforeAfterForm())
   const previousApprovalStatus = useRef<CleanerProfile['approvalStatus']>()
   const [authChecked, setAuthChecked] = useState(false)
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -128,55 +107,26 @@ export default function CleanerProfile() {
     previousApprovalStatus.current = profile.approvalStatus
   }, [profile.approvalStatus])
 
-  const readFileAsDataUrl = (file: File | null | undefined, field: keyof BeforeAfterForm) => {
-    if (!file) return
-    const reader = new FileReader()
-    reader.onloadend = () => {
-      setBeforeAfterForm((prev: any) => ({
-        ...prev,
-        [field]: reader.result as string
-      }))
-    }
-    reader.readAsDataURL(file)
-  }
+  // const _readFileAsDataUrl = (file: File | null | undefined, field: keyof BeforeAfterForm) => {
+  //   if (!file) return
+  //   const reader = new FileReader()
+  //   reader.onloadend = () => {
+  //     setBeforeAfterForm((prev: any) => ({
+  //       ...prev,
+  //       [field]: reader.result as string
+  //     }))
+  //   }
+  //   reader.readAsDataURL(file)
+  // }
 
-  const handleRemoveCompletedJob = (id: string) => {
-    setProfile((prev: any) => ({
-      ...prev,
-      beforeAfterPhotos: (prev.beforeAfterPhotos || []).filter((photo: any) => photo.id !== id)
-    }))
-    toast.success('Removed job from gallery')
-  }
+  // const _handleRemoveCompletedJob = (jobId: string) => {
+  //   setProfile((prev: any) => ({
+  //     ...prev,
+  //     beforeAfterPhotos: (prev.beforeAfterPhotos || []).filter((photo: any) => photo.id !== jobId)
+  //   }))
+  //   toast.success('Removed job from gallery')
+  // }
 
-  const handleAddCompletedJob = () => {
-    if (!beforeAfterForm.beforeImage || !beforeAfterForm.afterImage) {
-      toast.error('Add both before and after photos')
-      return
-    }
-    const services = beforeAfterForm.servicesUsed
-      .split(',')
-      .map((service: any) => service.trim())
-      .filter(Boolean)
-
-    const newEntry: BeforeAfterPhoto = {
-      id: `job-${Date.now()}`,
-      bookingId: `manual-${Date.now()}`,
-      beforeImage: beforeAfterForm.beforeImage,
-      afterImage: beforeAfterForm.afterImage,
-      description: beforeAfterForm.description,
-      uploadedBy: `${profile.firstName || 'Cleaner'} ${profile.lastName || ''}`.trim() || 'Cleaner',
-      uploadedAt: new Date().toISOString(),
-      servicesUsed: services,
-    }
-
-    setProfile((prev: any) => ({
-      ...prev,
-      beforeAfterPhotos: [newEntry, ...(prev.beforeAfterPhotos || [])]
-    }))
-
-    setBeforeAfterForm(createEmptyBeforeAfterForm())
-    toast.success('Added job to gallery')
-  }
 
   const handleCancel = () => {
     const saved = loadCleanerProfile()
@@ -187,7 +137,7 @@ export default function CleanerProfile() {
       setProfile(createEmptyProfile())
       toast('Cleared form', { icon: '🧼' })
     }
-    setBeforeAfterForm(createEmptyBeforeAfterForm())
+
   }
 
   const handleAuthLogin = async () => {
@@ -271,7 +221,7 @@ export default function CleanerProfile() {
       return
     }
 
-    // Photo uploads are now optional - no verification required
+    // Profile submission requires admin verification
 
     const profileId = profile.id || Date.now().toString()
 
@@ -284,17 +234,15 @@ export default function CleanerProfile() {
       address: profile.address,
       city: profile.city,
       bio: profile.bio,
-      profileImage: profile.profileImage,
-      passportPhoto: profile.passportPhoto,
-      fullBodyPhoto: profile.fullBodyPhoto,
-      portfolioImages: profile.portfolioImages || [],
+
       services: profile.services || [],
       rating: 0,
       totalJobs: 0,
-      verified: true,
-      approvalStatus: 'approved',
-      beforeAfterPhotos: profile.beforeAfterPhotos || [],
-      verification: profile.verification,
+      verified: false,
+      approvalStatus: 'pending',
+      portfolioImages: [],
+
+      verification: undefined,
       mpesaPhoneNumber: profile.mpesaPhoneNumber || '',
       createdAt: new Date().toISOString(),
     }
@@ -310,11 +258,6 @@ export default function CleanerProfile() {
         city: savedProfile.city,
         bio: savedProfile.bio,
         services: savedProfile.services,
-        passportPhoto: savedProfile.passportPhoto,
-        fullBodyPhoto: savedProfile.fullBodyPhoto,
-        portfolioImages: savedProfile.portfolioImages,
-        verification: savedProfile.verification,
-        beforeAfterPhotos: savedProfile.beforeAfterPhotos,
         mpesaPhoneNumber: savedProfile.mpesaPhoneNumber
       })
       if (!response.ok) {
@@ -324,11 +267,21 @@ export default function CleanerProfile() {
       }
       const data = await response.json()
       if (data?.success) {
-        toast.success('Profile saved successfully! You can now access all features ✅')
+        toast.success('Profile submitted! Awaiting admin verification (24-48 hours) ⏳')
         
+        // Update user session to reflect that profile exists
+        const session = JSON.parse(localStorage.getItem('cleancloak-user-session') || '{}');
+        session.hasProfile = true;
+        localStorage.setItem('cleancloak-user-session', JSON.stringify(session));
+
         saveCleanerProfile(savedProfile)
         addPendingCleaner(savedProfile)
         setProfile(savedProfile)
+        
+        // Redirect to pending page
+        setTimeout(() => {
+          window.location.href = '/pending-verification';
+        }, 2000);
       } else {
         throw new Error(data?.message || 'Submission failed')
       }
@@ -339,7 +292,7 @@ export default function CleanerProfile() {
     }
   }
 
-  // Removed verification blocking - cleaners can access immediately
+  // Require authentication as cleaner to access profile page
   if (!authChecked || !isAuthenticated || !isCleaner) {
     return (
       <CleanerLayout currentPage="profile">
@@ -409,7 +362,7 @@ export default function CleanerProfile() {
     )
   }
 
-  // Removed verification blocking screens - cleaners can access immediately
+  // Main profile form
 
   return (
     <CleanerLayout currentPage="profile">
@@ -420,7 +373,7 @@ export default function CleanerProfile() {
           <p className="text-gray-600">Tell us about yourself and showcase your work</p>
         </div>
 
-        {/* Verification status removed - all cleaners are automatically approved */}
+        {/* Verification status shown after submission */}
 
         {}
         <Card className="p-6">
@@ -505,111 +458,6 @@ export default function CleanerProfile() {
           </div>
         </Card>
 
-        {}
-        <Card className="p-6 space-y-4">
-          <div className="flex items-center gap-2">
-            <Badge variant="outline">Optional</Badge>
-            <h2 className="text-xl font-semibold text-gray-900">Identity Verification (Optional)</h2>
-          </div>
-          <p className="text-sm text-gray-600">Upload clear photos of your national ID if you want to be verified. These are only shown to clients after they select you.</p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="block text-sm font-semibold text-gray-900">National ID - Front</label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(event) => {
-                  const file = event.target.files?.[0]
-                  if (!file) return
-                  const reader = new FileReader()
-                  reader.onloadend = () => {
-                    setProfile((prev: any) => ({
-                      ...prev,
-                      verification: { ...(prev.verification || { idVerified: false, policeCheck: false, references: [], insuranceCoverage: false }), idDocumentFront: reader.result as string }
-                    }))
-                  }
-                  reader.readAsDataURL(file)
-                }}
-                className="w-full text-sm"
-              />
-              {profile.verification?.idDocumentFront && (
-                <img src={profile.verification.idDocumentFront} alt="ID front" className="w-full max-w-xs rounded-lg border" />
-              )}
-            </div>
-            <div className="space-y-2">
-              <label className="block text-sm font-semibold text-gray-900">National ID - Back</label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(event) => {
-                  const file = event.target.files?.[0]
-                  if (!file) return
-                  const reader = new FileReader()
-                  reader.onloadend = () => {
-                    setProfile((prev: any) => ({
-                      ...prev,
-                      verification: { ...(prev.verification || { idVerified: false, policeCheck: false, references: [], insuranceCoverage: false }), idDocumentBack: reader.result as string }
-                    }))
-                  }
-                  reader.readAsDataURL(file)
-                }}
-                className="w-full text-sm"
-              />
-              {profile.verification?.idDocumentBack && (
-                <img src={profile.verification.idDocumentBack} alt="ID back" className="w-full max-w-xs rounded-lg border" />
-              )}
-            </div>
-          </div>
-        </Card>
-
-        {}
-        <Card className="p-6 space-y-4">
-          <h2 className="text-xl font-semibold text-gray-900">Professional Photos</h2>
-          <p className="text-sm text-gray-600">Clients will see these photos when they view your profile. Dress professionally in your cleaning outfit.</p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <label className="block text-sm font-semibold text-gray-900">Passport Photo</label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(event) => {
-                  const file = event.target.files?.[0]
-                  if (!file) return
-                  const reader = new FileReader()
-                  reader.onloadend = () => {
-                    setProfile((prev: any) => ({ ...prev, passportPhoto: reader.result as string }))
-                  }
-                  reader.readAsDataURL(file)
-                }}
-                className="w-full text-sm"
-              />
-              {profile.passportPhoto && (
-                <img src={profile.passportPhoto} alt="Passport" className="w-full max-w-xs rounded-lg border" />
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <label className="block text-sm font-semibold text-gray-900">Full Body Photo</label>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(event) => {
-                  const file = event.target.files?.[0]
-                  if (!file) return
-                  const reader = new FileReader()
-                  reader.onloadend = () => {
-                    setProfile((prev: any) => ({ ...prev, fullBodyPhoto: reader.result as string }))
-                  }
-                  reader.readAsDataURL(file)
-                }}
-                className="w-full text-sm"
-              />
-              {profile.fullBodyPhoto && (
-                <img src={profile.fullBodyPhoto} alt="Full body" className="w-full max-w-xs rounded-lg border" />
-              )}
-            </div>
-          </div>
-        </Card>
 
         {}
         <Card className="p-6">

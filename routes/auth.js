@@ -94,6 +94,9 @@ router.post(
           name: user.name,
           phone: user.phone,
           role: user.role,
+          verificationStatus: user.verificationStatus,
+          isVerified: user.isVerified,
+          hasProfile: false
         },
       });
     } catch (error) {
@@ -178,6 +181,14 @@ router.post(
         maxAge: 7 * 24 * 60 * 60 * 1000, 
       });
 
+      // Check if cleaner profile exists
+      let hasProfile = false;
+      if (user.role === 'cleaner') {
+        const CleanerProfile = require('../models/CleanerProfile');
+        const profile = await CleanerProfile.findOne({ user: user._id });
+        hasProfile = !!profile;
+      }
+
       res.json({
         success: true,
         message: "Login successful",
@@ -186,6 +197,9 @@ router.post(
           name: user.name,
           phone: user.phone,
           role: user.role,
+          verificationStatus: user.verificationStatus,
+          isVerified: user.isVerified,
+          hasProfile
         },
       });
     } catch (error) {
@@ -232,6 +246,14 @@ router.get("/me", async (req, res) => {
         });
       }
 
+      // Check if cleaner profile exists
+      let hasProfile = false;
+      if (user.role === 'cleaner') {
+        const CleanerProfile = require('../models/CleanerProfile');
+        const profile = await CleanerProfile.findOne({ user: user._id });
+        hasProfile = !!profile;
+      }
+
       res.json({
         success: true,
         user: {
@@ -239,6 +261,9 @@ router.get("/me", async (req, res) => {
           name: user.name,
           phone: user.phone,
           role: user.role,
+          verificationStatus: user.verificationStatus,
+          isVerified: user.isVerified,
+          hasProfile
         },
       });
     } catch (error) {

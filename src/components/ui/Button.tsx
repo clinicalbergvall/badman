@@ -3,7 +3,6 @@ import React, { useState, useEffect, useRef } from 'react';
 // Workaround for React import issues
 const { forwardRef } = React as any;
 import toast from "react-hot-toast";
-import { loadUserSession, getStoredAuthToken } from "@/lib/storage";
 import { Card } from "./Card";
 import { authAPI, api } from "@/lib/api";
 import { API_BASE_URL } from "@/lib/config";
@@ -124,7 +123,7 @@ export const ImageCarousel = ({
     return () => clearInterval(timer);
   }, [images.length, interval]);
 
-  const currentImage = images[currentIndex];
+
 
   return (
     <div className="relative w-full h-64 overflow-hidden rounded-lg shadow-sm border border-gray-200">
@@ -253,19 +252,7 @@ interface RegisterData {
   role?: "client" | "cleaner";
 }
 
-interface AuthResponse {
-  success: boolean;
-  message: string;
-  token?: string;
-  user?: {
-    id: string;
-    name: string;
-    email: string;
-    phone: string;
-    role: string;
-  };
-  errors?: Array<{ msg: string }>;
-}
+
 
 export const LoginForm = ({
   onAuthSuccess,
@@ -309,6 +296,9 @@ export const LoginForm = ({
             userType: data.user.role as "client" | "cleaner" | "admin",
             name: data.user.name,
             phone: data.user.phone,
+            verificationStatus: data.user.verificationStatus,
+            isVerified: data.user.isVerified,
+            hasProfile: data.user.hasProfile,
             lastSignedIn: new Date().toISOString(),
           }),
         );
@@ -340,7 +330,7 @@ export const LoginForm = ({
   }, []);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen flex items-start justify-center bg-gray-50 pt-8 pb-24 px-4 sm:px-6 lg:px-8 overflow-y-auto">
       <div className="max-w-md w-full space-y-8">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
@@ -349,12 +339,11 @@ export const LoginForm = ({
         </div>
         <Card className="p-8">
           {apiStatus && (
-            <div
-              className={`mb-4 p-3 rounded-lg text-sm ${
-                apiStatus.ok ? "bg-green-50 text-green-800" : "bg-red-50 text-red-800"
-              }`}
-            >
-              API {apiStatus.ok ? "reachable" : "unreachable"}
+            <div className="mb-4 flex items-center gap-2">
+              <div className={`w-3 h-3 rounded-full ${apiStatus.ok ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
+              <span className={`text-sm font-medium ${apiStatus.ok ? 'text-green-700' : 'text-red-700'}`}>
+                {apiStatus.ok ? 'Connected' : 'Connection issue'}
+              </span>
             </div>
           )}
           <form className="space-y-6" onSubmit={handleSubmit}>

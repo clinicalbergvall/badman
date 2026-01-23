@@ -11,23 +11,19 @@ import {
   useNavigate,
   useLocation,
 } from "react-router-dom";
-import AppEnhanced from "./AppEnhanced";
 import LandingPage from "./LandingPage";
 import AdminDashboard from "./pages/AdminDashboard";
 import CleanerJobs from "./pages/cleanersjob";
 import VerificationPending from "./pages/VerificationPending";
 import AdminRegister from "./pages/AdminRegister";
-import ClientProfile from "./pages/ClientProfile";
-import ActiveBooking from "./pages/ActiveBooking";
 import CleanerProfile from "./pages/CleanerProfile";
 import CleanerActiveBookings from "./pages/CleanerActiveBookings";
-import CompletedBookings from "./pages/CompletedBookings";
 import Earnings from "./pages/Earnings";
 import { LoginForm, AdminLoginForm } from "./components/ui";
-import { loadUserSession, getStoredAuthToken, setupSessionSync, saveUserSession, clearUserSession } from './lib/storage';
+import { loadUserSession, setupSessionSync, saveUserSession, clearUserSession } from './lib/storage';
 import { NotificationProvider } from "./contexts/NotificationContext";
-import { API_BASE_URL } from "./lib/config";
 import { api } from "./lib/api";
+import { API_BASE_URL } from "./lib/config";
 import "./index.css";
 import { Toaster, toast } from "react-hot-toast";
 
@@ -126,6 +122,9 @@ const ProtectedRoute = ({
             userType: u.userType || u.role,
             name: u.name || "",
             phone: u.phone || "",
+            verificationStatus: u.verificationStatus || 'pending',
+            isVerified: !!u.isVerified,
+            hasProfile: !!u.hasProfile,
             lastSignedIn: new Date().toISOString(),
           };
           
@@ -186,13 +185,26 @@ const ProtectedRoute = ({
     return <Navigate to="/" replace />;
   }
 
-  // Block unverified cleaners from accessing any protected cleaner route EXCEPT the pending page itself
+  // Block unverified cleaners from accessing any protected cleaner route EXCEPT the pending page itself and profile page
   if (localSession.userType === 'cleaner') {
     const isUnverified = localSession.verificationStatus !== 'verified' && !localSession.isVerified;
     const isAtPendingPage = window.location.pathname === '/pending-verification';
+    const isAtProfilePage = window.location.pathname === '/cleaner-profile';
+    const hasNoProfile = !localSession.hasProfile;
     
-    if (isUnverified && !isAtPendingPage) {
+    // If unverified and trying to access something else
+    if (isUnverified && !isAtPendingPage && !isAtProfilePage) {
+      // If no profile, send to profile page
+      if (hasNoProfile) {
+        return <Navigate to="/cleaner-profile" replace />;
+      }
+      // If has profile but not verified, send to pending page
       return <Navigate to="/pending-verification" replace />;
+    }
+    
+    // If no profile yet, always redirect to profile page unless already there
+    if (hasNoProfile && !isAtProfilePage) {
+      return <Navigate to="/cleaner-profile" replace />;
     }
     
     // If successfully verified while at pending page, redirect forward to jobs
@@ -436,7 +448,7 @@ const renderApp = () => {
       rootElement.innerHTML = `
         <div style="display: flex; align-items: center; justify-content: center; height: 100vh; text-align: center; padding: 20px; background-color: #f3f4f6;">
           <div>
-            <h1 style="color: #FACC15; margin-bottom: 16px; font-family: sans-serif; font-size: 24px;">CleanCloak Detailer</h1>
+            <h1 style="color: #FACC15; margin-bottom: 16px; font-family: sans-serif; font-size: 24px;">CleanCloak</h1>
             <p style="color: #6B7280; margin-bottom: 8px; font-family: sans-serif;">App failed to load</p>
             <p style="color: #9CA3AF; font-size: 14px; font-family: sans-serif;">Error: ${error instanceof Error ? error.message : 'Unknown error'}</p>
             <p style="color: #9CA3AF; font-size: 12px; font-family: sans-serif; margin-top: 10px;">Check browser console for more details</p>
