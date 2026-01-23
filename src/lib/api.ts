@@ -1,13 +1,9 @@
-import { API_BASE_URL, getApiUrl } from './config';
+import { getApiUrl } from './config';
 import { logger } from './logger';
 import { USER_SESSION_KEY, saveUserSession, clearUserSession } from './storage';
-import { safeLogError, getUserFriendlyError, sanitizeErrorMessage } from './errorHandler';
+import { safeLogError, getUserFriendlyError } from './errorHandler';
 
-// Function to get CapacitorHttp dynamically
-const getCapacitorHttp = async (): Promise<any | null> => {
-  // Capacitor HTTP plugin is no longer used, always return null
-  return null;
-};
+
 
 const getAuthHeaders = (): HeadersInit => {
   return {
@@ -18,15 +14,14 @@ const getAuthHeaders = (): HeadersInit => {
 };
 
 const addCorsHeaders = (headers: HeadersInit = {}): HeadersInit => {
-  // Check if we're running in a Capacitor environment
-  const isNative = typeof (window as any).Capacitor !== 'undefined' && (window as any).Capacitor.isNativePlatform?.();
+
   
   // Add common CORS-related headers
   return {
     ...headers,
     'X-Requested-With': 'XMLHttpRequest',
     'X-Client-Type': 'frontend-app',
-    'X-Capacitor': isNative ? 'true' : 'false', // Explicitly indicate if request is from Capacitor
+    'X-Capacitor': (typeof (window as any).Capacitor !== 'undefined' && (window as any).Capacitor.isNativePlatform?.()) ? 'true' : 'false', // Explicitly indicate if request is from Capacitor
   } as HeadersInit;
 };
 
@@ -37,8 +32,6 @@ export const api = {
         console.log(`API GET Request to: ${url}`);
       }
     
-    // Check if we're running in a Capacitor environment
-    const isNative = typeof (window as any).Capacitor !== 'undefined' && (window as any).Capacitor.isNativePlatform?.();
     
     // Always use fetch API for all environments
     try {
@@ -108,8 +101,6 @@ export const api = {
         console.log(`API POST Request to: ${url}`);
       }
     
-    // Check if we're running in a Capacitor environment
-    const isNative = typeof (window as any).Capacitor !== 'undefined' && (window as any).Capacitor.isNativePlatform?.();
     
     // Always use fetch API for all environments
     try {
@@ -210,8 +201,6 @@ export const api = {
   put: async (endpoint: string, data: any, options: RequestInit = {}) => {
     const url = getApiUrl(endpoint);
     
-    // Check if we're running in a Capacitor environment
-    const isNative = typeof (window as any).Capacitor !== 'undefined' && (window as any).Capacitor.isNativePlatform?.();
     
     // Always use fetch API for all environments
     try {
@@ -271,8 +260,6 @@ export const api = {
   delete: async (endpoint: string, options: RequestInit = {}) => {
     const url = getApiUrl(endpoint);
     
-    // Check if we're running in a Capacitor environment
-    const isNative = typeof (window as any).Capacitor !== 'undefined' && (window as any).Capacitor.isNativePlatform?.();
     
     // Always use fetch API for all environments
     try {
@@ -453,6 +440,12 @@ export const authAPI = {
 export const adminAPI = {
   getPendingCleaners: async () => {
     const response = await api.get('/verification/pending-profiles');
+    const data = await response.json();
+    return data;
+  },
+
+  getApprovedCleaners: async () => {
+    const response = await api.get('/admin/cleaners/approved');
     const data = await response.json();
     return data;
   },

@@ -1,6 +1,35 @@
 
 const express = require('express');
 const router = express.Router();
+
+/**
+ * Normalizes a Kenyan phone number to the format 254XXXXXXXXX
+ * @param {string} phone
+ * @returns {string}
+ */
+function normalizePhoneNumber(phone) {
+  if (!phone) return '';
+  // Remove all non-numeric characters
+  let cleaned = phone.replace(/\D/g, '');
+  
+  // Handle 07... or 01... format
+  if (cleaned.startsWith('0')) {
+    cleaned = '254' + cleaned.substring(1);
+  }
+  
+  // Handle +254... or 254... format
+  if (cleaned.startsWith('254') && cleaned.length === 12) {
+    return cleaned;
+  }
+  
+  // Handle 7... or 1... format (missing prefix)
+  if (cleaned.length === 9 && (cleaned.startsWith('7') || cleaned.startsWith('1'))) {
+    cleaned = '254' + cleaned;
+  }
+  
+  return cleaned;
+}
+
 const Booking = require('../models/Booking');
 const Transaction = require('../models/transaction');
 const User = require('../models/User');
@@ -64,7 +93,15 @@ router.post('/initiate', protect, async (req, res) => {
     );
     
     
-    const formattedPhone = phoneNumber.replace(/^0/, '254').replace(/^\+/, '');
+    const formattedPhone = normalizePhoneNumber(phoneNumber);
+    
+    if (!formattedPhone || formattedPhone.length !== 12) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid phone number format. Please use 07XXXXXXXX or 2547XXXXXXXX'
+      });
+    }
+
     
     // Recalculate pricing to ensure correct amount
     const pricing = booking.calculatePricing();
@@ -341,7 +378,7 @@ async function processCleanerPayout(booking, payoutAmount, session = null) {
       description: `Cleaner payout for cleaning service - ${booking.serviceCategory}`,
       status: 'pending',
       metadata: {
-        mpesaPhone: cleanerProfile.mpesaPhoneNumber
+        mpesaPhone: normalizePhoneNumber(cleanerProfile.mpesaPhoneNumber)
       }
     });
     
@@ -408,9 +445,11 @@ async function processMpesaPayout(transaction, phoneNumber, amount) {
       process.env.NODE_ENV !== 'production'   
     );
 
+    const formattedPhone = normalizePhoneNumber(phoneNumber);
+
     const response = await client.transfer().mpesa({
       amount: amount,
-      account: phoneNumber,
+      account: formattedPhone,
       narrative: `Cleaner payout for ${transaction.reference}`,
     });
 
@@ -501,7 +540,15 @@ router.post('/retry/:bookingId', protect, async (req, res) => {
     );
     
     
-    const formattedPhone = phoneNumber.replace(/^0/, '254').replace(/^\+/, '');
+    const formattedPhone = normalizePhoneNumber(phoneNumber);
+    
+    if (!formattedPhone || formattedPhone.length !== 12) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid phone number format. Please use 07XXXXXXXX or 2547XXXXXXXX'
+      });
+    }
+
     
     // Recalculate pricing to ensure correct amount
     const pricing = booking.calculatePricing();

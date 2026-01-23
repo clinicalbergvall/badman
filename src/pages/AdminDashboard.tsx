@@ -1,9 +1,9 @@
 
 import { useMemo, useState, useEffect } from 'react'
-import { Card, Button, Badge, Input } from '@/components/ui'
+import { Button, Badge, Input } from '@/components/ui'
 import type { CleanerProfile } from '@/lib/types'
 import toast from 'react-hot-toast'
-import { api } from '@/lib/api'
+import { api, adminAPI } from '@/lib/api'
 import { logger } from '@/lib/logger'
 
 interface DashboardStats {
@@ -35,7 +35,7 @@ export default function AdminDashboard() {
   const [search, setSearch] = useState('')
   const [cityFilter, setCityFilter] = useState('all')
   const [bookings, setBookings] = useState<BookingData[]>([])
-  const [bookingStatus, setBookingStatus] = useState<'all' | 'pending' | 'confirmed' | 'completed'>('all')
+  const [bookingStatus, _setBookingStatus] = useState<'all' | 'pending' | 'confirmed' | 'completed'>('all')
   const [bookingPage, setBookingPage] = useState(1)
   const [bookingPages, setBookingPages] = useState(0)
   const [stats, setStats] = useState<DashboardStats | null>(null)
@@ -43,9 +43,7 @@ export default function AdminDashboard() {
 
   const fetchPendingCleaners = async () => {
     try {
-      const res = await api.get('/admin/cleaners/pending')
-      if (!res.ok) throw new Error('Failed to fetch pending cleaners')
-      const data = await res.json()
+      const data = await adminAPI.getPendingCleaners()
       setPending(data.cleaners || [])
     } catch (error) {
       logger.error('Fetch pending cleaners error:', error instanceof Error ? error : undefined);
@@ -54,9 +52,7 @@ export default function AdminDashboard() {
 
   const fetchApprovedCleaners = async () => {
     try {
-      const res = await api.get('/admin/cleaners/approved')
-      if (!res.ok) throw new Error('Failed to fetch approved cleaners')
-      const data = await res.json()
+      const data = await adminAPI.getApprovedCleaners()
       setApproved(data.cleaners || [])
     } catch (error) {
       logger.error('Fetch approved cleaners error:', error instanceof Error ? error : undefined);
@@ -81,9 +77,7 @@ export default function AdminDashboard() {
 
   const fetchStats = async () => {
     try {
-      const res = await api.get('/admin/dashboard/stats')
-      if (!res.ok) throw new Error('Failed to fetch stats')
-      const data = await res.json()
+      const data = await adminAPI.getDashboard()
       setStats(data.stats)
     } catch (error) {
       logger.error('Fetch stats error:', error instanceof Error ? error : undefined);
@@ -111,10 +105,7 @@ export default function AdminDashboard() {
 
   const handleApprove = async (profileId: string, name: string) => {
     try {
-      const res = await api.put(`/admin/cleaners/${profileId}/approve`, {
-        notes: 'Verified via High-Priority Admin Cockpit'
-      })
-      if (!res.ok) throw new Error('Failed to approve')
+      await adminAPI.approveCleaner(profileId, 'Verified via Operations Cockpit')
       toast.success(`${name} verified successfully`)
       loadData()
     } catch (error) {
@@ -124,10 +115,7 @@ export default function AdminDashboard() {
 
   const handleReject = async (profileId: string, name: string) => {
     try {
-      const res = await api.put(`/admin/cleaners/${profileId}/reject`, {
-        notes: 'Security clearance denied'
-      })
-      if (!res.ok) throw new Error('Failed to reject')
+      await adminAPI.rejectCleaner(profileId, 'Security clearance denied', 'Rejected via Operations Cockpit')
       toast.error(`${name} rejected`)
       loadData()
     } catch (error) {
@@ -364,7 +352,7 @@ function CleanerRow({ cleaner, isPending, onApprove, onReject }: { cleaner: any;
   )
 }
 
-function Metric({ label, value, small }: { label: string; value: string | number; small?: boolean }) {
+function Metric({ label, value, small: _small }: { label: string; value: string | number; small?: boolean }) {
   return (
     <div className="flex items-center gap-1.5">
       <span className="text-[10px] font-black uppercase text-slate-600 tracking-tighter">{label}</span>
