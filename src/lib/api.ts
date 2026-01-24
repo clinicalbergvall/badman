@@ -439,7 +439,7 @@ export const authAPI = {
 
 export const adminAPI = {
   getPendingCleaners: async () => {
-    const response = await api.get('/verification/pending-profiles');
+    const response = await api.get('/admin/cleaners/pending');
     const data = await response.json();
     return data;
   },
@@ -451,19 +451,21 @@ export const adminAPI = {
   },
 
   approveCleaner: async (profileId: string, notes: string) => {
-    const response = await api.put(`/verification/approve-profile/${profileId}`, { adminNotes: notes });
+    // Both routes are now synced, but using admin route for consistency
+    const response = await api.put(`/admin/cleaners/${profileId}/approve`, { notes });
     const data = await response.json();
     return data;
   },
 
-  rejectCleaner: async (profileId: string, reason: string, notes: string) => {
-    const response = await api.put(`/verification/reject-profile/${profileId}`, { rejectionReason: reason, adminNotes: notes });
+  rejectCleaner: async (profileId: string, _reason: string, notes: string) => {
+    // Both routes are now synced, but using admin route for consistency
+    const response = await api.put(`/admin/cleaners/${profileId}/reject`, { notes });
     const data = await response.json();
     return data;
   },
 
   getDashboard: async () => {
-    const response = await api.get('/admin/dashboard');
+    const response = await api.get('/admin/dashboard/stats');
     const data = await response.json();
     return data;
   },

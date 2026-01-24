@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { Button, Card } from "@/components/ui";
-import { API_BASE_URL } from "@/lib/config";
 import toast from "react-hot-toast";
 import { api } from "@/lib/api";
 

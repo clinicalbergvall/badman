@@ -6,7 +6,7 @@ interface ServiceShowcaseProps {
   serviceCategory?: ServiceCategory
 }
 
-export default function ServiceShowcase({ serviceCategory = 'car-detailing' }: ServiceShowcaseProps) {
+export default function ServiceShowcase({ }: ServiceShowcaseProps) {
   const tabs = [
     { id: 'upholstery', label: 'Upholstery' },
     { id: 'move', label: 'Move‑In/Out' },
@@ -39,9 +39,6 @@ export default function ServiceShowcase({ serviceCategory = 'car-detailing' }: S
 
   const [active, setActive] = useState<string>(tabs[0].id)
   const [openIndex, setOpenIndex] = useState<number | null>(null)
-  const [slider, setSlider] = useState<number>(50)
-  const featuredVideo = '/assets/cleaning/6197568-mobile-720p.mp4'
-  const featuredPoster = '/assets/cleaning/pexels-tima-miroshnichenko-6195956.jpg'
   const [failed, setFailed] = useState<Record<number, boolean>>({})
 
   const items = media[active]

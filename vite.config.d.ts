@@ -1,3 +1,2 @@
-declare const defineConfig: any;
-declare const react: any;
-declare const path: any;
+declare const _default: import("vite").UserConfig;
+export default _default;

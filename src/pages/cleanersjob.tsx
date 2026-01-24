@@ -8,6 +8,7 @@ import toast from "react-hot-toast";
 import { api } from "@/lib/api";
 import { logger } from "@/lib/logger";
 import { LocationMap } from "@/components/ui";
+import { calculateCleanerPayout, formatCurrency } from "@/lib/utils";
 
 export default function CleanerJobs() {
   const [jobs, setJobs] = useState<CleanerJobOpportunity[]>([]);
@@ -42,14 +43,13 @@ export default function CleanerJobs() {
   };
 
   
-  const calculateCleanerPayout = (payout: string): string => {
+  const getCleanerShareDisplay = (payout: string): string => {
     
     const numericValue = parseFloat(payout.replace(/[^0-9.-]+/g, ""));
     if (isNaN(numericValue)) return payout; 
 
-    
-    const cleanerEarning = numericValue * 0.4;
-    return `KSh ${Math.round(cleanerEarning).toLocaleString()}`;
+    const cleanerEarning = calculateCleanerPayout(numericValue);
+    return formatCurrency(cleanerEarning);
   };
 
   
@@ -180,9 +180,7 @@ export default function CleanerJobs() {
           </h1>
           <p className="text-gray-600 max-w-2xl mx-auto">
             {profile?.firstName && (
-              <Badge variant="warning" className="mb-3">
-                🚀 {profile.firstName}, you're live on CleanCloak Detailer
-              </Badge>
+              <Badge variant="success" className="mb-4 text-sm py-1 px-3">🚀 {profile.firstName}, you're live on CleanCloak Detailer</Badge>
             )}
           </p>
           <p className="text-gray-600 mt-2">
@@ -288,7 +286,7 @@ export default function CleanerJobs() {
                           )}
                         </div>
                         <p className="text-xl font-bold text-emerald-600">
-                          {calculateCleanerPayout(job.payout)}
+                          {getCleanerShareDisplay(job.payout)}
                         </p>
                       </div>
 

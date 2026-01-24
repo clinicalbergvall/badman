@@ -1,16 +1,6 @@
-import React from 'react'
-
 // Workaround for React import issues
 const forwardRef = (React as any).forwardRef;
-const InputHTMLAttributes: any = null;
 import { nanoid } from 'nanoid'
-
-interface InputProps {
-  label?: string
-  error?: string
-  helperText?: string
-  icon?: any
-}
 
 export const Input = forwardRef(
   ({ label, error, helperText, icon, className = '', id, ...props }: any, ref: any) => {

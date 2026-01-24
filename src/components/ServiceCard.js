@@ -1,0 +1,4 @@
+import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+export default function ServiceCard({ name, price, selected, onSelect, subtitle }) {
+    return (_jsx("button", { type: "button", onClick: onSelect, className: `w-full text-left p-4 rounded-xl border transition shadow-sm mb-3 ${selected ? 'border-accent ring-2 ring-accent/40 bg-yellow-50' : 'border-gray-200 hover:border-black/60'}`, children: _jsxs("div", { className: "flex items-center justify-between", children: [_jsxs("div", { children: [_jsx("p", { className: "font-semibold", children: name }), subtitle ? _jsx("p", { className: "text-sm text-gray-600", children: subtitle }) : null] }), typeof price === 'number' ? (_jsxs("p", { className: "text-primary font-bold", children: ["KSh ", price.toLocaleString()] })) : null] }) }));
+}

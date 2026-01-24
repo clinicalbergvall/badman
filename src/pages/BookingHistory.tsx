@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Card, Badge, Button, ChatComponent } from "@/components/ui";
+import { Badge, Button, ChatComponent } from "@/components/ui";
 import { PaymentModal } from "@/components/PaymentModal";
 import toast from "react-hot-toast";
 import { loadUserSession } from "@/lib/storage";
@@ -174,19 +174,19 @@ export default function BookingHistory() {
   const [history, setHistory] = useState<BookingHistoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | BookingStatus>("all");
-  const [searchTerm, setSearchTerm] = useState("");
+
   const [selectedBooking, setSelectedBooking] =
     useState<BookingHistoryItem | null>(null);
   const [selectedChatBooking, setSelectedChatBooking] =
     useState<BookingHistoryItem | null>(null);
-  const [userSession, setUserSession] = useState(loadUserSession());
+  const userSession = loadUserSession();
   const [ratingModalOpen, setRatingModalOpen] = useState(false);
   const [selectedBookingForRating, setSelectedBookingForRating] =
     useState<BookingHistoryItem | null>(null);
   const [selectedBookingForPayment, setSelectedBookingForPayment] =
     useState<BookingHistoryItem | null>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [isMarkingComplete, setIsMarkingComplete] = useState(false);
+
 
   const fetchBookings = async (showLoading = true) => {
     if (showLoading) setIsLoading(true);
@@ -247,10 +247,7 @@ export default function BookingHistory() {
     return <Badge variant={variants[status]}>{status.toUpperCase()}</Badge>;
   };
 
-  const handleRateBooking = (booking: BookingHistoryItem) => {
-    setSelectedBookingForRating(booking);
-    setRatingModalOpen(true);
-  };
+
 
   const handleRatingSubmit = async (rating: number, review: string) => {
     if (!selectedBookingForRating) return;
@@ -324,59 +321,9 @@ export default function BookingHistory() {
     }
   };
 
-  const handleMarkComplete = async (booking: BookingHistoryItem) => {
-    if (
-      !window.confirm(
-        "Mark this job as completed? The client will be notified to pay within 2 hours.",
-      )
-    ) {
-      return;
-    }
 
-    setIsMarkingComplete(true);
-    try {
-      const response = await api.post(`/bookings/${booking.id}/complete`, {
-        notes: "Job completed successfully",
-      });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Failed to mark as complete");
-      }
 
-      
-      toast.success("✅ Job marked as completed! Client has 2 hours to pay.");
-
-      
-      setHistory((prev: any) =>
-        prev.map((item: any) =>
-          item.id === booking.id
-            ? { ...item, status: "completed" as BookingStatus }
-            : item,
-        ),
-      );
-    } catch (error) {
-      logger.error("Error marking complete:", error instanceof Error ? error : undefined);
-      toast.error(
-        error instanceof Error ? error.message : "Failed to mark as complete",
-      );
-    } finally {
-      setIsMarkingComplete(false);
-    }
-  };
-
-  const handlePayNow = async (booking: BookingHistoryItem) => {
-    
-    if (!booking.rating) {
-      toast.error("⭐ Please rate the service before paying");
-      handleRateBooking(booking);
-      return;
-    }
-
-    
-    setSelectedBookingForPayment(booking);
-    setShowPaymentModal(true);
-  };
 
   const handlePaymentSuccess = () => {
     
@@ -384,11 +331,7 @@ export default function BookingHistory() {
     toast.success("Payment completed successfully!");
   };
 
-  const handlePaymentCancel = () => {
-    setShowPaymentModal(false);
-    setSelectedBookingForPayment(null);
-    toast.error("Payment cancelled");
-  };
+
 
   return (
     <div className="min-h-screen bg-gray-50 py-8 px-0 overflow-x-hidden">

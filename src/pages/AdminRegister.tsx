@@ -1,6 +1,6 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { authAPI } from '@/lib/api'
-import { saveUserSession } from '@/lib/storage'
+
 import toast from 'react-hot-toast'
 
 interface AdminRegisterData {

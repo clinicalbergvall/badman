@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Card, LocationMap } from './ui'
 import type { TrackingData, Location } from '@/lib/types'
-import { loadUserSession, getStoredAuthToken } from '@/lib/storage'
 import { api } from '@/lib/api'
 
 interface LiveTrackingProps {

@@ -110,3 +110,14 @@ export async function compressImageArray(imageArray: string[], quality: number =
   const compressedPromises = imageArray.map(img => compressImage(img, quality, maxSize));
   return Promise.all(compressedPromises);
 }
+
+/**
+ * Calculates the cleaner's payout share from the total booking price.
+ * Currently set to 40% of the total price.
+ * 
+ * @param price Total booking price
+ * @returns Cleaner's earning share (rounded to nearest integer)
+ */
+export function calculateCleanerPayout(price: number): number {
+  return Math.round(price * 0.4);
+}

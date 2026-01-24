@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { protect, authorize } = require('../middleware/auth');
 const CleanerProfile = require('../models/CleanerProfile');
+const User = require('../models/User');
 
 
 router.get('/status', (req, res) => {
@@ -32,6 +33,7 @@ router.get('/pending-profiles', protect, authorize('admin'), async (req, res) =>
 
     const [cleaners, total] = await Promise.all([
       CleanerProfile.find(query)
+        .populate('user', 'name email phone')
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(parseInt(limit)),
@@ -94,6 +96,15 @@ router.put('/approve-profile/:id', protect, authorize('admin'), async (req, res)
 
     await profile.save();
 
+    // Sync status to the User model
+    if (profile.user) {
+      const User = require('../models/User');
+      await User.findByIdAndUpdate(profile.user, {
+        isVerified: true,
+        verificationStatus: 'verified'
+      });
+    }
+
     res.json({
       success: true,
       message: `${profile.firstName} ${profile.lastName} approved successfully`,
@@ -145,6 +156,15 @@ router.put('/reject-profile/:id', protect, authorize('admin'), async (req, res) 
     });
 
     await profile.save();
+
+    // Sync status to the User model
+    if (profile.user) {
+      const User = require('../models/User');
+      await User.findByIdAndUpdate(profile.user, {
+        isVerified: false,
+        verificationStatus: 'rejected'
+      });
+    }
 
     res.json({
       success: true,

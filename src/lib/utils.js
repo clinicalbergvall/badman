@@ -1,0 +1,105 @@
+export function formatPhone(phone) {
+    if (phone.length === 13 && phone.startsWith('+254')) {
+        return `${phone.slice(0, 4)} ${phone.slice(4, 7)} ${phone.slice(7, 10)} ${phone.slice(10)}`;
+    }
+    return phone;
+}
+export const formatPhoneNumber = formatPhone;
+export function formatCurrency(amount) {
+    return `KSh ${amount.toLocaleString()}`;
+}
+export function formatDate(date) {
+    return new Intl.DateTimeFormat('en-KE', {
+        weekday: 'short',
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric'
+    }).format(date);
+}
+export function formatTime(date) {
+    return new Intl.DateTimeFormat('en-KE', {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+    }).format(date);
+}
+export function getBase64FileSize(base64String) {
+    // Remove the data:image/*;base64, prefix
+    const base64WithoutPrefix = base64String.split(',')[1];
+    if (!base64WithoutPrefix)
+        return 0;
+    // Calculate approximate size (base64 increases size by ~33%)
+    const size = Math.round((base64WithoutPrefix.length * 3) / 4);
+    return size;
+}
+export function formatFileSize(bytes) {
+    if (bytes < 1024)
+        return bytes + ' bytes';
+    else if (bytes < 1048576)
+        return (bytes / 1024).toFixed(1) + ' KB';
+    else
+        return (bytes / 1048576).toFixed(1) + ' MB';
+}
+export function cn(...classes) {
+    return classes.filter(Boolean).join(' ');
+}
+export async function compressImage(base64, quality = 0.7, maxSize = 1024) {
+    return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.src = base64;
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            let width = img.width;
+            let height = img.height;
+            // Calculate new dimensions if image is too large
+            if (width > maxSize || height > maxSize) {
+                if (width > height) {
+                    height = (height * maxSize) / width;
+                    width = maxSize;
+                }
+                else {
+                    width = (width * maxSize) / height;
+                    height = maxSize;
+                }
+            }
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+                reject(new Error('Could not get canvas context'));
+                return;
+            }
+            ctx.drawImage(img, 0, 0, width, height);
+            canvas.toBlob((blob) => {
+                if (blob) {
+                    const reader = new FileReader();
+                    reader.onload = () => {
+                        resolve(reader.result);
+                    };
+                    reader.onerror = () => reject(new Error('Could not read compressed image'));
+                    reader.readAsDataURL(blob);
+                }
+                else {
+                    reject(new Error('Could not compress image'));
+                }
+            }, 'image/jpeg', quality);
+        };
+        img.onerror = (error) => {
+            reject(error);
+        };
+    });
+}
+export async function compressImageArray(imageArray, quality = 0.7, maxSize = 1024) {
+    const compressedPromises = imageArray.map(img => compressImage(img, quality, maxSize));
+    return Promise.all(compressedPromises);
+}
+/**
+ * Calculates the cleaner's payout share from the total booking price.
+ * Currently set to 40% of the total price.
+ *
+ * @param price Total booking price
+ * @returns Cleaner's earning share (rounded to nearest integer)
+ */
+export function calculateCleanerPayout(price) {
+    return Math.round(price * 0.4);
+}

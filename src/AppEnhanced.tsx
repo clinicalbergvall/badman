@@ -5,13 +5,7 @@ const { useState, useEffect } = React;
 import { useLocation, useNavigate } from "react-router-dom";
 import BookingEnhanced from "./pages/BookingEnhanced";
 import BookingHistory from "./pages/BookingHistory";
-import CleanerProfile from "./pages/CleanerProfile";
-import { LoginForm } from "./components/ui";
-import { loadUserSession, clearUserSession } from "./lib/storage";
 import ErrorBoundary from "./components/ErrorBoundary";
-import { authAPI } from "@/lib/api";
-import { NotificationCenter } from "./components/NotificationCenter";
-import { API_BASE_URL } from "./lib/config";
 
 
 
@@ -39,11 +33,7 @@ export default function App() {
     return tab && ["booking", "history", "profile"].includes(tab) ? tab : "booking";
   });
   const [darkMode, setDarkMode] = useState(false);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-
-  const [isOnline, setIsOnline] = useState<boolean>(true);
+  const [isOnline, setIsOnline] = useState<boolean>(true); // Used for online/offline detection
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
 
   useEffect(() => {
@@ -92,11 +82,7 @@ export default function App() {
   }, []);
 
 
-  const toggleDarkMode = () => {
-    const newMode = !darkMode;
-    setDarkMode(newMode);
-    localStorage.setItem("darkMode", String(newMode));
-  };
+
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -261,6 +247,11 @@ export default function App() {
         </div>
 
         { }
+        {isOnline ? null : (
+          <div className="bg-red-600 text-white text-center py-2 px-4 text-sm font-medium">
+            You are offline. Some features may not work properly.
+          </div>
+        )}
         <div className="relative z-10 w-full m-0 p-0 animate-fade">
           { }
           <div

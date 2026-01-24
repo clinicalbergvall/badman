@@ -1,11 +1,9 @@
-import React, { useState } from 'react'
-import AppEnhanced from './AppEnhanced';
+import { useState } from 'react'
 import { Button, Card } from '@/components/ui'
 import { LoginForm } from '@/components/ui'
 import { loadUserSession } from '@/lib/storage'
 
 export default function LandingPage() {
-  const [userType, setUserType] = useState<'client' | 'cleaner' | null>(null)
   const [showLogin, setShowLogin] = useState(false)
 
   const session = loadUserSession()
@@ -35,15 +33,14 @@ export default function LandingPage() {
         {/* Cleaner Card */}
         <Card className="p-8 text-center hover:shadow-xl transition-shadow cursor-pointer border-2 border-yellow-400 bg-yellow-50 hover:border-yellow-500 shadow-sm"
           onClick={() => {
-            setUserType('cleaner')
             setShowLogin(true)
           }}>
           <div className="w-20 h-20 bg-gradient-to-br from-yellow-500 to-yellow-700 rounded-full flex items-center justify-center mx-auto mb-4 text-white overflow-hidden shadow-lg">
             <img src="/detail-logo.jpg" className="w-full h-full object-cover" alt="Detail Logo" />
           </div>
-          <h3 className="text-2xl font-bold text-gray-900 mb-3">
-            Join the Clean Cloak Family and Offer Premium Detailing Services
-          </h3>
+          <h1 className="text-4xl md:text-6xl font-bold mb-6 text-black drop-shadow-md">
+            Join the Clean Cloak Family
+          </h1>
           <p className="text-gray-600 mb-6">
             Offer Premium Detailing Services and grow your business. Find cleaning jobs near you and get paid securely.
           </p>

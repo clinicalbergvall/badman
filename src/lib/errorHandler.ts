@@ -37,19 +37,29 @@ const SENSITIVE_PATTERNS = [
   /phone.*number/gi,
   /address/gi,
   /location.*coordinates/gi,
+  // Backend infrastructure patterns (security)
+  /render\.com/gi,
+  /herokuapp\.com/gi,
+  /vercel\.app/gi,
+  /netlify\.app/gi,
+  /railway\.app/gi,
+  /fly\.io/gi,
+  /backend.*url/gi,
+  /server.*endpoint/gi,
 ];
 
 // User-friendly error messages for common errors
 const USER_FRIENDLY_MESSAGES: { [key: string]: string } = {
-  'network error': 'Unable to connect to the server. Please check your internet connection.',
-  'failed to fetch': 'Network connection failed. Please try again.',
+  'network error': 'No internet connection. Please check your network settings.',
+  'failed to fetch': 'No internet connection. Please check your network settings.',
   'unauthorized': 'Your session has expired. Please log in again.',
   'forbidden': 'You do not have permission to perform this action.',
   'not found': 'The requested resource was not found.',
   'internal server error': 'A server error occurred. Please try again later.',
   'bad request': 'Invalid request. Please check your input and try again.',
-  'timeout': 'The request took too long. Please try again.',
-  'connection': 'Connection error. Please check your internet connection.',
+  'timeout': 'Connection timed out. Please check your internet connection.',
+  'connection': 'No internet connection. Please check your network settings.',
+  'fetch': 'No internet connection. Please check your network settings.',
 };
 
 /**

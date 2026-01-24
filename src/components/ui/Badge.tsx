@@ -1,5 +1,3 @@
-import React from 'react';
-
 type BadgeProps = any & {
   variant?: 'default' | 'success' | 'warning' | 'error' | 'secondary' | 'outline'
 };

@@ -7,7 +7,7 @@ import type {
   MidSUVPricingTier,
   PropertySize,
   CleaningServiceOption,
-  HomeCleaningAddon,
+
   VehicleCategory,
   CarServicePackageOption,
   PaintCorrectionStageOption,
@@ -522,7 +522,14 @@ export const getCarPrice = getCarDetailingPrice;
 export const getCleaningPrice = (
   propertySize: PropertySize,
   service: CleaningServiceOption,
-) => 0;
+): number => {
+  // Map simplified parameters to detailed object for getHomeCleaningPrice
+  // This is a basic mapping and might need refinement based on usage context
+  return getHomeCleaningPrice("HOUSE_CLEANING", {
+    roomSize: propertySize as any,
+    houseCleaningType: service as any
+  });
+};
 export const getPropertyCategory = (id: PropertySize) =>
   propertyCategories.find((c) => c.id === id);
 export const getCleaningServicePackage = (id: CleaningServiceOption) =>

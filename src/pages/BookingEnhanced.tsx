@@ -7,14 +7,13 @@ import {
 } from "@/components/ui";
 import CleanerProfile from "./CleanerProfile";
 import LocationMap from "@/components/LocationMap";
-import { PaymentModal } from "@/components/PaymentModal";
+
 import {
   VEHICLE_CATEGORIES,
   CAR_SERVICE_PACKAGES,
   PAINT_CORRECTION_STAGES,
   CAR_DETAILING_EXTRAS,
   getCarDetailingPrice,
-  loginSchema,
 } from "@/lib/validation";
 import type {
   VehicleType,
@@ -35,41 +34,10 @@ import { getCurrentLocation, getLocationPermissionStatus, reverseGeocode } from 
 import authAPI from "@/lib/auth-api";
 import { api } from "@/lib/api";
 import toast from "react-hot-toast";
-import { logger } from "@/lib/logger";
 
 
-const carDetailingCarouselImages = [
-  {
-    id: 1,
-    title: "Professional Car Polishing",
-    description: "Expert detailing with premium equipment",
-    image: "/assets/images/car-polish-new.png",
-  },
-  {
-    id: 2,
-    title: "Pressure Washing Service",
-    description: "Deep cleaning with high-pressure equipment",
-    image: "/assets/images/pressure-wash-new.png",
-  },
-  {
-    id: 5,
-    title: "Interior Steam Cleaning",
-    description: "Deep sanitation and stain removal",
-    image: "/assets/images/interior-steam-cleaning.jpg",
-  },
-  {
-    id: 6,
-    title: "Premium Foam Wash",
-    description: "Gentle and effective exterior cleaning",
-    image: "/assets/images/premium-foam-wash.jpg",
-  },
-  {
-    id: 7,
-    title: "Detailed Interior Care",
-    description: "Thorough cleaning for every corner",
-    image: "/assets/images/interior-detailing.jpg",
-  },
-];
+
+
 
 
 
@@ -114,7 +82,7 @@ export default function BookingEnhanced() {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
-  const [isSignup, setIsSignup] = useState(false); // Kept for potential future use
+  const [isSignup, setIsSignup] = useState(false);
   const [isAuthenticating, setIsAuthenticating] = useState(false);
 
 
@@ -128,7 +96,7 @@ export default function BookingEnhanced() {
   const [selectedCarExtras, setSelectedCarExtras] = useState<
     CarDetailingExtra[]
   >([]);
-  const [selectedCarServices, setSelectedCarServices] = useState<string[]>([]);
+
   const [failedPackage, setFailedPackage] = useState<Record<string, boolean>>({});
   const [vehicleVideoFailed, setVehicleVideoFailed] = useState(false);
 
@@ -138,7 +106,7 @@ export default function BookingEnhanced() {
   const [bookingType, setBookingType] = useState<BookingType>("immediate");
   const [scheduledDate, setScheduledDate] = useState("");
   const [scheduledTime, setScheduledTime] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("mpesa");
+  const [paymentMethod, _setPaymentMethod] = useState<PaymentMethod>("mpesa");
   const [location, setLocation] = useState<{
     address?: string;
     manualAddress?: string;
@@ -148,9 +116,7 @@ export default function BookingEnhanced() {
   const [locationPermission, setLocationPermission] = useState<string>("unknown");
 
 
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [currentBookingId, setCurrentBookingId] = useState("");
-  const [currentBookingAmount, setCurrentBookingAmount] = useState(0);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -161,7 +127,6 @@ export default function BookingEnhanced() {
       setPhone(session.phone || "");
       if (session.userType === "client") {
         setStep(2); // Start at step 2 (vehicle selection) for returning clients
-        setIsSignup(false);
       }
     } else {
       // For new users, start at step 0 (user type selection)
@@ -259,9 +224,7 @@ export default function BookingEnhanced() {
     });
   };
 
-  const roleFromUserType = (u: UserType): "client" | "cleaner" => {
-    return u === "cleaner" ? "cleaner" : "client"
-  }
+
 
   const extrasEnabled = serviceCategory === "car-detailing";
 
@@ -562,7 +525,7 @@ export default function BookingEnhanced() {
   };
 
   return (
-    <div className="w-full min-h-screen min-w-full mx-auto m-0 p-0 bg-white overflow-x-hidden">
+    <div className="w-full min-h-screen min-w-full mx-auto m-0 p-0 pb-32 bg-white overflow-x-hidden">
       { }
       <div className="mb-6 bg-gradient-to-br from-gray-900 via-gray-950 to-black shadow-lg border-b border-gray-800 backdrop-blur-sm -mx-4 px-4 pt-6 pb-8">
         {step > 0 && (
@@ -653,7 +616,7 @@ export default function BookingEnhanced() {
                   </div>
                   <div className="flex-1">
                     <h3 className="font-bold text-xl text-gray-900 mb-1">
-                      Join the Clean Cloak Family
+                      Join the Clean Cloak Family or Login
                     </h3>
                     <p className="text-sm text-gray-600">
                       Offer Premium Detailing Services
@@ -903,6 +866,7 @@ export default function BookingEnhanced() {
                 loop
                 playsInline
                 autoPlay
+                preload="metadata"
                 className="w-full h-full object-cover rounded-lg"
                 onError={(e) => {
                   console.error('Video failed to load:', e.currentTarget.src);
@@ -929,7 +893,7 @@ export default function BookingEnhanced() {
                   vehicleType === vehicle.id
                     ? "current"
                     : "upcoming";
-                const statusClasses =
+                const _statusClasses =
                   status === "current"
                     ? "border-2 border-yellow-400 shadow-sm"
                     : "border border-gray-200 opacity-60";
@@ -1052,7 +1016,7 @@ export default function BookingEnhanced() {
                   carServicePackage === pkg.id
                     ? "current"
                     : "upcoming";
-                const statusClasses =
+                const _statusClasses =
                   status === "current"
                     ? "border-2 border-yellow-400 shadow-sm"
                     : "border border-gray-200 opacity-60";
@@ -1091,7 +1055,6 @@ export default function BookingEnhanced() {
                               playsInline
                               preload="none"
                               autoPlay
-                              controls={false}
                               poster={PACKAGE_FALLBACK_IMAGES[pkg.id]}
                               onError={() => setFailedPackage((p: any) => ({ ...p, [pkg.id]: true }))}
                             />
@@ -1195,9 +1158,7 @@ export default function BookingEnhanced() {
                     -
                   </button>
                   <div className="flex-1 text-center">
-                    <span className="text-2xl font-bold text-gray-900">
-                      {fleetCarCount}
-                    </span>
+                    <h2 className="text-2xl font-bold text-gray-900">Login to CleanCloak</h2>
                   </div>
                   <button
                     type="button"

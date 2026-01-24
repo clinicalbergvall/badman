@@ -1,0 +1,20 @@
+import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+import { useState } from 'react';
+import { loadUserSession } from '@/lib/storage';
+export default function CleanerLayout({ children, currentPage = 'jobs' }) {
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+    const userSession = loadUserSession();
+    const navItems = [
+        { id: 'jobs', label: 'Jobs', icon: '💼', href: '/jobs' },
+        { id: 'active', label: 'My Jobs', icon: '📋', href: '/cleaner-active' },
+        { id: 'profile', label: 'Profile', icon: '👤', href: '/cleaner-profile' },
+        { id: 'earnings', label: 'Earnings', icon: '💰', href: '/earnings' },
+    ];
+    return (_jsxs("div", { className: "min-h-screen bg-gray-50", children: [_jsx("header", { className: "bg-white border-b border-gray-200 sticky top-0 z-40 shadow-sm", children: _jsxs("div", { className: "w-full px-1 sm:px-2 lg:px-2", children: [_jsxs("div", { className: "flex items-center justify-between h-16", children: [_jsx("nav", { className: "hidden md:flex items-center gap-1", children: navItems.map((item) => (_jsxs("a", { href: item.href, className: `flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all ${currentPage === item.id
+                                            ? 'bg-yellow-50 text-yellow-700 border border-yellow-200'
+                                            : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`, children: [_jsx("span", { className: "text-lg", children: item.icon }), _jsx("span", { children: item.label })] }, item.id))) }), _jsxs("div", { className: "flex items-center gap-3", children: [_jsxs("div", { className: "hidden sm:block text-right", children: [_jsx("p", { className: "text-sm font-semibold text-gray-900", children: userSession?.name || 'Cleaner' }), _jsx("p", { className: "text-xs text-gray-500", children: "Active" })] }), _jsx("div", { className: "w-10 h-10 bg-gradient-to-br from-yellow-400 to-yellow-500 rounded-full flex items-center justify-center text-white font-bold shadow-md", children: (userSession?.name || 'C')[0].toUpperCase() }), _jsx("button", { onClick: () => setIsMobileMenuOpen(!isMobileMenuOpen), className: "md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors", children: _jsx("svg", { className: "w-6 h-6 text-gray-600", fill: "none", stroke: "currentColor", viewBox: "0 0 24 24", children: isMobileMenuOpen ? (_jsx("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M6 18L18 6M6 6l12 12" })) : (_jsx("path", { strokeLinecap: "round", strokeLinejoin: "round", strokeWidth: 2, d: "M4 6h16M4 12h16M4 18h16" })) }) })] })] }), isMobileMenuOpen && (_jsx("div", { className: "md:hidden py-4 border-t border-gray-200 animate-up", children: _jsx("nav", { className: "flex flex-col gap-2", children: navItems.map((item) => (_jsxs("a", { href: item.href, className: `flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all ${currentPage === item.id
+                                        ? 'bg-yellow-50 text-yellow-700 border border-yellow-200'
+                                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'}`, onClick: () => setIsMobileMenuOpen(false), children: [_jsx("span", { className: "text-xl", children: item.icon }), _jsx("span", { children: item.label })] }, item.id))) }) }))] }) }), _jsx("main", { className: "w-full px-1 sm:px-2 lg:px-2 py-2", children: children }), _jsx("nav", { className: "md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-40", children: _jsx("div", { className: "grid grid-cols-4 gap-1 px-2 py-2", children: navItems.map((item) => (_jsxs("a", { href: item.href, className: `flex flex-col items-center gap-1 py-2 px-3 rounded-lg text-xs font-medium transition-all ${currentPage === item.id
+                            ? 'bg-yellow-50 text-yellow-700'
+                            : 'text-gray-600 hover:bg-gray-50'}`, children: [_jsx("span", { className: "text-xl", children: item.icon }), _jsx("span", { children: item.label })] }, item.id))) }) }), _jsx("div", { className: "md:hidden h-20" })] }));
+}

@@ -9,14 +9,7 @@ const User = require('../models/User');
 
 router.post('/profile', protect, async (req, res) => {
   try {
-    
-    if (req.user.role !== 'cleaner') {
-      return res.status(403).json({
-        success: false,
-        message: 'Only users with cleaner role can submit profiles'
-      });
-    }
-    
+    // Check if profile already exists for this user
     const existingProfile = await CleanerProfile.findOne({ user: req.user.id });
     if (existingProfile) {
       return res.status(400).json({
@@ -29,8 +22,8 @@ router.post('/profile', protect, async (req, res) => {
     const profileData = {
       user: req.user.id,
       ...req.body,
-      approvalStatus: 'approved',
-      verified: true
+      approvalStatus: 'pending',
+      verified: false
     };
 
     const profile = await CleanerProfile.create(profileData);
@@ -118,12 +111,33 @@ router.put('/profile', protect, authorize('cleaner'), async (req, res) => {
       });
     }
 
+    // Only allow specific fields to be updated by the cleaner
+    const allowedFields = [
+      'firstName', 
+      'lastName', 
+      'bio', 
+      'address', 
+      'city', 
+      'email', 
+      'mpesaPhoneNumber', 
+      'profileImage',
+      'workingHours',
+      'isAvailable'
+    ];
+    
+    const updateData = {};
+    allowedFields.forEach(field => {
+      if (req.body[field] !== undefined) {
+        updateData[field] = req.body[field];
+      }
+    });
+
     // Sanitize input before updating
-    const sanitizedData = sanitizeProfileInput(req.body);
+    const sanitizedData = sanitizeProfileInput(updateData);
 
     profile = await CleanerProfile.findOneAndUpdate(
       { user: req.user.id },
-      sanitizedData,
+      { $set: sanitizedData },
       { new: true, runValidators: true }
     );
 

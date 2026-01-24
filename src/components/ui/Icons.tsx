@@ -1,9 +1,4 @@
-import React from 'react'
 
-interface IconProps {
-    className?: string
-    size?: number
-}
 
 
 export const SparkleIcon = ({ className = '', size = 24 }: any) => (

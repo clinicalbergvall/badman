@@ -172,6 +172,14 @@ router.put('/cleaners/:id/approve', protect, authorize('admin'), async (req, res
 
     await profile.save();
 
+    // Sync status to the User model
+    if (profile.user) {
+      await User.findByIdAndUpdate(profile.user, {
+        isVerified: true,
+        verificationStatus: 'verified'
+      });
+    }
+
     res.json({
       success: true,
       message: `${profile.firstName} ${profile.lastName} approved successfully`,
@@ -229,6 +237,14 @@ router.put('/cleaners/:id/reject', protect, authorize('admin'), async (req, res)
     });
 
     await profile.save();
+
+    // Sync status to the User model
+    if (profile.user) {
+      await User.findByIdAndUpdate(profile.user, {
+        isVerified: false,
+        verificationStatus: 'rejected'
+      });
+    }
 
     res.json({
       success: true,

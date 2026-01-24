@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+
 import { loadUserSession } from "@/lib/storage";
 import toast from "react-hot-toast";
 import ErrorBoundary from "../components/ErrorBoundary";
-import { API_BASE_URL } from "@/lib/config";
+
 import { logger } from "@/lib/logger";
 import { api } from "@/lib/api";
 
@@ -29,7 +29,7 @@ interface ClientProfile {
 }
 
 export default function ClientProfile() {
-  const navigate = useNavigate();
+
   const [profile, setProfile] = useState<ClientProfile | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);

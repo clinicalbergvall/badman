@@ -1,15 +1,15 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
+import { loadUserSession } from "@/lib/storage";
 import { api } from "@/lib/api";
 import { useNotifications } from "../contexts/NotificationContext";
 import { CompleteJobModal } from '@/components/CompleteJobModal';
-import { Card, Badge, Button, ChatComponent } from '@/components/ui';
+import { Button, ChatComponent } from '@/components/ui';
 import CleanerLayout from "@/components/CleanerLayout";
 import { getVehicleCategory } from "@/lib/validation";
 import type { VehicleType } from "@/lib/types";
-import { loadUserSession } from "@/lib/storage";
-import { watchLocation } from "@/lib/location";
+import { calculateCleanerPayout } from "@/lib/utils";
 
 interface ActiveBooking {
   _id: string;
@@ -144,7 +144,7 @@ export default function CleanerActiveBookings() {
         throw new Error("Failed to complete booking");
       }
 
-      const data = await response.json();
+      await response.json();
 
       toast.success("Job marked as complete! Client will be notified.");
 
@@ -184,18 +184,9 @@ export default function CleanerActiveBookings() {
     }
   };
 
-  const calculatePayout = (price: number) => Math.round(price * 0.4);
 
-  const formatDate = (dateString?: string) => {
-    if (!dateString) return "N/A";
-    return new Date(dateString).toLocaleDateString("en-KE", {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
+
+
 
   if (loading) {
     return (
@@ -338,7 +329,7 @@ export default function CleanerActiveBookings() {
 interface ActiveBookingCardProps {
   booking: ActiveBooking;
   onComplete: () => void;
-  onNavigate: () => void;
+  onNavigate: (_page: string) => void;
   onStartChat: (booking: ActiveBooking) => void;
   onGetDirections: (booking: ActiveBooking) => void;
 }
@@ -346,7 +337,7 @@ interface ActiveBookingCardProps {
 function ActiveBookingCard({
   booking,
   onComplete,
-  onNavigate,
+  
   onStartChat,
   onGetDirections
 }: ActiveBookingCardProps) {
@@ -359,7 +350,7 @@ function ActiveBookingCard({
     });
   };
 
-  const cleanerPayout = Math.round(booking.price * 0.4);
+  const cleanerPayout = calculateCleanerPayout(booking.price);
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6 border border-gray-200 dark:border-gray-700">
@@ -496,7 +487,7 @@ function CompletedBookingCard({ booking }: CompletedBookingCardProps) {
     });
   };
 
-  const cleanerPayout = Math.round(booking.price * 0.4);
+  const cleanerPayout = calculateCleanerPayout(booking.price);
   const isPaid = booking.paid || booking.paymentStatus === "paid";
   const payoutProcessed = booking.payoutStatus === "completed";
 

@@ -4,7 +4,7 @@ import type {
   CleanerChecklistItem,
   CleanerJobOpportunity,
   CleanerProfile,
-  BeforeAfterPhoto,
+
   UserAccountSession,
 } from "./types";
 import { API_BASE_URL } from "./config";
@@ -17,7 +17,6 @@ const CLEANER_PENDING_KEY = "cleancloak-pending-cleaners";
 const CLEANER_APPROVED_KEY = "cleancloak-approved-cleaners";
 const CLEANER_JOB_OPPORTUNITIES_KEY = "cleancloak-job-opportunities";
 const CLEANER_CHECKLIST_KEY = "cleancloak-job-checklist";
-const CLEANER_BEFORE_AFTER_KEY = "cleancloak-before-after-gallery";
 export const USER_SESSION_KEY = "cleancloak-user-session";
 
 const OPPORTUNITIES_ENDPOINT = "/bookings/opportunities";

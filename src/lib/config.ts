@@ -39,20 +39,18 @@ const getDefaultBaseUrl = () => {
 
 const BASE = getDefaultBaseUrl();
 
-// For Capacitor apps, use the base URL without additional /api suffix as Capacitor handles the proxying
-export const API_BASE_URL = isCapacitor ? BASE : (BASE.endsWith('/api') ? BASE : `${BASE}/api`)
+// Don't add /api suffix here - it will be added in getApiUrl
+export const API_BASE_URL = BASE;
 
 
 export const getApiUrl = (endpoint: string): string => {
-    // During development, use proxy to avoid CORS issues
+    // During development, connect directly to Render backend
     // In production, use the configured API URL
     const isDevMode = import.meta.env.MODE === 'development';
     if (isDevMode && !isCapacitor) {
-        // Use relative paths during development to leverage Vite proxy
-        // This avoids CORS issues when connecting to external or local backends
-        // We MUST prepend /api to match the Vite proxy configuration
-        const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-        return `/api${cleanEndpoint}`;
+        // Connect directly to Render backend to avoid proxy issues
+        const cleanEndpoint = endpoint.startsWith('/api/') ? endpoint : `/api${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
+        return `${API_BASE_URL}${cleanEndpoint}`;
     }
     
     // For Capacitor, we don't add additional /api since the base URL handles it

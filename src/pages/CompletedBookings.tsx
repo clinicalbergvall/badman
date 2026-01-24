@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import { API_BASE_URL } from "@/lib/config";
 import { api } from "@/lib/api";
 import { useNotifications } from "../contexts/NotificationContext";
 import { RatingInterface } from "@/components/RatingInterface";
@@ -272,7 +271,7 @@ interface BookingCardProps {
 
 function BookingCard({
   booking,
-  onRate,
+
   onPay,
   isPaid,
   isRating,

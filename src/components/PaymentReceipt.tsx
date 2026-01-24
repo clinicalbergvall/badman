@@ -227,7 +227,7 @@ export function PaymentReceipt({ booking, onClose }: PaymentReceiptProps) {
                     {}
                     <div className="text-center text-xs text-gray-500 dark:text-gray-400 pt-4 border-t border-gray-200 dark:border-gray-700">
                         <p>Thank you for choosing CleanCloak!</p>
-                        <p className="mt-1">For support, contact us at support@cleancloak.com</p>
+                        <p className="mt-1">For support, contact us at support@cleancloak.co</p>
                     </div>
                 </div>
             </div>

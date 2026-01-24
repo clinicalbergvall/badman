@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">CleanCloak</string>
-    <string name="title_activity_main">CleanCloak</string>
-    <string name="package_name">com.cleancloak.app</string>
-    <string name="custom_url_scheme">com.cleancloak.app</string>
+    <string name="app_name">CleanCloak Detailer</string>
+    <string name="title_activity_main">CleanCloak Detailer</string>
+    <string name="package_name">com.cleancloak.detailer</string>
+    <string name="custom_url_scheme">com.cleancloak.detailer</string>
 </resources>

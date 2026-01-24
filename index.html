@@ -1,182 +1,180 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content"
+    />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
 
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-content" />
-
-  
-  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-
-  
-  <title>CleanCloak - Professional Car Detailing</title>
+    <title>CleanCloak - Professional Car Detailing</title>
   <meta name="description"
-    content="On-demand professional car detailing and home cleaning services in Kenya. Book instantly with verified cleaners." />
-  <meta name="keywords" content="car detailing, home cleaning, professional cleaning, Kenya, on-demand service" />
+    content="On-demand professional car detailing services. Book instantly with verified detailers." />
+  <meta name="keywords" content="car detailing, professional cleaning, Kenya, on-demand service" />
 
-  
   <meta name="theme-color" content="#FACC15" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 
-  
   <link rel="preconnect" href="https://clean-cloak-b.onrender.com" crossorigin />
-
-  
   <link rel="dns-prefetch" href="https://clean-cloak-b.onrender.com" />
 
-  
-  <link rel="preload" as="script" href="/src/main.tsx" />
+    <link rel="icon" type="image/png" href="/assets/images/logo.png" />
+    <link rel="apple-touch-icon" href="/assets/images/logo.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
 
-  
-  <link rel="icon" type="image/png" href="/assets/images/logo.png" />
-  <link rel="apple-touch-icon" href="/assets/images/logo.png" />
-  <link rel="manifest" href="/manifest.webmanifest" />
-
-  
-  <style>
-    /* Critical CSS - inline to prevent FOUC */
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    html,
-    body,
-    #root {
-      height: 100%;
-      width: 100%;
-      margin: 0;
-      padding: 0;
-    }
-
-    body {
-      margin: 0;
-      padding: 0;
-      width: 100%;
-      max-width: 500px; /* Mobile width */
-      min-height: 100vh;
-      margin-left: auto;
-      margin-right: auto;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-        'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-        sans-serif;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-      background-color: #000000;
-      color: #111827;
-      overflow-x: hidden;
-      box-shadow: 0 0 30px rgba(0, 0, 0, 0.2);
-      position: relative;
-    }
-
-    /* Uber-style splash screen */
-    #root:empty {
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      background-color: #ffffff;
-      position: relative;
-    }
-
-    #root:empty::before {
-      content: 'CLEANCLOAK';
-      font-family: 'Exo', 'Artemis', 'Orbitron', sans-serif;
-      font-size: min(8vw, 64px);
-      font-weight: 800;
-      color: #000000;
-      text-align: center;
-      margin-bottom: 20px;
-    }
-
-    #root:empty::after {
-      content: '';
-      width: 50px;
-      height: 50px;
-      border: 4px solid #f3f4f6;
-      border-top-color: #FACC15;
-      border-radius: 50%;
-      animation: spin 0.8s linear infinite;
-      position: relative;
-    }
-
-    @keyframes spin {
-      to {
-        transform: rotate(360deg);
+    <style>
+      /* Critical CSS - inline to prevent FOUC */
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
       }
-    }
 
-    /* Performance optimizations */
-    img,
-    video {
-      max-width: 100%;
-      height: auto;
-    }
-
-    /* Reduce motion for users who prefer it */
-    @media (prefers-reduced-motion: reduce) {
-
-      *,
-      *::before,
-      *::after {
-        animation-duration: 0.01ms !important;
-        animation-iteration-count: 1 !important;
-        transition-duration: 0.01ms !important;
-        scroll-behavior: auto !important;
+      html,
+      body,
+      #root {
+        height: 100%;
+        width: 100%;
+        margin: 0;
+        padding: 0;
       }
-    }
 
-    /* Hardware acceleration for better performance */
-    .card,
-    .btn,
-    .animate-blob {
-      will-change: transform;
-      transform: translateZ(0);
-      backface-visibility: hidden;
-      perspective: 1000px;
-    }
-  </style>
+      body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        min-height: 100vh;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto",
+          "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans",
+          "Helvetica Neue", sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        background-color: #000000;
+        color: #111827;
+        overflow-x: hidden;
+        box-shadow: 0 0 30px rgba(0, 0, 0, 0.2);
+        position: relative;
+      }
 
-  
-  <link rel="preload"
-    href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap"
-    as="style" onload="this.onload=null;this.rel='stylesheet'" />
-  <link rel="preload"
-    href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;800&family=Oxanium:wght@400;600;700&display=swap"
-    as="style" onload="this.onload=null;this.rel='stylesheet'" />
-  <link rel="preload" href="https://fonts.googleapis.com/css2?family=Exo:wght@700;800;900&display=swap" as="style"
-    onload="this.onload=null;this.rel='stylesheet'" />
-  <noscript>
+      /* Uber-style splash screen */
+      #root:empty {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        background-color: #ffffff;
+        position: relative;
+      }
+
+      #root:empty::before {
+        content: "CLEANCLOAK";
+        font-family: "Exo", "Artemis", "Orbitron", sans-serif;
+        font-size: min(8vw, 64px);
+        font-weight: 800;
+        color: #000000;
+        text-align: center;
+        margin-bottom: 20px;
+      }
+
+      #root:empty::after {
+        content: "";
+        width: 50px;
+        height: 50px;
+        border: 4px solid #f3f4f6;
+        border-top-color: #facc15;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+        position: relative;
+      }
+
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* Performance optimizations */
+      img,
+      video {
+        max-width: 100%;
+        height: auto;
+      }
+
+      /* Reduce motion for users who prefer it */
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
+          scroll-behavior: auto !important;
+        }
+      }
+
+      /* Hardware acceleration for better performance */
+      .card,
+      .btn,
+      .animate-blob {
+        will-change: transform;
+        transform: translateZ(0);
+        backface-visibility: hidden;
+        perspective: 1000px;
+      }
+    </style>
+
     <link
+      rel="preload"
       href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap"
-      rel="stylesheet" />
+      as="style"
+      onload="this.onload=null;this.rel='stylesheet'"
+    />
     <link
+      rel="preload"
       href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;800&family=Oxanium:wght@400;600;700&display=swap"
-      rel="stylesheet" />
-    <link href="https://fonts.googleapis.com/css2?family=Exo:wght@700;800;900&display=swap" rel="stylesheet" />
-  </noscript>
-</head>
+      as="style"
+      onload="this.onload=null;this.rel='stylesheet'"
+    />
+    <link
+      rel="preload"
+      href="https://fonts.googleapis.com/css2?family=Exo:wght@700;800;900&display=swap"
+      as="style"
+      onload="this.onload=null;this.rel='stylesheet'"
+    />
+    <noscript>
+      <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+        rel="stylesheet"
+      />
+      <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;800&family=Oxanium:wght@400;600;700&display=swap"
+        rel="stylesheet"
+      />
+      <link
+        href="https://fonts.googleapis.com/css2?family=Exo:wght@700;800;900&display=swap"
+        rel="stylesheet"
+      />
+    </noscript>
+  </head>
 
-<body class="bg-white">
-  
-  <div id="root"></div>
+  <body class="bg-white">
+    <div id="root"></div>
 
-  
-  <script type="module" src="/src/main.tsx"></script>
+    <script type="module" src="/src/main.tsx"></script>
 
-  
-  <script>
-    // Function to remove splash screen styling if app takes too long to load
-    window.addEventListener('load', function () {
-      setTimeout(() => {
-        const rootElement = document.getElementById('root');
-        if (rootElement && rootElement.innerHTML.trim() === '') {
-          // If root is still empty after 5 seconds, remove the splash screen styling
-          const styleElement = document.createElement('style');
-          styleElement.textContent = `
+    <script>
+      // Function to remove splash screen styling if app takes too long to load
+      window.addEventListener("load", function () {
+        setTimeout(() => {
+          const rootElement = document.getElementById("root");
+          if (rootElement && rootElement.innerHTML.trim() === "") {
+            // If root is still empty after 5 seconds, remove the splash screen styling
+            const styleElement = document.createElement("style");
+            styleElement.textContent = `
               #root:empty {
                 display: block !important;
                 min-height: auto !important;
@@ -186,10 +184,10 @@
                 display: none !important;
               }
             `;
-          document.head.appendChild(styleElement);
+            document.head.appendChild(styleElement);
 
-          // Add a message to indicate the app failed to load
-          rootElement.innerHTML = `
+            // Add a message to indicate the app failed to load
+            rootElement.innerHTML = `
               <div style="display: flex; align-items: center; justify-content: center; height: 100vh; text-align: center; padding: 20px;">
                 <div>
                   <h1 style="color: #FACC15; margin-bottom: 16px; font-family: sans-serif;">CleanCloak</h1>
@@ -198,22 +196,22 @@
                 </div>
               </div>
             `;
-        }
-      }, 5000); // 5 seconds timeout
-    });
+          }
+        }, 5000); // 5 seconds timeout
+      });
 
-    // Global error handler to catch any runtime errors
-    window.addEventListener('error', function (e) {
-      console.error('Global error:', e.error);
-      console.error('Error message:', e.message);
-      console.error('Error source:', e.filename);
-      console.error('Error line:', e.lineno);
-      console.error('Error column:', e.colno);
+      // Global error handler to catch any runtime errors
+      window.addEventListener("error", function (e) {
+        console.error("Global error:", e.error);
+        console.error("Error message:", e.message);
+        console.error("Error source:", e.filename);
+        console.error("Error line:", e.lineno);
+        console.error("Error column:", e.colno);
 
-      // If there's a critical error during loading, show it in the UI
-      const rootElement = document.getElementById('root');
-      if (rootElement && rootElement.innerHTML.trim() === '') {
-        rootElement.innerHTML = `
+        // If there's a critical error during loading, show it in the UI
+        const rootElement = document.getElementById("root");
+        if (rootElement && rootElement.innerHTML.trim() === "") {
+          rootElement.innerHTML = `
             <div style="display: flex; align-items: center; justify-content: center; height: 100vh; text-align: center; padding: 20px;">
               <div>
                 <h1 style="color: #FACC15; margin-bottom: 16px; font-family: sans-serif;">CleanCloak</h1>
@@ -223,17 +221,17 @@
               </div>
             </div>
           `;
-      }
-    });
+        }
+      });
 
-    // Unhandled promise rejection handler
-    window.addEventListener('unhandledrejection', function (e) {
-      console.error('Unhandled promise rejection:', e.reason);
+      // Unhandled promise rejection handler
+      window.addEventListener("unhandledrejection", function (e) {
+        console.error("Unhandled promise rejection:", e.reason);
 
-      // If there's a critical promise rejection during loading, show it in the UI
-      const rootElement = document.getElementById('root');
-      if (rootElement && rootElement.innerHTML.trim() === '') {
-        rootElement.innerHTML = `
+        // If there's a critical promise rejection during loading, show it in the UI
+        const rootElement = document.getElementById("root");
+        if (rootElement && rootElement.innerHTML.trim() === "") {
+          rootElement.innerHTML = `
             <div style="display: flex; align-items: center; justify-content: center; height: 100vh; text-align: center; padding: 20px;">
               <div>
                 <h1 style="color: #FACC15; margin-bottom: 16px; font-family: sans-serif;">CleanCloak</h1>
@@ -242,21 +240,32 @@
               </div>
             </div>
           `;
-      }
-    });
-  </script>
+        }
+      });
+    </script>
 
-  
-  <noscript>
-    <div
-      style="display: flex; align-items: center; justify-content: center; height: 100vh; padding: 20px; text-align: center; font-family: system-ui, sans-serif;">
-      <div>
-        <h1 style="color: #FACC15; margin-bottom: 16px;">CleanCloak</h1>
-        <p style="color: #6B7280; margin-bottom: 8px;">Please enable JavaScript to use this application.</p>
-        <p style="color: #9CA3AF; font-size: 14px;">This app requires JavaScript for the best experience.</p>
+    <noscript>
+      <div
+        style="
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          height: 100vh;
+          padding: 20px;
+          text-align: center;
+          font-family: system-ui, sans-serif;
+        "
+      >
+        <div>
+          <h1 style="color: #facc15; margin-bottom: 16px">CleanCloak</h1>
+          <p style="color: #6b7280; margin-bottom: 8px">
+            Please enable JavaScript to use this application.
+          </p>
+          <p style="color: #9ca3af; font-size: 14px">
+            This app requires JavaScript for the best experience.
+          </p>
+        </div>
       </div>
-    </div>
-  </noscript>
-</body>
-
+    </noscript>
+  </body>
 </html>

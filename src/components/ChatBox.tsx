@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Button, Card } from './ui'
-import { loadUserSession, getStoredAuthToken } from '@/lib/storage'
+import { loadUserSession } from '@/lib/storage'
 import type { ChatMessage } from '@/lib/types'
 import toast from 'react-hot-toast'
 import { api } from '@/lib/api'
@@ -22,7 +22,6 @@ export default function ChatBox({
 }: ChatBoxProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [newMessage, setNewMessage] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
   const [isKeyboardVisible, setIsKeyboardVisible] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)

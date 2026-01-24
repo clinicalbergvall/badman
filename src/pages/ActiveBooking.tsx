@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { Button, Card } from '@/components/ui'
 import LiveTracking from '@/components/LiveTracking'
 import ChatBox from '@/components/ChatBox'
 import VerificationBadge from '@/components/VerificationBadge'
-import type { VerificationDetails, Location } from '@/lib/types'
+import type { VerificationDetails } from '@/lib/types'
 import { api } from '@/lib/api'
 import { loadUserSession } from '@/lib/storage'
 
@@ -244,7 +244,7 @@ export default function ActiveBooking() {
               </div>
               <div>
                 <p className="font-medium text-red-100">Need Help?</p>
-                <p className="text-sm text-red-300">Report an issue</p>
+                <p className="text-sm text-green-700">CleanCloak support will contact you shortly.</p>
               </div>
             </div>
             <Button

@@ -30,9 +30,9 @@ export default function App() {
                 <span>On-Demand Services</span>
               </Badge>
             </div>
-            <h1 className="mt-2 text-3xl sm:text-4xl font-bold text-black mb-2">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-yellow-400 to-yellow-600 bg-clip-text text-transparent transform hover:scale-105 transition-transform cursor-default">
               CleanCloak
-            </h1>
+          </h1>
             <p className="text-gray-700 text-base sm:text-lg mb-4">
               Professional car detailing services
             </p>
