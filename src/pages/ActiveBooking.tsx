@@ -27,7 +27,7 @@ export default function ActiveBooking() {
         bookingId={bookingId}
         currentUserId={userSession.phone}
         currentUserName={userSession.name}
-        currentUserRole={userSession.userType as 'client' | 'cleaner'}
+        currentUserRole="cleaner"
       />
     )
   }
@@ -135,15 +135,46 @@ export default function ActiveBooking() {
                 <VerificationBadge verification={cleanerVerification} size="sm" />
               </div>
 
-              <div className="mt-4 grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-xs text-gray-400">Service</p>
-                  <p className="text-sm font-medium text-gray-100">{booking.serviceType}</p>
+              <div className="mt-4 space-y-3">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs text-gray-400">Service Package</p>
+                    <p className="text-sm font-medium text-gray-100 capitalize">
+                      {booking.carServicePackage?.replace(/-/g, " ") || booking.serviceCategory?.replace(/-/g, " ")}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-gray-400">Vehicle Type</p>
+                    <p className="text-sm font-medium text-gray-100">{booking.vehicleType || "N/A"}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-xs text-gray-400">Vehicle</p>
-                  <p className="text-sm font-medium text-gray-100">{booking.vehicleType}</p>
-                </div>
+
+                {booking.paintCorrectionStage && (
+                  <div>
+                    <p className="text-xs text-gray-400">Paint Correction Stage</p>
+                    <p className="text-sm font-medium text-gray-100">{booking.paintCorrectionStage.replace(/-/g, " ")}</p>
+                  </div>
+                )}
+                
+                {booking.fleetCarCount && (
+                  <div>
+                    <p className="text-xs text-gray-400">Fleet Size</p>
+                    <p className="text-sm font-medium text-gray-100">{booking.fleetCarCount} Vehicles</p>
+                  </div>
+                )}
+
+                {booking.selectedCarExtras && booking.selectedCarExtras.length > 0 && (
+                  <div>
+                    <p className="text-xs text-gray-400">Extras</p>
+                    <div className="flex flex-wrap gap-2 mt-1">
+                      {booking.selectedCarExtras.map((extra: string, i: number) => (
+                        <span key={i} className="text-xs bg-gray-700 text-gray-300 px-2 py-1 rounded-md capitalize">
+                          {extra.replace(/-/g, " ")}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="mt-4 flex items-center gap-3">

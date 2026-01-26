@@ -15,7 +15,9 @@ dotenv.config();
 
 
 const app = express();
-app.set('trust proxy', true);
+// Enable trust proxy for Render (behind load balancer)
+// '1' means trust the first proxy, which is Render's load balancer
+app.set('trust proxy', 1);
 
 
 app.use(helmet());

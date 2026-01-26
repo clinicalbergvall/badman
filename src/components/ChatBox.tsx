@@ -22,9 +22,10 @@ export default function ChatBox({
 }: ChatBoxProps) {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [newMessage, setNewMessage] = useState('')
-  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false)
+  const [viewportHeight, setViewportHeight] = useState<number | undefined>(undefined);
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
 
 
   const scrollToBottom = () => {
@@ -79,71 +80,50 @@ export default function ChatBox({
   }, [bookingId, currentUserId, currentUserName, currentUserRole, messages.length])
 
 
+  // Handle resize using Visual Viewport API for accurate mobile keyboard detection
   useEffect(() => {
-    const handleResize = () => {
-      const isMobile = window.innerWidth <= 768;
-      if (isMobile) {
-        const viewportHeight = window.innerHeight;
-        const documentHeight = document.documentElement.scrollHeight;
-        const heightDifference = Math.abs(documentHeight - viewportHeight);
-        
-        const keyboardVisible = heightDifference > 150 || viewportHeight < window.screen.height * 0.75;
-        setIsKeyboardVisible(keyboardVisible);
-        
-        // Scroll to bottom when keyboard visibility changes
-        if (keyboardVisible && inputRef.current && document.activeElement === inputRef.current) {
-          setTimeout(() => {
-            // Scroll input into view
-            inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end', inline: 'nearest' });
-            // Scroll messages to show latest
-            setTimeout(() => {
-              messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-            }, 200);
-          }, 300);
-        }
-      } else {
-        setIsKeyboardVisible(false);
-      }
-    };
-    
-    // Listen for visual viewport changes (better for mobile keyboard detection)
-    const handleViewportChange = () => {
+    const handleVisualViewportResize = () => {
+      // If visual viewport is supported, use it to calculate exact visible height
       if (window.visualViewport) {
-        const viewportHeight = window.visualViewport.height;
-        const windowHeight = window.innerHeight;
-        const keyboardVisible = viewportHeight < windowHeight * 0.75;
-        setIsKeyboardVisible(keyboardVisible);
+        // Calculate the actual visible height available for the chat
+        // We subtract a small buffer for headers/safe areas if needed, 
+        // but visualViewport usually gives the exact space above keyboard
+        const currentVisualHeight = window.visualViewport.height;
         
-        if (keyboardVisible && inputRef.current && document.activeElement === inputRef.current) {
-          setTimeout(() => {
-            inputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-            setTimeout(() => {
-              messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-            }, 200);
-          }, 300);
+        // On mobile, if the visual viewport is significantly smaller than window height,
+        // it means keyboard is open
+        if (currentVisualHeight < window.innerHeight * 0.9) {
+           setViewportHeight(currentVisualHeight);
+        } else {
+           setViewportHeight(undefined); // Reset to CSS default when keyboard is closed
         }
       }
     };
-    
-    // Listen for both resize and orientationchange events
-    window.addEventListener('resize', handleResize);
-    window.addEventListener('orientationchange', handleResize);
+
+    // Initial check
     if (window.visualViewport) {
-      window.visualViewport.addEventListener('resize', handleViewportChange);
-      window.visualViewport.addEventListener('scroll', handleViewportChange);
+      window.visualViewport.addEventListener('resize', handleVisualViewportResize);
+      window.visualViewport.addEventListener('scroll', handleVisualViewportResize);
     }
-    
-    handleResize();
-    
+    window.addEventListener('resize', handleVisualViewportResize);
+
     return () => {
-      window.removeEventListener('resize', handleResize);
-      window.removeEventListener('orientationchange', handleResize);
       if (window.visualViewport) {
-        window.visualViewport.removeEventListener('resize', handleViewportChange);
-        window.visualViewport.removeEventListener('scroll', handleViewportChange);
+        window.visualViewport.removeEventListener('resize', handleVisualViewportResize);
+        window.visualViewport.removeEventListener('scroll', handleVisualViewportResize);
       }
+      window.removeEventListener('resize', handleVisualViewportResize);
     };
   }, []);
+
+  // Scroll to bottom when viewport height changes (keyboard opens/closes)
+  useEffect(() => {
+    if (viewportHeight) {
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      }, 100);
+    }
+  }, [viewportHeight]);
 
 
   useEffect(() => {
@@ -274,7 +254,16 @@ export default function ChatBox({
   }
 
   return (
-    <Card className={`flex flex-col ${isKeyboardVisible ? 'h-[calc(100vh-200px)]' : 'h-[500px]'} max-h-[70vh]`}>
+    <Card 
+      ref={containerRef}
+      className={`flex flex-col w-full transition-all duration-200 ease-out`}
+      style={{
+        height: viewportHeight 
+          ? `${viewportHeight - 140}px` // Subtract header/stats height when keyboard is open
+          : '70dvh', // Use dynamic viewport height as default
+        maxHeight: viewportHeight ? `${viewportHeight}px` : '80dvh'
+      }}
+    >
       { }
       <div className="p-4 border-b border-gray-200 flex-shrink-0">
         <div className="flex items-center justify-between">
@@ -286,9 +275,8 @@ export default function ChatBox({
       </div>
 
       { }
-      <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-4" ref={messagesEndRef} style={{ 
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-4 bg-gray-50" ref={messagesEndRef} style={{ 
         WebkitOverflowScrolling: 'touch',
-        paddingBottom: isKeyboardVisible ? '20px' : '16px'
       }}>
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-gray-500">
@@ -353,9 +341,7 @@ export default function ChatBox({
       </div>
 
       { }
-      <div className={`p-4 border-t border-gray-200 bg-white flex-shrink-0 ${isKeyboardVisible ? 'pb-safe' : ''}`} style={{
-        paddingBottom: isKeyboardVisible ? 'env(safe-area-inset-bottom, 20px)' : '16px'
-      }}>
+      <div className={`p-4 border-t border-gray-200 bg-white flex-shrink-0 relative z-20`}>
         <div className="flex gap-2 items-end">
 
 
@@ -371,7 +357,7 @@ export default function ChatBox({
               }}
               placeholder="Type a message..."
               ref={inputRef}
-              className={`w-full px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent resize-none ${isKeyboardVisible ? 'z-10' : ''}`}
+              className={`w-full px-4 py-2 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent resize-none`}
               rows={1}
               style={{ minHeight: '40px', maxHeight: '100px' }}
               onTouchStart={(e) => {
@@ -381,12 +367,10 @@ export default function ChatBox({
                 }, 100);
               }}
               onClick={(e) => {
-                // Additional click handler to ensure focus on mobile
-                if (isKeyboardVisible) {
-                  setTimeout(() => {
-                    e.currentTarget.focus();
-                  }, 0);
-                }
+                // Ensure focus on click
+                setTimeout(() => {
+                  e.currentTarget.focus();
+                }, 0);
               }}
               onFocus={(e) => {
                 // Ensure the input stays visible when keyboard appears on mobile

@@ -34,6 +34,7 @@ const Booking = require('../models/Booking');
 const Transaction = require('../models/transaction');
 const User = require('../models/User');
 const CleanerProfile = require('../models/CleanerProfile');
+const mongoose = require('mongoose');
 const IntaSend = require('intasend-node');
 const { protect } = require('../middleware/auth');
 const { sendNotificationToBookingParticipants, sendNotificationToUser } = require('./events');
@@ -56,6 +57,25 @@ try {
   };
 }
 
+
+router.get('/debug-env', protect, (req, res) => {
+  // Only allow admin or specific user to debug if needed, or just log to server console
+  console.log('--- ENV DEBUG CHECK ---');
+  console.log('INTASEND_PUBLIC_KEY exists:', !!process.env.INTASEND_PUBLIC_KEY);
+  console.log('INTASEND_SECRET_KEY exists:', !!process.env.INTASEND_SECRET_KEY);
+  console.log('INTASEND_PUBLIC_KEY length:', process.env.INTASEND_PUBLIC_KEY ? process.env.INTASEND_PUBLIC_KEY.length : 0);
+  console.log('NODE_ENV:', process.env.NODE_ENV);
+  console.log('-----------------------');
+  
+  res.json({
+    success: true,
+    message: 'Check server logs for env status',
+    envCheck: {
+      hasPublicKey: !!process.env.INTASEND_PUBLIC_KEY,
+      hasSecretKey: !!process.env.INTASEND_SECRET_KEY
+    }
+  });
+});
 
 router.post('/initiate', protect, async (req, res) => {
   console.log('Payment initiate route hit:', req.body);
