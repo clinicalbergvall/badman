@@ -338,7 +338,7 @@ router.get(
           .skip(skip)
           .limit(pageSize)
           .select(
-            "serviceCategory bookingType status price vehicleType carServiceOption carServicePackage cleaningCategory location scheduledDate scheduledTime createdAt",
+            "serviceCategory bookingType status price vehicleType carServiceOption carServicePackage cleaningCategory location scheduledDate scheduledTime createdAt paintCorrectionStage midSUVPricingTier fleetCarCount selectedCarExtras",
           ),
         Booking.countDocuments(query),
       ]);
@@ -365,12 +365,25 @@ router.get(
 
       const opportunities = bookings.map((booking) => {
         const pkg = booking.carServicePackage || booking.carServiceOption;
+        let serviceName = carServiceLabels[pkg] || pkg || "Car Detailing";
+        
+        // Add specific details to service name
+        if (booking.carServicePackage === "PAINT-CORRECTION" && booking.paintCorrectionStage) {
+          serviceName += ` · ${booking.paintCorrectionStage.replace("-", " ")}`;
+        } else if (booking.carServicePackage === "FLEET-PACKAGE" && booking.fleetCarCount) {
+          serviceName += ` · ${booking.fleetCarCount} Cars`;
+        } else if (booking.midSUVPricingTier) {
+           serviceName += ` · ${booking.midSUVPricingTier}`;
+        }
+
         const title =
           booking.serviceCategory === "car-detailing"
-            ? [carServiceLabels[pkg] || pkg || "Car Detailing", booking.vehicleType]
+            ? [serviceName, booking.vehicleType]
                 .filter(Boolean)
                 .join(" · ")
-            : [booking.cleaningCategory || "Home Cleaning"].filter(Boolean).join(" · ");
+            : [booking.cleaningCategory || "Home Cleaning", booking.houseCleaningType, booking.roomSize]
+                .filter(Boolean)
+                .join(" · ");
 
         const timing =
           booking.bookingType === "scheduled" && booking.scheduledDate
@@ -379,8 +392,12 @@ router.get(
 
         const requirements = [
           booking.vehicleType ? `Vehicle: ${booking.vehicleType}` : null,
-          booking.carServiceOption
-            ? `Package: ${booking.carServiceOption}`
+          booking.carServiceOption || booking.carServicePackage
+            ? `Package: ${booking.carServicePackage || booking.carServiceOption}`
+            : null,
+          booking.paintCorrectionStage ? `Stage: ${booking.paintCorrectionStage.replace("-", " ")}` : null,
+           booking.selectedCarExtras && booking.selectedCarExtras.length > 0 
+            ? `Extras: ${booking.selectedCarExtras.map(e => e.replace(/-/g, " ")).join(", ")}` 
             : null,
           `Status: ${booking.status}`,
         ].filter(Boolean);
@@ -402,6 +419,10 @@ router.get(
           saved: false,
           createdAt:
             booking.createdAt?.toISOString?.() || new Date().toISOString(),
+          // Pass raw fields for frontend custom display if needed
+          carServicePackage: booking.carServicePackage,
+          paintCorrectionStage: booking.paintCorrectionStage,
+          selectedCarExtras: booking.selectedCarExtras
         };
       });
 
