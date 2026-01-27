@@ -1,3 +1,4 @@
+
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
@@ -224,12 +225,10 @@ async function reconnectToMongoDB() {
         serverSelectionTimeoutMS: 5000,
         socketTimeoutMS: 45000,
         heartbeatFrequencyMS: 10000,
-        bufferCommands: true,
-        bufferMaxEntries: 0,
-        autoIndex: false,
-        autoReconnect: true,
-        reconnectTries: Number.MAX_VALUE,
-        reconnectInterval: 1000
+        // Remove deprecated options for newer MongoDB driver
+        // autoReconnect, reconnectTries, reconnectInterval are deprecated
+        // bufferMaxEntries, autoReconnect, bufferCommands are deprecated
+        // Modern mongoose handles reconnection automatically
       });
       console.log('✅ MongoDB reconnected successfully');
     } catch (err) {
@@ -271,14 +270,10 @@ async function connectToDatabase() {
       socketTimeoutMS: 45000,
       // Keep connection alive
       heartbeatFrequencyMS: 10000,
-      // Retry on network error
-      bufferCommands: true,
-      bufferMaxEntries: 0,
-      autoIndex: false, // Disable auto-indexing in production
-      // Reconnect options
-      autoReconnect: true,
-      reconnectTries: Number.MAX_VALUE, // Never stop trying to reconnect
-      reconnectInterval: 1000 // Reconnect every 1 second
+      // Remove deprecated options for newer MongoDB driver
+      // autoReconnect, reconnectTries, reconnectInterval are deprecated
+      // bufferMaxEntries, autoReconnect, bufferCommands are deprecated
+      // Modern mongoose handles reconnection automatically
     });
 
     cachedDb = conn;
