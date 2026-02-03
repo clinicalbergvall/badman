@@ -190,9 +190,7 @@ export default function CleanerJobs() {
           </p>
         </div>
 
-        <section className="grid gap-6 lg:grid-cols-3">
-          {}
-          <div className="lg:col-span-2 space-y-5">
+        <div className="max-w-4xl mx-auto space-y-5">
             <Card className="p-6 border border-gray-100 shadow-sm hover-lift">
               <div className="flex items-center justify-between mb-6">
                 <div>
@@ -238,7 +236,7 @@ export default function CleanerJobs() {
                     </Button>
                   </Card>
                 ) : (
-                  displayedJobs.map((job: any) => (
+                  displayedJobs.map((job: CleanerJobOpportunity) => (
                     <Card
                       key={job.id}
                       className="p-5 border border-gray-100 bg-white space-y-4 hover:border-yellow-400 hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
@@ -290,6 +288,41 @@ export default function CleanerJobs() {
                         </p>
                       </div>
 
+                      {/* Explicit Service Details Section */}
+                      <div className="flex flex-wrap gap-2 text-xs">
+                        {job.carServicePackage === "PAINT-CORRECTION" && job.paintCorrectionStage && (
+                          <Badge variant="warning" className="border-yellow-200 bg-yellow-50 text-yellow-800">
+                            🎨 {job.paintCorrectionStage.replace(/-/g, " ")}
+                          </Badge>
+                        )}
+                        {job.carServicePackage === "FLEET-PACKAGE" && job.fleetCarCount && (
+                          <Badge variant="warning" className="border-blue-200 bg-blue-50 text-blue-800">
+                            🚕 {job.fleetCarCount} Vehicles
+                          </Badge>
+                        )}
+                        {/* Show Mid-SUV Tier if present */}
+                        {(job.title.includes("Rav4") || job.title.includes("Prado") || job.title.includes("Harrier") || job.title.includes("Vanguard")) && (
+                          <Badge variant="outline" className="border-gray-300 bg-gray-50">
+                            🚙 {job.title.split("·").pop()?.trim()}
+                          </Badge>
+                        )}
+                        {/* Extras Badge */}
+                        {job.selectedCarExtras && job.selectedCarExtras.length > 0 && (
+                          <div className="w-full mt-1.5 p-2 bg-yellow-50/50 border border-yellow-100 rounded-md">
+                            <p className="font-semibold text-yellow-800 mb-1 flex items-center gap-1.5">
+                              <span className="text-sm">✨</span> Extras Requested:
+                            </p>
+                            <div className="flex flex-wrap gap-1.5">
+                              {job.selectedCarExtras.map((extra: string, idx: number) => (
+                                <span key={idx} className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-white border border-yellow-200 text-yellow-700 shadow-sm">
+                                  {extra.replace(/-/g, " ")}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
                       <div className="text-sm text-gray-600 bg-gray-50 rounded-lg p-3">
                         <p className="font-semibold text-gray-900 mb-2 flex items-center gap-1">
                           <span>📋</span>
@@ -317,49 +350,7 @@ export default function CleanerJobs() {
                 )}
               </div>
             </Card>
-          </div>
-
-          {}
-          <div className="space-y-6">
-            {}
-            <Card className="p-6 border border-gray-100 shadow-sm hover-lift">
-              <div className="mb-4">
-                <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold">
-                  Your Stats
-                </p>
-                <h2 className="text-lg font-bold text-gray-900">Performance</h2>
-              </div>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <span className="text-sm font-medium text-gray-600">
-                    Available Jobs
-                  </span>
-                  <span className="text-2xl font-bold text-gray-900">
-                    {jobs.length}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between p-3 bg-emerald-50 rounded-lg">
-                  <span className="text-sm font-medium text-emerald-700">
-                    Matched Jobs
-                  </span>
-                  <span className="text-2xl font-bold text-emerald-600">
-                    {displayedJobs.length}
-                  </span>
-                </div>
-                {profile?.rating && (
-                  <div className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
-                    <span className="text-sm font-medium text-yellow-700">
-                      Your Rating
-                    </span>
-                    <span className="text-2xl font-bold text-yellow-600">
-                      ⭐ {profile.rating.toFixed(1)}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </Card>
-          </div>
-        </section>
+        </div>
       </div>
 
       {/* Location Modal */}

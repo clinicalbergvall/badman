@@ -14,6 +14,7 @@ import { calculateCleanerPayout } from "@/lib/utils";
 interface ActiveBooking {
   _id: string;
   id?: string;
+  title?: string;
   serviceCategory: string;
   bookingType: string;
   price: number;
@@ -39,6 +40,10 @@ interface ActiveBooking {
   carServicePackage?: string;
   cleaningCategory?: string;
   vehicleType?: VehicleType;
+  paintCorrectionStage?: string;
+  midSUVPricingTier?: string;
+  fleetCarCount?: number;
+  selectedCarExtras?: string[];
 }
 
 export default function CleanerActiveBookings() {
@@ -65,7 +70,7 @@ export default function CleanerActiveBookings() {
     return (
       <ChatComponent
         bookingId={bookingId}
-        currentUserId={userSession.phone}
+        currentUserId={userSession.id || userSession._id || ""}
         currentUserRole="cleaner"
       />
     );
@@ -224,7 +229,7 @@ export default function CleanerActiveBookings() {
                 🧹 Active Jobs ({activeBookings.length})
               </h2>
               <div className="space-y-4">
-                {activeBookings.map((booking: any) => (
+                {activeBookings.map((booking: ActiveBooking) => (
                   <ActiveBookingCard
                     key={booking._id || booking.id}
                     booking={booking}
@@ -245,7 +250,7 @@ export default function CleanerActiveBookings() {
                 ✅ Completed - Awaiting Payment ({completedBookings.length})
               </h2>
               <div className="space-y-4">
-                {completedBookings.map((booking: any) => (
+                {completedBookings.map((booking: ActiveBooking) => (
                   <CompletedBookingCard
                     key={booking._id || booking.id}
                     booking={booking}
@@ -326,6 +331,22 @@ export default function CleanerActiveBookings() {
 }
 
 
+const formatBookingTitle = (booking: ActiveBooking) => {
+  if (booking.title && !booking.title.toLowerCase().includes('car detailing')) return booking.title;
+  
+  if (booking.serviceCategory === 'car-detailing' || booking.carServicePackage) {
+    const pkg = booking.carServicePackage?.replace(/-/g, ' ') || 'Car Service';
+    const vehicle = booking.vehicleType ? ` (${booking.vehicleType})` : '';
+    return (pkg + vehicle).toUpperCase();
+  }
+  
+  if (booking.cleaningCategory) {
+    return (booking.cleaningCategory.replace(/-/g, ' ') + ' Cleaning').toUpperCase();
+  }
+
+  return (booking.serviceCategory?.replace(/-/g, ' ') || 'Booking').toUpperCase();
+};
+
 interface ActiveBookingCardProps {
   booking: ActiveBooking;
   onComplete: () => void;
@@ -361,12 +382,50 @@ function ActiveBookingCard({
             {booking.vehicleType ? getVehicleCategory(booking.vehicleType)?.icon || "🚗" : "🚗"}
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white capitalize">
-              {booking.serviceCategory?.replace("-", " ")}
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+              {formatBookingTitle(booking)}
             </h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400 capitalize">
-              {booking.bookingType}
-            </p>
+            <div className="flex flex-col gap-0.5">
+              {booking.carServicePackage && (
+                 <div className="flex flex-wrap gap-2 mt-1">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200">
+                      {booking.carServicePackage.replace(/-/g, " ")}
+                    </span>
+                    {booking.paintCorrectionStage && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-800 border border-orange-200">
+                        🎨 {booking.paintCorrectionStage.replace(/-/g, " ")}
+                      </span>
+                    )}
+                    {booking.fleetCarCount && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200">
+                        🚕 {booking.fleetCarCount} Vehicles
+                      </span>
+                    )}
+                    {booking.midSUVPricingTier && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-800 border border-gray-200">
+                        🚙 {booking.midSUVPricingTier}
+                      </span>
+                    )}
+                 </div>
+              )}
+              {booking.selectedCarExtras && booking.selectedCarExtras.length > 0 && (
+                <div className="mt-1.5 p-2 bg-gray-50 dark:bg-gray-700/50 rounded-md border border-gray-100 dark:border-gray-600">
+                  <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1 flex items-center gap-1">
+                    <span>✨</span> Extras:
+                  </p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {booking.selectedCarExtras.map((extra: string, idx: number) => (
+                      <span key={idx} className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-white dark:bg-gray-600 border border-gray-200 dark:border-gray-500 text-gray-700 dark:text-gray-300">
+                        {extra.replace(/-/g, " ")}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <p className="text-sm text-gray-500 dark:text-gray-400 capitalize mt-1">
+                {booking.bookingType}
+              </p>
+            </div>
           </div>
         </div>
         <div className="flex flex-col items-end">
@@ -500,12 +559,40 @@ function CompletedBookingCard({ booking }: CompletedBookingCardProps) {
             ✅
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white capitalize">
-              {booking.serviceCategory?.replace("-", " ")}
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+              {formatBookingTitle(booking)}
             </h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              Completed {formatDate(booking.completedAt)}
-            </p>
+            <div className="flex flex-col gap-0.5">
+              {booking.carServicePackage && (
+                 <div className="flex flex-wrap gap-2 mt-1">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-50 text-green-800 border border-green-200">
+                      {booking.carServicePackage.replace(/-/g, " ")}
+                    </span>
+                    {booking.paintCorrectionStage && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-orange-50 text-orange-800 border border-orange-200">
+                        🎨 {booking.paintCorrectionStage.replace(/-/g, " ")}
+                      </span>
+                    )}
+                    {booking.fleetCarCount && (
+                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-50 text-blue-800 border border-blue-200">
+                        🚕 {booking.fleetCarCount} Vehicles
+                      </span>
+                    )}
+                 </div>
+              )}
+              {booking.selectedCarExtras && booking.selectedCarExtras.length > 0 && (
+                <div className="mt-1.5 flex flex-wrap gap-1.5 opacity-75">
+                  {booking.selectedCarExtras.map((extra: string, idx: number) => (
+                    <span key={idx} className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-50 border border-gray-200 text-gray-600">
+                      + {extra.replace(/-/g, " ")}
+                    </span>
+                  ))}
+                </div>
+              )}
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                Completed {formatDate(booking.completedAt)}
+              </p>
+            </div>
           </div>
         </div>
         <div className="flex flex-col items-end">

@@ -212,8 +212,38 @@ try {
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-
 let cachedDb = null;
+
+// Auto-reconnect logic if connection drops
+async function reconnectToMongoDB() {
+  if (mongoose.connection.readyState === 0) { // Disconnected
+    console.log('🔄 Attempting to reconnect to MongoDB...');
+    try {
+      await mongoose.connect(process.env.MONGODB_URI, {
+        maxPoolSize: 10,
+        serverSelectionTimeoutMS: 5000,
+        socketTimeoutMS: 45000,
+        heartbeatFrequencyMS: 10000,
+        // Remove deprecated options for newer MongoDB driver
+        // autoReconnect, reconnectTries, reconnectInterval are deprecated
+        // bufferMaxEntries, autoReconnect, bufferCommands are deprecated
+        // Modern mongoose handles reconnection automatically
+      });
+      console.log('✅ MongoDB reconnected successfully');
+    } catch (err) {
+      console.error('❌ MongoDB reconnection failed:', err);
+      // Retry in 5 seconds
+      setTimeout(reconnectToMongoDB, 5000);
+    }
+  }
+}
+
+// Check connection every 60 seconds and reconnect if needed
+setInterval(() => {
+  if (mongoose.connection.readyState === 0) {
+    reconnectToMongoDB();
+  }
+}, 60000);
 
 async function connectToDatabase() {
   if (cachedDb) {
@@ -236,16 +266,54 @@ async function connectToDatabase() {
     const conn = await mongoose.connect(process.env.MONGODB_URI, {
       maxPoolSize: 10,
       serverSelectionTimeoutMS: 5000,
-      socketTimeoutMS: 45000
+      socketTimeoutMS: 45000,
+      // Keep connection alive
+      heartbeatFrequencyMS: 10000,
+      // Remove deprecated options for newer MongoDB driver
+      // autoReconnect, reconnectTries, reconnectInterval are deprecated
+      // bufferMaxEntries, autoReconnect, bufferCommands are deprecated
+      // Modern mongoose handles reconnection automatically
     });
 
     cachedDb = conn;
     console.log('✅ MongoDB Connected Successfully');
     console.log(`🔗 Connected to database: ${process.env.MONGODB_URI}`);
+    
+    // Monitor connection events
+    mongoose.connection.on('error', (err) => {
+      console.error('❌ MongoDB connection error:', err);
+    });
+    
+    mongoose.connection.on('disconnected', () => {
+      console.warn('⚠️ MongoDB disconnected');
+    });
+    
+    mongoose.connection.on('reconnected', () => {
+      console.log('🔄 MongoDB reconnected');
+    });
+    
+    // Keep MongoDB connection alive with periodic ping
+    const keepAliveInterval = setInterval(async () => {
+      try {
+        await mongoose.connection.db.admin().ping();
+        // console.log('✅ MongoDB keep-alive ping successful');
+      } catch (err) {
+        console.error('❌ MongoDB keep-alive ping failed:', err);
+      }
+    }, 30000); // Every 30 seconds
+    
+    // Clear interval on shutdown
+    process.on('exit', () => {
+      clearInterval(keepAliveInterval);
+    });
+    
     return conn;
   } catch (err) {
     console.error('❌ MongoDB Connection Error:', err);
     console.error('🔧 For development, make sure MongoDB is installed and running, or set MONGODB_URI');
+    
+    // Try to reconnect in 5 seconds
+    setTimeout(reconnectToMongoDB, 5000);
     
     // Create a mock connection object to allow the server to start
     console.warn('⚠️ Using mock database connection - features will be limited');
@@ -517,19 +585,7 @@ app.use((req, res) => {
 });
 
 
-process.on('SIGTERM', () => {
-  console.log('SIGTERM received, shutting down gracefully');
-  mongoose.connection.close();
-  console.log('MongoDB connection closed');
-  process.exit(0);
-});
 
-process.on('SIGINT', () => {
-  console.log('SIGINT received, shutting down gracefully');
-  mongoose.connection.close();
-  console.log('MongoDB connection closed');
-  process.exit(0);
-});
 
 
 const PORT = process.env.NODE_ENV === 'production' ? (process.env.PORT || 5000) : 5001;
@@ -538,6 +594,45 @@ const server = http.createServer(app);
 const { initSocket } = require('./lib/socket.js');
 
 initSocket(server);
+
+// Handle SIGTERM gracefully
+process.on('SIGTERM', async () => {
+  console.log('SIGTERM received, shutting down gracefully...');
+  
+  // DO NOT close MongoDB connection - let it stay alive
+  // MongoDB will handle reconnection automatically
+  
+  // Close server
+  server.close(() => {
+    console.log('Server closed');
+    process.exit(0);
+  });
+  
+  // Force shutdown after 10 seconds
+  setTimeout(() => {
+    console.error('Could not close connections in time, forcefully shutting down');
+    process.exit(1);
+  }, 10000);
+});
+
+// Handle SIGINT (Ctrl+C)
+process.on('SIGINT', async () => {
+  console.log('SIGINT received, shutting down gracefully...');
+  
+  // DO NOT close MongoDB connection - let it stay alive
+  
+  // Close server
+  server.close(() => {
+    console.log('Server closed');
+    process.exit(0);
+  });
+  
+  // Force shutdown after 10 seconds
+  setTimeout(() => {
+    console.error('Could not close connections in time, forcefully shutting down');
+    process.exit(1);
+  }, 10000);
+});
 
 if (require.main === module) {
   server.listen(PORT, () => {

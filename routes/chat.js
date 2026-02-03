@@ -181,6 +181,21 @@ router.post('/:bookingId/message', protect, async (req, res) => {
       bookingId: req.params.bookingId
     });
 
+    // Send Push Notification
+    try {
+      const NotificationService = require('../lib/notificationService');
+      if (NotificationService && typeof NotificationService.sendChatMessageNotification === 'function') {
+        NotificationService.sendChatMessageNotification(
+          req.params.bookingId,
+          recipientId,
+          senderName,
+          message
+        ).catch(err => console.error('Push notification error in chat:', err.message));
+      }
+    } catch (pushError) {
+      console.warn('NotificationService not available in chat route:', pushError.message);
+    }
+
     
     const updatedChatRoom = await ChatRoom.findOne({ booking: req.params.bookingId })
       .populate('client', 'name phone profileImage')

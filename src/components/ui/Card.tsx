@@ -1,17 +1,7 @@
- import React from 'react';
+import React from 'react';
  
  // Workaround for React import issues
  const forwardRef = (React as any).forwardRef;
-import { useState } from 'react'
-import toast from 'react-hot-toast'
-import { saveUserSession } from '@/lib/storage'
-import { Button } from './Button'
-
-interface CardProps {
-  variant?: 'default' | 'elevated' | 'outlined' | 'glass'
-  hoverable?: boolean
-  selected?: boolean
-}
 
 export const Card = forwardRef(
   ({ variant = 'default', hoverable, selected, className = '', children, ...props }: any, ref: any) => {

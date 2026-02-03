@@ -3,7 +3,7 @@ import { loadUserSession } from '@/lib/storage'
 
 interface CleanerLayoutProps {
     children: ReactNode
-    currentPage?: 'jobs' | 'active' | 'profile' | 'earnings' | 'settings'
+    currentPage?: 'jobs' | 'active' | 'profile' | 'earnings' | 'settings' | 'info'
 }
 
 export default function CleanerLayout({ children, currentPage = 'jobs' }: CleanerLayoutProps) {
@@ -13,8 +13,9 @@ export default function CleanerLayout({ children, currentPage = 'jobs' }: Cleane
     const navItems = [
         { id: 'jobs', label: 'Jobs', icon: '💼', href: '/jobs' },
         { id: 'active', label: 'My Jobs', icon: '📋', href: '/cleaner-active' },
-        { id: 'profile', label: 'Profile', icon: '👤', href: '/cleaner-profile' },
         { id: 'earnings', label: 'Earnings', icon: '💰', href: '/earnings' },
+        { id: 'info', label: 'Guide', icon: 'ℹ️', href: '/info' },
+        { id: 'profile', label: 'Profile', icon: '👤', href: '/cleaner-profile' },
     ]
 
     return (
@@ -100,7 +101,7 @@ export default function CleanerLayout({ children, currentPage = 'jobs' }: Cleane
 
             {}
             <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-40">
-                <div className="grid grid-cols-4 gap-1 px-2 py-2">
+                <div className="grid grid-cols-5 gap-1 px-2 py-2">
                     {navItems.map((item) => (
                         <a
                             key={item.id}

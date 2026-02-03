@@ -9,13 +9,33 @@ import { toast } from 'react-hot-toast'
 interface CompletedBooking {
     _id: string
     id?: string
+    title?: string
     serviceCategory: string
     price: number
     completedAt: string
     paymentStatus?: string
     payoutStatus?: string
     paidAt?: string
+    carServicePackage?: string
+    vehicleType?: string
+    cleaningCategory?: string
 }
+
+const formatBookingTitle = (booking: CompletedBooking) => {
+    if (booking.title && !booking.title.toLowerCase().includes('car detailing')) return booking.title;
+    
+    if (booking.serviceCategory === 'car-detailing' || booking.carServicePackage) {
+      const pkg = booking.carServicePackage?.replace(/-/g, ' ') || 'Car Service';
+      const vehicle = booking.vehicleType ? ` (${booking.vehicleType})` : '';
+      return (pkg + vehicle).toUpperCase();
+    }
+    
+    if (booking.cleaningCategory) {
+      return (booking.cleaningCategory.replace(/-/g, ' ') + ' Cleaning').toUpperCase();
+    }
+  
+    return (booking.serviceCategory?.replace(/-/g, ' ') || 'Booking').toUpperCase();
+};
 
 export default function Earnings() {
     const [bookings, setBookings] = useState<CompletedBooking[]>([])
@@ -124,15 +144,15 @@ export default function Earnings() {
                             <p className="text-gray-500">No completed jobs yet.</p>
                         </Card>
                     ) : (
-                        bookings.map((job: any) => {
+                        bookings.map((job: CompletedBooking) => {
                             const earning = calculateCleanerPayout(job.price)
                             const isPaid = job.payoutStatus === 'completed'
 
                             return (
                                 <Card key={job._id || job.id} className="p-4 flex justify-between items-center transition-shadow hover:shadow-md">
                                     <div>
-                                        <h3 className="font-semibold text-gray-900 capitalize">
-                                            {job.serviceCategory.replace('-', ' ')}
+                                        <h3 className="font-bold text-gray-900">
+                                            {formatBookingTitle(job)}
                                         </h3>
                                         <p className="text-xs text-gray-500">
                                             {new Date(job.completedAt).toLocaleDateString()} at {new Date(job.completedAt).toLocaleTimeString()}

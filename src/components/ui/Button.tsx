@@ -109,7 +109,7 @@ export const ImageCarousel = ({
   interval = 4000,
 }: ImageCarouselProps) => {
   const [currentIndex, setCurrentIndex] = useState<number>(0);
-  const [isAnimating, setIsAnimating] = useState<boolean>(false);
+  const [, setIsAnimating] = useState<boolean>(false);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -686,7 +686,14 @@ export const ChatComponent = ({
   };
 
   return (
-    <Card className="h-full flex flex-col min-h-[400px] max-h-[100dvh]">
+    <div className="fixed inset-0 pointer-events-none z-40">
+    <Card className="flex flex-col fixed top-0 left-0 right-0 z-50 rounded-b-3xl rounded-t-none border-none shadow-2xl pointer-events-auto"
+      style={{ 
+        height: '40vh',
+        maxHeight: '40vh',
+        paddingTop: 'env(safe-area-inset-top, 20px)'
+      }}
+    >
       <div className="p-4 border-b flex items-center justify-between bg-white shrink-0">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-yellow-500 rounded-full flex items-center justify-center text-white font-semibold flex-shrink-0">
@@ -717,31 +724,34 @@ export const ChatComponent = ({
             <p className="text-sm">Send a message to start the conversation</p>
           </div>
         ) : (
-          messages.map((message: ChatMessage) => (
-            <div
-              key={message.id}
-              className={`flex ${message.senderId === currentUserId ? "justify-end" : "justify-start"}`}
-            >
+          messages.map((message: ChatMessage) => {
+            const isFromMe = message.senderId === currentUserId;
+            return (
               <div
-                className={`max-w-[85%] px-4 py-2 rounded-2xl ${
-                  message.senderId === currentUserId
-                    ? "bg-yellow-500 text-white rounded-br-none"
-                    : "bg-white text-gray-900 rounded-bl-none shadow-sm"
-                }`}
+                key={message.id}
+                className={`flex ${isFromMe ? "justify-end" : "justify-start"}`}
               >
-                {message.senderName && message.senderId !== currentUserId && (
-                  <div className="text-xs font-semibold mb-1">{message.senderName}</div>
-                )}
-                <div className="whitespace-pre-wrap break-words text-sm md:text-base">{message.content || message.message}</div>
-                <div className={`text-[10px] mt-1 ${message.senderId === currentUserId ? "text-yellow-100" : "text-gray-500"} flex items-center justify-end gap-1`}>
-                  {formatTime(message.timestamp)}
-                  {message.senderId === currentUserId && (
-                    <span className="text-xs">✓✓</span>
+                <div
+                  className={`max-w-[85%] px-4 py-2 rounded-2xl ${
+                    isFromMe
+                      ? "bg-yellow-500 text-gray-900 rounded-br-none"
+                      : "bg-gray-200 text-gray-800 rounded-bl-none shadow-sm"
+                  }`}
+                >
+                  {!isFromMe && message.senderName && (
+                    <div className="text-xs font-semibold mb-1 text-gray-500">{message.senderName}</div>
                   )}
+                  <div className="whitespace-pre-wrap break-words text-sm md:text-base">{message.content || message.message}</div>
+                  <div className={`text-[10px] mt-1 ${isFromMe ? "text-yellow-800" : "text-gray-400"} flex items-center justify-end gap-1`}>
+                    {formatTime(message.timestamp)}
+                    {isFromMe && (
+                      <span className="text-xs">✓✓</span>
+                    )}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))
+            );
+          })
         )}
         <div ref={messagesEndRef} className="h-2" />
       </div>
@@ -790,5 +800,6 @@ export const ChatComponent = ({
         </div>
       </form>
     </Card>
+    </div>
   );
 };

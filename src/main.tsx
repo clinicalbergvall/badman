@@ -19,6 +19,7 @@ import AdminRegister from "./pages/AdminRegister";
 import CleanerProfile from "./pages/CleanerProfile";
 import CleanerActiveBookings from "./pages/CleanerActiveBookings";
 import Earnings from "./pages/Earnings";
+import AppInfo from "./pages/AppInfo";
 import { LoginForm, AdminLoginForm } from "./components/ui";
 import { loadUserSession, setupSessionSync, saveUserSession, clearUserSession } from './lib/storage';
 import { NotificationProvider } from "./contexts/NotificationContext";
@@ -373,6 +374,14 @@ const Root = () => {
                 element={
                   <ProtectedRoute requiredRole="cleaner">
                     <Earnings />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/info"
+                element={
+                  <ProtectedRoute requiredRole="cleaner">
+                    <AppInfo />
                   </ProtectedRoute>
                 }
               />

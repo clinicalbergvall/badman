@@ -30,7 +30,7 @@ import {
   loadUserSession,
   clearUserSession,
 } from "@/lib/storage";
-import { getCurrentLocation, getLocationPermissionStatus, reverseGeocode } from "@/lib/location";
+import { getCurrentLocation, reverseGeocode } from "@/lib/location";
 import authAPI from "@/lib/auth-api";
 import { api } from "@/lib/api";
 import toast from "react-hot-toast";
@@ -113,7 +113,6 @@ export default function BookingEnhanced() {
     coordinates?: [number, number];
   }>({});
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
-  const [locationPermission, setLocationPermission] = useState<string>("unknown");
 
 
 
@@ -132,7 +131,6 @@ export default function BookingEnhanced() {
       // For new users, start at step 0 (user type selection)
       setStep(0);
     }
-    getLocationPermissionStatus().then(setLocationPermission).catch(() => setLocationPermission("unknown"));
   }, []);
 
   useEffect(() => {
@@ -889,15 +887,6 @@ export default function BookingEnhanced() {
 
             <div className="space-y-4 w-full max-w-lg mx-auto">
               {VEHICLE_CATEGORIES.map((vehicle) => {
-                const status =
-                  vehicleType === vehicle.id
-                    ? "current"
-                    : "upcoming";
-                const _statusClasses =
-                  status === "current"
-                    ? "border-2 border-yellow-400 shadow-sm"
-                    : "border border-gray-200 opacity-60";
-                
                 return (
                   <Card
                     key={vehicle.id}
@@ -1011,15 +1000,6 @@ export default function BookingEnhanced() {
                     fleetCarCount,
                   );
                 }
-                
-                const status =
-                  carServicePackage === pkg.id
-                    ? "current"
-                    : "upcoming";
-                const _statusClasses =
-                  status === "current"
-                    ? "border-2 border-yellow-400 shadow-sm"
-                    : "border border-gray-200 opacity-60";
                 
                 return (
                   <Card
@@ -1431,9 +1411,7 @@ export default function BookingEnhanced() {
               >
                 📍 Use Current Location
               </Button>
-              <p className="text-xs text-gray-600 mb-2">
-                Permission: {locationPermission}
-              </p>
+
               <Input
                 placeholder="Or enter address manually"
                 value={location.manualAddress || ""}

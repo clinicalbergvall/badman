@@ -348,9 +348,31 @@ export function PaymentModal({
         </div>
 
         {}
-        <p className="text-xs text-center text-gray-500 mt-4">
-          🔒 Secure payment powered by IntaSend
-        </p>
+        <div className="mt-6 text-center">
+          <a
+            href="https://intasend.com/security"
+            target="_blank"
+            rel="noreferrer"
+            className="block"
+          >
+            <img
+              src="https://intasend-prod-static.s3.amazonaws.com/img/trust-badges/intasend-trust-badge-with-mpesa-hr-dark.png"
+              alt="IntaSend Secure Payments (PCI-DSS Compliant)"
+              className="mx-auto max-w-full"
+              style={{ width: "375px" }}
+            />
+          </a>
+          <strong>
+            <a
+              href="https://intasend.com/security"
+              target="_blank"
+              rel="noreferrer"
+              className="mt-2 block text-xs no-underline text-gray-500 hover:text-gray-700"
+            >
+              Secured by IntaSend Payments
+            </a>
+          </strong>
+        </div>
       </Card>
     </div>
   );

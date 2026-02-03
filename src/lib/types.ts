@@ -194,6 +194,7 @@ export interface BookingHistoryItem extends BookingData {
 
 export interface UserAccountSession {
   id?: string;
+  _id?: string;
   userType: "client" | "cleaner" | "admin";
   name: string;
   phone: string;
@@ -308,6 +309,10 @@ export interface CleanerJobOpportunity {
   bookingId?: string;
   createdAt?: string;
   coordinates?: [number, number];
+  carServicePackage?: string;
+  paintCorrectionStage?: string;
+  fleetCarCount?: number;
+  selectedCarExtras?: string[];
 }
 
 export interface CleanerChecklistItem {

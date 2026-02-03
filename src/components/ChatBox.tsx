@@ -25,7 +25,6 @@ export default function ChatBox({
   const [viewportHeight, setViewportHeight] = useState<number | undefined>(undefined);
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLTextAreaElement>(null)
-  const containerRef = useRef<HTMLDivElement>(null)
 
 
   const scrollToBottom = () => {
@@ -115,6 +114,37 @@ export default function ChatBox({
       window.removeEventListener('resize', handleVisualViewportResize);
     };
   }, []);
+
+  // Adjust chat container height when keyboard appears/disappears
+  useEffect(() => {
+    const adjustViewport = () => {
+      if (viewportHeight && window.visualViewport) {
+        // Calculate keyboard height
+        const keyboardHeight = window.innerHeight - window.visualViewport.height;
+        // Apply padding to root element to push content up
+        document.documentElement.style.paddingBottom = `${keyboardHeight}px`;
+        document.body.style.paddingBottom = `${keyboardHeight}px`;
+      } else {
+        // Reset padding when keyboard is hidden
+        document.documentElement.style.paddingBottom = '0px';
+        document.body.style.paddingBottom = '0px';
+      }
+    };
+
+    adjustViewport();
+    
+    // Also adjust on viewport changes
+    if (window.visualViewport) {
+      const handleViewportChange = () => adjustViewport();
+      window.visualViewport.addEventListener('resize', handleViewportChange);
+      return () => {
+        window.visualViewport?.removeEventListener('resize', handleViewportChange);
+        // Cleanup padding on unmount
+        document.documentElement.style.paddingBottom = '0px';
+        document.body.style.paddingBottom = '0px';
+      };
+    }
+  }, [viewportHeight]);
 
   // Scroll to bottom when viewport height changes (keyboard opens/closes)
   useEffect(() => {
@@ -254,14 +284,13 @@ export default function ChatBox({
   }
 
   return (
+    <div className="fixed inset-0 pointer-events-none z-40">
     <Card 
-      ref={containerRef}
-      className={`flex flex-col w-full transition-all duration-200 ease-out`}
-      style={{
-        height: viewportHeight 
-          ? `${viewportHeight - 140}px` // Subtract header/stats height when keyboard is open
-          : '70dvh', // Use dynamic viewport height as default
-        maxHeight: viewportHeight ? `${viewportHeight}px` : '80dvh'
+      className="flex flex-col fixed top-0 left-0 right-0 z-50 rounded-b-3xl rounded-t-none border-none shadow-2xl pointer-events-auto"
+      style={{ 
+        height: '40vh',
+        maxHeight: '40vh',
+        paddingTop: 'env(safe-area-inset-top, 20px)'
       }}
     >
       { }
@@ -302,30 +331,30 @@ export default function ChatBox({
                 </span>
               </div>
               {dateMessages.map((msg) => {
-                const isClientMessage = msg.senderRole === 'client'
+                const isFromMe = msg.senderId === currentUserId;
 
                 return (
                   <div
                     key={msg.id}
-                    className={`flex ${isClientMessage ? 'justify-end' : 'justify-start'} mb-3`}
+                    className={`flex ${isFromMe ? 'justify-end' : 'justify-start'} mb-3`}
                   >
-                    <div className={`${isClientMessage ? 'order-2' : 'order-1'} ${isClientMessage ? 'ml-auto' : 'mr-auto'}`}>
+                    <div className={`${isFromMe ? 'order-2 ml-auto' : 'order-1 mr-auto'} max-w-[85%]`}>
                       <div
-                        className={`rounded-2xl px-4 py-2 ${isClientMessage
-                            ? 'bg-blue-500 text-white rounded-br-none'
-                            : 'bg-gray-300 text-gray-800 rounded-bl-none'
+                        className={`rounded-2xl px-4 py-2 ${isFromMe
+                            ? 'bg-yellow-500 text-gray-900 rounded-br-none'
+                            : 'bg-gray-200 text-gray-800 rounded-bl-none shadow-sm'
                           }`}
                       >
-                        {!isClientMessage && msg.senderName && (
-                          <p className="text-xs font-semibold mb-1">{msg.senderName}</p>
+                        {!isFromMe && msg.senderName && (
+                          <p className="text-xs font-semibold mb-1 opacity-70">{msg.senderName}</p>
                         )}
                         <p className="text-sm whitespace-pre-wrap break-words">{msg.message}</p>
 
                       </div>
-                      <div className={`text-xs ${isClientMessage ? 'text-blue-100' : 'text-gray-500'} mt-1 flex ${isClientMessage ? 'flex-row-reverse justify-end' : 'justify-start'}`}>
+                      <div className={`text-xs ${isFromMe ? 'text-yellow-700' : 'text-gray-500'} mt-1 flex ${isFromMe ? 'flex-row-reverse justify-end' : 'justify-start'}`}>
                         <span>{formatTime(msg.timestamp)}</span>
-                        {isClientMessage && (
-                          <span className="ml-1">
+                        {isFromMe && (
+                          <span className="ml-1 text-[10px]">
                             {msg.read ? '✓✓' : '✓'}
                           </span>
                         )}
@@ -406,5 +435,6 @@ export default function ChatBox({
         </div>
       </div>
     </Card>
+    </div>
   )
 }

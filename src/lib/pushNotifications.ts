@@ -120,15 +120,10 @@ export class PushNotificationService {
 
   static async sendTokenToBackend(token: any) {
     try {
-
-
-      const response = await fetch('/api/users/device-token', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
-        },
-        body: JSON.stringify({ deviceToken: token })
+      const { api } = await import('./api');
+      
+      const response = await api.post('/users/device-token', { 
+        deviceToken: token 
       });
 
       if (!response.ok) {
